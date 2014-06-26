@@ -25,7 +25,7 @@ MANAGERS = ADMINS
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql_psycopg2',
-        'NAME': 'skeleton',
+        'NAME': 'control',
         'USER': 'postgres',
         'PASSWORD': 'postgres',
         'HOST': '127.0.0.1',
@@ -147,8 +147,8 @@ INSTALLED_APPS = (
     'debug_toolbar',
 
     # sample apps to explain usage
-    'app1',
-    'celery_app',
+    'subscription',
+    'subsend',
 )
 
 # A sample logging configuration. The only tangible logging
