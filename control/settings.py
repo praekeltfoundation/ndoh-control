@@ -146,6 +146,7 @@ INSTALLED_APPS = (
     'djcelery_email',
     'debug_toolbar',
     'autodatetimefields',
+    'tastypie',
 
     # sample apps to explain usage
     'subscription',
@@ -200,7 +201,6 @@ if DEBUG:
 
 # Django debug toolbar
 DEBUG_TOOLBAR_CONFIG = {
-    'INTERCEPT_REDIRECTS': False,
     'ENABLE_STACKTRACES': True,
 }
 
