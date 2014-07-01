@@ -1,4 +1,7 @@
 from django.db import models
+from django.contrib.auth.models import User
+from django.db.models.signals import post_save
+from django.dispatch import receiver
 # from django.utils import timezone
 # import datetime
 from djcelery.models import PeriodicTask
@@ -62,3 +65,10 @@ class Subscription(models.Model):
 
 from south.modelsinspector import add_introspection_rules
 add_introspection_rules([], ["^autodatetimefields\.models\.AutoNewDateTimeField", "^autodatetimefields\.models\.AutoDateTimeField"])
+
+# workaround for https://github.com/toastdriven/django-tastypie/issues/937
+@receiver(post_save, sender=User)
+def create_user_api_key(sender, **kwargs):
+     from tastypie.models import create_api_key
+     create_api_key(User, **kwargs)
+
