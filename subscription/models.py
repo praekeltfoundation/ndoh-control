@@ -34,7 +34,7 @@ class Message(models.Model):
     updated_at = AutoDateTimeField(blank=True)
 
     def __unicode__(self):
-        return "Message %s from %s" % (self.sequence_number, self.message_set.short_name)
+        return "Message %s in %s from %s" % (self.sequence_number, self.lang, self.message_set.short_name)
 
 
 class Subscription(models.Model):

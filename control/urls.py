@@ -14,5 +14,8 @@ urlpatterns = patterns('',
 
     # Uncomment the next line to enable the admin:
     url(r'^admin/', include(admin.site.urls)),
+        url(r'^admin/subscription/upload/', 'subscription.views.uploader',
+        {'page_name': 'csv_uploader'}, name="csv_uploader"),
     url(r'^', include('subscription.urls')),
+
 )
