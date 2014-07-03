@@ -69,6 +69,5 @@ user_model = get_user_model()
 # workaround for https://github.com/toastdriven/django-tastypie/issues/937
 @receiver(post_save, sender=user_model)
 def create_user_api_key(sender, **kwargs):
-     from tastypie.models import create_api_key
-     create_api_key(user_model, **kwargs)
-
+    from tastypie.models import create_api_key
+    create_api_key(user_model, **kwargs)
