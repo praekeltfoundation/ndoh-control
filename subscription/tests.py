@@ -6,7 +6,6 @@ from django.contrib.auth.models import User
 
 
 class SubscriptionResourceTest(ResourceTestCase):
-    # fixtures = ['test_subscription.json']
 
     def setUp(self):
         super(SubscriptionResourceTest, self).setUp()
