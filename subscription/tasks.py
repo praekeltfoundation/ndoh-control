@@ -7,14 +7,13 @@ logger = logging.getLogger(__name__)
 
 
 @task()
-# @transaction.atomic
 def ingest_csv(csv_data, message_set):
     """ Expecting data in the following format:
     message_id,en,safe,af,safe,zu,safe,xh,safe,ve,safe,tn,safe,ts,safe,ss,safe,st,safe,nso,safe,nr,safe
     """
     records = csv.DictReader(csv_data)
     for line in records:
-        for key in line.iterkeys():
+        for key in line:
             # Ignore non-content keys and empty keys
             if key not in ["message_id", "safe"] and line[key] != "":
                 try:
