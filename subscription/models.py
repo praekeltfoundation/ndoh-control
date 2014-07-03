@@ -1,9 +1,6 @@
 from django.db import models
-from django.contrib.auth.models import User
 from django.db.models.signals import post_save
 from django.dispatch import receiver
-# from django.utils import timezone
-# import datetime
 from djcelery.models import PeriodicTask
 from autodatetimefields.models import AutoNewDateTimeField, AutoDateTimeField
 
@@ -15,7 +12,6 @@ class MessageSet(models.Model):
     short_name = models.CharField(max_length=20)
     notes = models.CharField(max_length=200, verbose_name=u'Notes', null=True, blank=True)
     next_set = models.ForeignKey('self',
-                                         # related_name='next_set',
                                          null=True,
                                          blank=True)
     created_at = AutoNewDateTimeField(blank=True)
@@ -66,9 +62,13 @@ class Subscription(models.Model):
 from south.modelsinspector import add_introspection_rules
 add_introspection_rules([], ["^autodatetimefields\.models\.AutoNewDateTimeField", "^autodatetimefields\.models\.AutoDateTimeField"])
 
+# Auth set up stuff to ensure apikeys are created
+# ensures endpoints require username and api_key values to access
+from django.contrib.auth import get_user_model
+user_model = get_user_model()
 # workaround for https://github.com/toastdriven/django-tastypie/issues/937
-@receiver(post_save, sender=User)
+@receiver(post_save, sender=user_model)
 def create_user_api_key(sender, **kwargs):
      from tastypie.models import create_api_key
-     create_api_key(User, **kwargs)
+     create_api_key(user_model, **kwargs)
 
