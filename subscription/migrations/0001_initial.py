@@ -12,7 +12,7 @@ class Migration(SchemaMigration):
         db.create_table(u'subscription_messageset', (
             (u'id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
             ('short_name', self.gf('django.db.models.fields.CharField')(max_length=20)),
-            ('notes', self.gf('django.db.models.fields.CharField')(max_length=200, null=True, blank=True)),
+            ('notes', self.gf('django.db.models.fields.TextField')(null=True, blank=True)),
             ('next_set', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['subscription.MessageSet'], null=True, blank=True)),
             ('created_at', self.gf('autodatetimefields.models.AutoNewDateTimeField')(blank=True)),
             ('updated_at', self.gf('autodatetimefields.models.AutoDateTimeField')(blank=True)),
@@ -110,7 +110,7 @@ class Migration(SchemaMigration):
             'created_at': ('autodatetimefields.models.AutoNewDateTimeField', [], {'blank': 'True'}),
             u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
             'next_set': ('django.db.models.fields.related.ForeignKey', [], {'to': u"orm['subscription.MessageSet']", 'null': 'True', 'blank': 'True'}),
-            'notes': ('django.db.models.fields.CharField', [], {'max_length': '200', 'null': 'True', 'blank': 'True'}),
+            'notes': ('django.db.models.fields.TextField', [], {'null': 'True', 'blank': 'True'}),
             'short_name': ('django.db.models.fields.CharField', [], {'max_length': '20'}),
             'updated_at': ('autodatetimefields.models.AutoDateTimeField', [], {'blank': 'True'})
         },
