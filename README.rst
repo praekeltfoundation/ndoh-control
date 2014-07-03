@@ -3,7 +3,7 @@ ndoh-control
 
 Django application for MomConnect control interfaces.
 
-Warning: Don't create a superuser on syncdb as TastyPie migrations have not yet occured
+Warning: Don't create a superuser on syncdb as TastyPie migrations have not yet occurred.
 
 ::
 
