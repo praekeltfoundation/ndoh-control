@@ -8,6 +8,7 @@ from tastypie.api import Api
 api_resources = Api(api_name='v1')
 api_resources.register(api.SubscriptionResource())
 api_resources.register(api.PeriodicTaskResource())
+api_resources.register(api.MessageSetResource())
 
 
 api_resources.prepend_urls()
