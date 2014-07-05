@@ -62,7 +62,7 @@ class SubscriptionResourceTest(ResourceTestCase):
             "message_set": "/api/v1/message_set/3/",
             "next_sequence_number": 1,
             "resource_uri": "/api/v1/subscription/1/",
-            "schedule": "/api/v1/periodic_task/1/", # Non existent task
+            "schedule": "/api/v1/periodic_task/1/",
             "to_addr": "+271234",
             "user_account": "80493284823"
         }
