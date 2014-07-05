@@ -51,7 +51,9 @@ class SubscriptionResourceTest(ResourceTestCase):
                                         authentication=self.get_credentials(),
                                         data=data)
         json_item = json.loads(response.content)
-        self.assertIn("error", json_item)
+        self.assertHttpBadRequest(response)
+        self.assertEqual("Could not find the provided object via resource URI " \
+                         "'/api/v1/periodic_task/10/'.", json_item["error"])
 
     def test_post_subscription_good(self):
         data = {
