@@ -8,6 +8,7 @@ from django.core.urlresolvers import reverse
 from subscription.models import MessageSet, Message
 from subscription.tasks import ingest_csv
 from StringIO import StringIO
+import json
 
 
 class SubscriptionResourceTest(ResourceTestCase):
@@ -38,6 +39,52 @@ class SubscriptionResourceTest(ResourceTestCase):
         # Scope out the data for correctness.
         self.assertEqual(len(self.deserialize(resp)['objects']), 0)
 
+    def test_post_subscription_with_non_existent_schedule_ref(self):
+        data = {
+            "active": True,
+            "completed": False,
+            "contact_key": "82309423098",
+            "lang": "en",
+            "next_sequence_number": 1,
+            "resource_uri": "/api/v1/subscription/1/",
+            "schedule": "/api/v1/periodic_task/10/", # Non existent task
+            "to_addr": "+271234",
+            "user_account": "80493284823"
+        }
+
+        response = self.api_client.post('/api/v1/subscription/', format='json',
+                                        authentication=self.get_credentials(),
+                                        data=data)
+        json_item = json.loads(response.content)
+        self.assertHttpBadRequest(response)
+        self.assertEqual("Could not find the provided object via resource URI " \
+                         "'/api/v1/periodic_task/10/'.", json_item["error"])
+
+    def test_post_subscription_good(self):
+        data = {
+            "contact_key": "82309423098",
+            "lang": "en",
+            "message_set": "/api/v1/message_set/3/",
+            "next_sequence_number": 1,
+            "resource_uri": "/api/v1/subscription/1/",
+            "schedule": "/api/v1/periodic_task/1/",
+            "to_addr": "+271234",
+            "user_account": "80493284823"
+        }
+
+        response = self.api_client.post('/api/v1/subscription/', format='json',
+                                        authentication=self.get_credentials(),
+                                        data=data)
+        json_item = json.loads(response.content)
+        self.assertEqual("82309423098", json_item["contact_key"])
+        self.assertEqual(True, json_item["active"])
+        self.assertEqual(False, json_item["completed"])
+        self.assertEqual("en", json_item["lang"])
+        self.assertEqual("/api/v1/message_set/3/", json_item["message_set"])
+        self.assertEqual(1, json_item["next_sequence_number"])
+        self.assertEqual("/api/v1/periodic_task/1/", json_item["schedule"])
+        self.assertEqual("+271234", json_item["to_addr"])
+        self.assertEqual("80493284823", json_item["user_account"])
 
 class TestUploadCSV(TestCase):
 
@@ -95,3 +142,5 @@ class TestUploadCSV(TestCase):
         imported_en_dirty = Message.objects.filter(lang="en")
         self.assertEquals(len(imported_en_dirty), 1)
 
+
+    
