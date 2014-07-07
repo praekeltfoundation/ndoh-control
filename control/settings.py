@@ -183,15 +183,16 @@ LOGGING = {
 }
 
 # Celery configuration options
-BROKER_URL = 'redis://localhost:6379/0'
-CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
+BROKER_URL = "amqp://guest:guest@localhost:5672/"
+CELERY_RESULT_BACKEND = "database"
+CELERYBEAT_SCHEDULER = 'djcelery.schedulers.DatabaseScheduler'
 
 # Uncomment if you're running in DEBUG mode and you want to skip the broker
 # and execute tasks immediate instead of deferring them to the queue / workers.
-# CELERY_ALWAYS_EAGER = DEBUG
+CELERY_ALWAYS_EAGER = DEBUG
 
 # Tell Celery where to find the tasks
-CELERY_IMPORTS = ('subsend.tasks',)
+CELERY_IMPORTS = ('subsend.tasks','subscription.tasks',)
 
 # Defer email sending to Celery, except if we're in debug mode,
 # then just print the emails to stdout for debugging.
