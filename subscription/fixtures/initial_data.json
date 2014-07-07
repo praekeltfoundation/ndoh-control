@@ -88,6 +88,17 @@
     }
 },
 {
+    "pk": 9, 
+    "model": "subscription.messageset", 
+    "fields": {
+        "notes": "Used to encourage mothers to go to clinic", 
+        "next_set": null, 
+        "short_name": "promotional",
+        "created_at": "2014-07-01T10:49:23.571Z",
+        "updated_at": "2014-07-01T10:49:23.572Z"
+    }
+},
+{
     "pk": 1,
     "model": "djcelery.crontabschedule",
     "fields": {
