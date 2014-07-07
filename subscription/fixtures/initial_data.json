@@ -91,9 +91,20 @@
     "pk": 9, 
     "model": "subscription.messageset", 
     "fields": {
-        "notes": "Used to encourage mothers to go to clinic", 
+        "notes": "Used to encourage mothers from public line to go to clinic", 
         "next_set": null, 
-        "short_name": "promotional",
+        "short_name": "subscription",
+        "created_at": "2014-07-01T10:49:23.571Z",
+        "updated_at": "2014-07-01T10:49:23.572Z"
+    }
+},
+{
+    "pk": 10, 
+    "model": "subscription.messageset", 
+    "fields": {
+        "notes": "Used to encourage mothers from CHW line to go to clinic", 
+        "next_set": null, 
+        "short_name": "chw",
         "created_at": "2014-07-01T10:49:23.571Z",
         "updated_at": "2014-07-01T10:49:23.572Z"
     }
