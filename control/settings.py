@@ -144,7 +144,6 @@ INSTALLED_APPS = (
     'raven.contrib.django.raven_compat',
     'djcelery',
     'djcelery_email',
-    'debug_toolbar',
     'autodatetimefields',
     'tastypie',
 
@@ -224,3 +223,6 @@ try:
     from local_settings import *
 except ImportError:
     pass
+
+if DEBUG:
+    INSTALLED_APPS += ('debug_toolbar',)
