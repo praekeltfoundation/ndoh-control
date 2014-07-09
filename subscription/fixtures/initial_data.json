@@ -154,10 +154,25 @@
     }
 },
 {
-    "pk": 1,
-    "model": "djcelery.periodictasks",
+    "pk": 5,
+    "model": "djcelery.crontabschedule",
     "fields": {
-        "last_update": "2014-07-04T08:56:23.622Z"
+        "month_of_year": "*",
+        "day_of_week": "1,2,3,5",
+        "hour": "10",
+        "minute": "0",
+        "day_of_month": "*"
+    }
+},
+{
+    "pk": 6,
+    "model": "djcelery.crontabschedule",
+    "fields": {
+        "month_of_year": "*",
+        "day_of_week": "1,2,3,4,5",
+        "hour": "10",
+        "minute": "15",
+        "day_of_month": "*"
     }
 },
 {
@@ -235,6 +250,48 @@
         "enabled": true,
         "routing_key": null,
         "crontab": 4,
+        "interval": null,
+        "queue": null,
+        "total_run_count": 0,
+        "expires": null,
+        "kwargs": "{}",
+        "date_changed": "2014-07-04T08:56:23.644Z",
+        "description": ""
+    }
+},
+{
+    "pk": 5,
+    "model": "djcelery.periodictask",
+    "fields": {
+        "task": "subsend.tasks.process_message_queue",
+        "name": "Monday, Tuesday, Wednesday and Friday - 10am",
+        "exchange": null,
+        "last_run_at": null,
+        "args": "[]",
+        "enabled": true,
+        "routing_key": null,
+        "crontab": 5,
+        "interval": null,
+        "queue": null,
+        "total_run_count": 0,
+        "expires": null,
+        "kwargs": "{}",
+        "date_changed": "2014-07-04T08:56:23.644Z",
+        "description": ""
+    }
+},
+{
+    "pk": 6,
+    "model": "djcelery.periodictask",
+    "fields": {
+        "task": "subsend.tasks.process_message_queue",
+        "name": "Weekdays - 10.15am",
+        "exchange": null,
+        "last_run_at": null,
+        "args": "[]",
+        "enabled": true,
+        "routing_key": null,
+        "crontab": 6,
         "interval": null,
         "queue": null,
         "total_run_count": 0,
