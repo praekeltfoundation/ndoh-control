@@ -39,6 +39,64 @@ class SubscriptionResourceTest(ResourceTestCase):
         # Scope out the data for correctness.
         self.assertEqual(len(self.deserialize(resp)['objects']), 0)
 
+    def test_get_filtered_list_json(self):
+        data = {
+            "contact_key": "82309423098",
+            "lang": "en",
+            "message_set": "/api/v1/message_set/3/",
+            "next_sequence_number": 1,
+            "resource_uri": "/api/v1/subscription/1/",
+            "schedule": "/api/v1/periodic_task/1/",
+            "to_addr": "+271234",
+            "user_account": "80493284823"
+        }
+
+        response = self.api_client.post('/api/v1/subscription/', format='json',
+                                        authentication=self.get_credentials(),
+                                        data=data)
+        json_item = json.loads(response.content)
+
+        filter_data = {
+            "user_account": json_item['user_account'],
+            "to_addr": json_item['to_addr']
+        }
+
+        resp = self.api_client.get('/api/v1/subscription/', data=filter_data, 
+                                   format='json', authentication=self.get_credentials())
+        self.assertValidJSONResponse(resp)
+
+        # Scope out the data for correctness.
+        self.assertEqual(len(self.deserialize(resp)['objects']), 1)
+
+    def test_get_filtered_list_denied_json(self):
+        data = {
+            "contact_key": "82309423098",
+            "lang": "en",
+            "message_set": "/api/v1/message_set/3/",
+            "next_sequence_number": 1,
+            "resource_uri": "/api/v1/subscription/1/",
+            "schedule": "/api/v1/periodic_task/1/",
+            "to_addr": "+271234",
+            "user_account": "80493284823"
+        }
+
+        response = self.api_client.post('/api/v1/subscription/', format='json',
+                                        authentication=self.get_credentials(),
+                                        data=data)
+        json_item = json.loads(response.content)
+
+        filter_data = {
+            "user_account": json_item['user_account'],
+            "to_addr": json_item['to_addr'],
+            "lang": "en"
+        }
+
+        resp = self.api_client.get('/api/v1/subscription/', data=filter_data, 
+                                   format='json', authentication=self.get_credentials())
+        json_item = json.loads(resp.content)
+        self.assertHttpBadRequest(resp)
+        self.assertEqual("The 'lang' field does not allow filtering.", json_item["error"])
+
     def test_post_subscription_with_non_existent_schedule_ref(self):
         data = {
             "active": True,
