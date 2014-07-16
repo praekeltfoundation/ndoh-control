@@ -35,5 +35,6 @@ class SubscriptionResource(ModelResource):
         authentication = ApiKeyAuthentication()
         authorization = Authorization()
         filtering = {
-            'to_addr': ALL
+            'to_addr': ALL,
+            'user_account': ALL
         }
