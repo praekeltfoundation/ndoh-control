@@ -1,5 +1,5 @@
 from tastypie import fields
-from tastypie.resources import ModelResource
+from tastypie.resources import ModelResource, ALL
 from tastypie.authentication import ApiKeyAuthentication
 from tastypie.authorization import Authorization
 from subscription.models import Subscription, MessageSet
@@ -34,3 +34,6 @@ class SubscriptionResource(ModelResource):
         always_return_data = True
         authentication = ApiKeyAuthentication()
         authorization = Authorization()
+        filtering = {
+            'to_addr': ALL
+        }
