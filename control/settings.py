@@ -58,7 +58,7 @@ USE_I18N = True
 USE_L10N = True
 
 # If you set this to False, Django will not use timezone-aware datetimes.
-USE_TZ = True
+USE_TZ = False
 
 # Absolute filesystem path to the directory that will hold user-uploaded files.
 # Example: "/var/www/example.com/media/"
@@ -218,6 +218,10 @@ RAVEN_CONFIG = {
     # DevOps will supply you with this.
     # 'dsn': 'http://public:secret@example.com/1',
 }
+
+VUMI_GO_ACCOUNT_KEY = "replaceme"
+VUMI_GO_CONVERSATION_KEY = "replaceme"
+VUMI_GO_ACCOUNT_TOKEN = "replaceme"
 
 try:
     from local_settings import *
