@@ -219,6 +219,7 @@ RAVEN_CONFIG = {
     # 'dsn': 'http://public:secret@example.com/1',
 }
 
+VUMI_GO_BASE_URL = "http://go.vumi.org/api/v1/go/http_api_nostream"
 VUMI_GO_ACCOUNT_KEY = "replaceme"
 VUMI_GO_CONVERSATION_KEY = "replaceme"
 VUMI_GO_ACCOUNT_TOKEN = "replaceme"
