@@ -51,7 +51,8 @@ def advance_to_next(subscriber):
         # If next set defined create new subscription
         message_set = subscriber.message_set
         if message_set.next_set:
-            # clone existing minus PK
+            # clone existing minus PK as recommended in 
+            # https://docs.djangoproject.com/en/1.6/topics/db/queries/#copying-model-instances
             subscriber.pk = None
             subscription = subscriber
             subscription.message_set = message_set.next_set
