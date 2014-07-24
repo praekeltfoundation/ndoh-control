@@ -45,6 +45,7 @@ class Migration(SchemaMigration):
             ('created_at', self.gf('subscription.models.AutoNewDateTimeField')(blank=True)),
             ('updated_at', self.gf('subscription.models.AutoDateTimeField')(blank=True)),
             ('schedule', self.gf('django.db.models.fields.related.ForeignKey')(related_name='subscriptions', to=orm['djcelery.PeriodicTask'])),
+            ('process_status', self.gf('django.db.models.fields.IntegerField')(default=0)),
         ))
         db.send_create_signal(u'subscription', ['Subscription'])
 
@@ -124,6 +125,7 @@ class Migration(SchemaMigration):
             'lang': ('django.db.models.fields.CharField', [], {'max_length': '3'}),
             'message_set': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'subscribers'", 'to': u"orm['subscription.MessageSet']"}),
             'next_sequence_number': ('django.db.models.fields.IntegerField', [], {'default': '1'}),
+            'process_status': ('django.db.models.fields.IntegerField', [], {'default': '0'}),
             'schedule': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'subscriptions'", 'to': u"orm['djcelery.PeriodicTask']"}),
             'to_addr': ('django.db.models.fields.CharField', [], {'max_length': '255'}),
             'updated_at': ('subscription.models.AutoDateTimeField', [], {'blank': 'True'}),

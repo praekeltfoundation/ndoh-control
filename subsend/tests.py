@@ -29,7 +29,7 @@ class TestMessageQueueProcessor(TestCase):
         messagesets = MessageSet.objects.all()
         self.assertEqual(len(messagesets), 10)
         subscriptions = Subscription.objects.all()
-        self.assertEqual(len(subscriptions), 4)
+        self.assertEqual(len(subscriptions), 5)
 
     def test_send_message_1_en_accelerated(self):
         subscriber = Subscription.objects.get(pk=1)
@@ -67,9 +67,9 @@ class TestMessageQueueProcessor(TestCase):
         self.assertTrue(result.successful())
         # Check another added and old still there
         all_subscription = Subscription.objects.all()
-        self.assertEquals(len(all_subscription),5)
+        self.assertEquals(len(all_subscription),6)
         # Check new subscription is for baby1
-        new_subscription = Subscription.objects.get(pk=5)
+        new_subscription = Subscription.objects.get(pk=6)
         self.assertEquals(new_subscription.message_set.pk, 4)
         self.assertEquals(new_subscription.to_addr, "+271234")
 
@@ -79,7 +79,7 @@ class TestMessageQueueProcessor(TestCase):
         self.assertTrue(result.successful())
         # Check no new subscription added
         all_subscription = Subscription.objects.all()
-        self.assertEquals(len(all_subscription),4)
+        self.assertEquals(len(all_subscription),5)
         # Check old one now inactive and complete
         subscriber_updated = Subscription.objects.get(pk=4)
         self.assertEquals(subscriber_updated.completed, True)

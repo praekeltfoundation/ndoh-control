@@ -74,6 +74,7 @@ class Subscription(models.Model):
     schedule =  models.ForeignKey(PeriodicTask,
                                         related_name='subscriptions',
                                         null=False)
+    process_status = models.IntegerField(default=0, null=False, blank=False)
 
     def __unicode__(self):
         return "%s to %s" % (self.contact_key, self.message_set.short_name)
