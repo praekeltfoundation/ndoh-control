@@ -27,7 +27,7 @@ def process_message_queue(schedule):
                 subscriber.in_process = 1
                 subscriber.save()
                 processes_message.delay(subscriber, sender)
-        return subscribers.__len__()
+        return subscribers.count()
 
 @task()
 def processes_message(subscriber, sender):
