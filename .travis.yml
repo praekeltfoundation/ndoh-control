@@ -6,6 +6,7 @@ before_script:
   - ./setuptests.sh
 install:
   - "pip install -r requirements.txt --use-wheel"
+  - "pip install -r requirements-dev.txt --use-wheel"
 script:
   - python manage.py syncdb --noinput
   - python manage.py migrate

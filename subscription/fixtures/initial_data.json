@@ -191,7 +191,7 @@
         "queue": null,
         "total_run_count": 0,
         "expires": null,
-        "kwargs": "{}",
+        "kwargs": "{\"schedule\":1}",
         "date_changed": "2014-07-04T08:54:47.683Z",
         "description": ""
     }
@@ -212,7 +212,7 @@
         "queue": null,
         "total_run_count": 0,
         "expires": null,
-        "kwargs": "{}",
+        "kwargs": "{\"schedule\":2}",
         "date_changed": "2014-07-04T08:55:16.438Z",
         "description": ""
     }
@@ -233,7 +233,7 @@
         "queue": null,
         "total_run_count": 0,
         "expires": null,
-        "kwargs": "{}",
+        "kwargs": "{\"schedule\":3}",
         "date_changed": "2014-07-04T08:55:56.257Z",
         "description": ""
     }
@@ -254,7 +254,7 @@
         "queue": null,
         "total_run_count": 0,
         "expires": null,
-        "kwargs": "{}",
+        "kwargs": "{\"schedule\":4}",
         "date_changed": "2014-07-04T08:56:23.644Z",
         "description": ""
     }
@@ -275,7 +275,7 @@
         "queue": null,
         "total_run_count": 0,
         "expires": null,
-        "kwargs": "{}",
+        "kwargs": "{\"schedule\":5}",
         "date_changed": "2014-07-04T08:56:23.644Z",
         "description": ""
     }
@@ -296,7 +296,7 @@
         "queue": null,
         "total_run_count": 0,
         "expires": null,
-        "kwargs": "{}",
+        "kwargs": "{\"schedule\":6}",
         "date_changed": "2014-07-04T08:56:23.644Z",
         "description": ""
     }

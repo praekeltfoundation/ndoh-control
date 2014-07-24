@@ -144,7 +144,6 @@ INSTALLED_APPS = (
     'raven.contrib.django.raven_compat',
     'djcelery',
     'djcelery_email',
-    'autodatetimefields',
     'tastypie',
 
     # sample apps to explain usage
@@ -218,6 +217,11 @@ RAVEN_CONFIG = {
     # DevOps will supply you with this.
     # 'dsn': 'http://public:secret@example.com/1',
 }
+
+VUMI_GO_BASE_URL = "http://go.vumi.org/api/v1/go/http_api_nostream"
+VUMI_GO_ACCOUNT_KEY = "replaceme"
+VUMI_GO_CONVERSATION_KEY = "replaceme"
+VUMI_GO_ACCOUNT_TOKEN = "replaceme"
 
 try:
     from local_settings import *
