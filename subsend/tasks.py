@@ -9,8 +9,8 @@ from subscription.models import Subscription, Message
 logger = get_task_logger(__name__)
 
 
-@task(bind=True)
-def process_message_queue(self, schedule):
+@task()
+def process_message_queue(schedule):
     # Get all active and incomplete subscribers for schedule
     subscribers = Subscription.objects.filter(
         schedule=schedule, active=True, completed=False).all()
@@ -27,8 +27,8 @@ def process_message_queue(self, schedule):
     return len(subscribers)
 
 
-@task(bind=True)
-def processes_message(self, subscriber, sender):
+@task()
+def processes_message(subscriber, sender):
     # Get next message
     message = Message.objects.get(
         message_set=subscriber.message_set, lang=subscriber.lang, 
@@ -39,8 +39,8 @@ def processes_message(self, subscriber, sender):
     advance_to_next.delay(subscriber)
     return response
 
-@task(bind=True)
-def advance_to_next(self, subscriber):
+@task()
+def advance_to_next(subscriber):
     # Get set max
     set_max = Message.objects.all().aggregate(Max('sequence_number'))["sequence_number__max"]
     # Compare user position to max
