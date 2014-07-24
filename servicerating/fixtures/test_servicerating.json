@@ -1,0 +1,93 @@
+[
+{
+    "pk": 1, 
+    "model": "servicerating.useraccount", 
+    "fields": {
+        "created_at": "2014-07-24T21:33:29.723Z", 
+        "notes": "", 
+        "name": "Dummy User Account", 
+        "key": "useraccountkey", 
+        "updated_at": "2014-07-24T21:33:29.723Z"
+    }
+},
+{
+    "pk": 1, 
+    "model": "servicerating.conversation", 
+    "fields": {
+        "user_account": 1, 
+        "created_at": "2014-07-24T21:34:03.654Z", 
+        "updated_at": "2014-07-24T21:34:03.654Z", 
+        "key": "dummyconversation", 
+        "notes": "", 
+        "name": "Dummy Conversation"
+    }
+},
+{
+    "pk": 1, 
+    "model": "servicerating.contact", 
+    "fields": {
+        "msisdn": "+27001", 
+        "created_at": "2014-07-24T21:35:33Z", 
+        "updated_at": "2014-07-24T21:36:47.114Z", 
+        "value": "{ \r\n        \"extra\": { \r\n            \"clinic_code\": \"123456\",\r\n            \"suspect_pregnancy\": \"yes\",\r\n            \"id_type\": \"none\",\r\n            \"ussd_sessions\": \"5\",\r\n            \"last_stage\": \"states_language\",\r\n            \"language_choice\": \"en\",\r\n            \"is_registered\": \"true\",\r\n            \"metric_sessions_to_register\": \"5\" \r\n        },\r\n        \"groups\": [],\r\n        \"subscription\": {},\r\n        \"msisdn\": \"+27001\",\r\n        \"created_at\": \"2014-06-25 15:37:57.957\",\r\n        \"user_account\": \"f299ca6f-555b-4c21-acec-506c4100a8b3\",\r\n        \"key\": \"dummycontact1\",\r\n        \"name\": null,\r\n        \"surname\": null,\r\n        \"email_address\": null,\r\n        \"dob\": null,\r\n        \"twitter_handle\": null,\r\n        \"facebook_id\": null,\r\n        \"bbm_pin\": null,\r\n        \"gtalk_id\": null \r\n    }", 
+        "conversation": 1, 
+        "key": "dummycontact1"
+    }
+},
+{
+    "pk": 2, 
+    "model": "servicerating.contact", 
+    "fields": {
+        "msisdn": "+27002", 
+        "created_at": "2014-07-24T21:36:28.097Z", 
+        "updated_at": "2014-07-24T21:36:28.097Z", 
+        "value": "{ \r\n        \"extra\": { \r\n            \"clinic_code\": \"123457\",\r\n            \"suspect_pregnancy\": \"yes\",\r\n            \"id_type\": \"none\",\r\n            \"ussd_sessions\": \"5\",\r\n            \"last_stage\": \"states_language\",\r\n            \"language_choice\": \"en\",\r\n            \"is_registered\": \"true\",\r\n            \"metric_sessions_to_register\": \"5\" \r\n        },\r\n        \"groups\": [],\r\n        \"subscription\": {},\r\n        \"msisdn\": \"+27002\",\r\n        \"created_at\": \"2014-06-25 15:37:57.957\",\r\n        \"user_account\": \"f299ca6f-555b-4c21-acec-506c4100a8b3\",\r\n        \"key\": \"dummycontact2\",\r\n        \"name\": null,\r\n        \"surname\": null,\r\n        \"email_address\": null,\r\n        \"dob\": null,\r\n        \"twitter_handle\": null,\r\n        \"facebook_id\": null,\r\n        \"bbm_pin\": null,\r\n        \"gtalk_id\": null \r\n    }", 
+        "conversation": 1, 
+        "key": "dummycontact2"
+    }
+},
+{
+    "pk": 1, 
+    "model": "servicerating.response", 
+    "fields": {
+        "created_at": "2014-07-24T21:49:14.806Z", 
+        "contact": 1, 
+        "value": "very-satisfied", 
+        "key": "question1friendliness", 
+        "updated_at": "2014-07-24T21:49:14.806Z"
+    }
+},
+{
+    "pk": 2, 
+    "model": "servicerating.response", 
+    "fields": {
+        "created_at": "2014-07-24T21:49:47.547Z", 
+        "contact": 2, 
+        "value": "satisfied", 
+        "key": "question1friendliness", 
+        "updated_at": "2014-07-24T21:49:47.547Z"
+    }
+},
+{
+    "pk": 3, 
+    "model": "servicerating.extra", 
+    "fields": {
+        "created_at": "2014-07-24T21:46:51.395Z", 
+        "contact": 1, 
+        "value": "123456", 
+        "key": "clinic_code", 
+        "updated_at": "2014-07-24T21:46:51.395Z"
+    }
+},
+{
+    "pk": 4, 
+    "model": "servicerating.extra", 
+    "fields": {
+        "created_at": "2014-07-24T21:47:11.344Z", 
+        "contact": 2, 
+        "value": "123457", 
+        "key": "clinic_code", 
+        "updated_at": "2014-07-24T21:47:11.344Z"
+    }
+}
+]

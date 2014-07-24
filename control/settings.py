@@ -145,10 +145,10 @@ INSTALLED_APPS = (
     'djcelery',
     'djcelery_email',
     'tastypie',
-
-    # sample apps to explain usage
+    # Custom apps
     'subscription',
     'subsend',
+    'servicerating'
 )
 
 # A sample logging configuration. The only tangible logging

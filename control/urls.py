@@ -17,5 +17,7 @@ urlpatterns = patterns('',
         url(r'^admin/subscription/upload/', 'subscription.views.uploader',
         {'page_name': 'csv_uploader'}, name="csv_uploader"),
     url(r'^', include('subscription.urls')),
+    url(r'^', include('servicerating.urls')),
+
 
 )
