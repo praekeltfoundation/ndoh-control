@@ -14,8 +14,8 @@ class Migration(SchemaMigration):
             ('short_name', self.gf('django.db.models.fields.CharField')(max_length=20)),
             ('notes', self.gf('django.db.models.fields.TextField')(null=True, blank=True)),
             ('next_set', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['subscription.MessageSet'], null=True, blank=True)),
-            ('created_at', self.gf('autodatetimefields.models.AutoNewDateTimeField')(blank=True)),
-            ('updated_at', self.gf('autodatetimefields.models.AutoDateTimeField')(blank=True)),
+            ('created_at', self.gf('subscription.models.AutoNewDateTimeField')(blank=True)),
+            ('updated_at', self.gf('subscription.models.AutoDateTimeField')(blank=True)),
         ))
         db.send_create_signal(u'subscription', ['MessageSet'])
 
@@ -26,8 +26,8 @@ class Migration(SchemaMigration):
             ('sequence_number', self.gf('django.db.models.fields.IntegerField')()),
             ('lang', self.gf('django.db.models.fields.CharField')(max_length=3)),
             ('content', self.gf('django.db.models.fields.TextField')()),
-            ('created_at', self.gf('autodatetimefields.models.AutoNewDateTimeField')(blank=True)),
-            ('updated_at', self.gf('autodatetimefields.models.AutoDateTimeField')(blank=True)),
+            ('created_at', self.gf('subscription.models.AutoNewDateTimeField')(blank=True)),
+            ('updated_at', self.gf('subscription.models.AutoDateTimeField')(blank=True)),
         ))
         db.send_create_signal(u'subscription', ['Message'])
 
@@ -42,8 +42,8 @@ class Migration(SchemaMigration):
             ('lang', self.gf('django.db.models.fields.CharField')(max_length=3)),
             ('active', self.gf('django.db.models.fields.BooleanField')(default=True)),
             ('completed', self.gf('django.db.models.fields.BooleanField')(default=False)),
-            ('created_at', self.gf('autodatetimefields.models.AutoNewDateTimeField')(blank=True)),
-            ('updated_at', self.gf('autodatetimefields.models.AutoDateTimeField')(blank=True)),
+            ('created_at', self.gf('subscription.models.AutoNewDateTimeField')(blank=True)),
+            ('updated_at', self.gf('subscription.models.AutoDateTimeField')(blank=True)),
             ('schedule', self.gf('django.db.models.fields.related.ForeignKey')(related_name='subscriptions', to=orm['djcelery.PeriodicTask'])),
         ))
         db.send_create_signal(u'subscription', ['Subscription'])
@@ -98,35 +98,35 @@ class Migration(SchemaMigration):
         u'subscription.message': {
             'Meta': {'object_name': 'Message'},
             'content': ('django.db.models.fields.TextField', [], {}),
-            'created_at': ('autodatetimefields.models.AutoNewDateTimeField', [], {'blank': 'True'}),
+            'created_at': ('subscription.models.AutoNewDateTimeField', [], {'blank': 'True'}),
             u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
             'lang': ('django.db.models.fields.CharField', [], {'max_length': '3'}),
             'message_set': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'messages'", 'to': u"orm['subscription.MessageSet']"}),
             'sequence_number': ('django.db.models.fields.IntegerField', [], {}),
-            'updated_at': ('autodatetimefields.models.AutoDateTimeField', [], {'blank': 'True'})
+            'updated_at': ('subscription.models.AutoDateTimeField', [], {'blank': 'True'})
         },
         u'subscription.messageset': {
             'Meta': {'object_name': 'MessageSet'},
-            'created_at': ('autodatetimefields.models.AutoNewDateTimeField', [], {'blank': 'True'}),
+            'created_at': ('subscription.models.AutoNewDateTimeField', [], {'blank': 'True'}),
             u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
             'next_set': ('django.db.models.fields.related.ForeignKey', [], {'to': u"orm['subscription.MessageSet']", 'null': 'True', 'blank': 'True'}),
             'notes': ('django.db.models.fields.TextField', [], {'null': 'True', 'blank': 'True'}),
             'short_name': ('django.db.models.fields.CharField', [], {'max_length': '20'}),
-            'updated_at': ('autodatetimefields.models.AutoDateTimeField', [], {'blank': 'True'})
+            'updated_at': ('subscription.models.AutoDateTimeField', [], {'blank': 'True'})
         },
         u'subscription.subscription': {
             'Meta': {'object_name': 'Subscription'},
             'active': ('django.db.models.fields.BooleanField', [], {'default': 'True'}),
             'completed': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
             'contact_key': ('django.db.models.fields.CharField', [], {'max_length': '36'}),
-            'created_at': ('autodatetimefields.models.AutoNewDateTimeField', [], {'blank': 'True'}),
+            'created_at': ('subscription.models.AutoNewDateTimeField', [], {'blank': 'True'}),
             u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
             'lang': ('django.db.models.fields.CharField', [], {'max_length': '3'}),
             'message_set': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'subscribers'", 'to': u"orm['subscription.MessageSet']"}),
             'next_sequence_number': ('django.db.models.fields.IntegerField', [], {'default': '1'}),
             'schedule': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'subscriptions'", 'to': u"orm['djcelery.PeriodicTask']"}),
             'to_addr': ('django.db.models.fields.CharField', [], {'max_length': '255'}),
-            'updated_at': ('autodatetimefields.models.AutoDateTimeField', [], {'blank': 'True'}),
+            'updated_at': ('subscription.models.AutoDateTimeField', [], {'blank': 'True'}),
             'user_account': ('django.db.models.fields.CharField', [], {'max_length': '36'})
         }
     }
