@@ -2,7 +2,26 @@ from django.db import models
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from djcelery.models import PeriodicTask
-from autodatetimefields.models import AutoNewDateTimeField, AutoDateTimeField
+from django.utils import timezone
+from django.db.models import DateTimeField
+
+
+# Modelled on https://github.com/jamesmarlowe/django-AutoDateTimeFields 
+# But with timezone support
+class AutoDateTimeField(DateTimeField):
+    def pre_save(self, model_instance, add):
+        now = timezone.now()
+        setattr(model_instance, self.attname, now)
+        return now
+
+
+class AutoNewDateTimeField(DateTimeField):
+    def pre_save(self, model_instance, add):
+        if not add:
+            return getattr(model_instance, self.attname)
+        now = timezone.now()
+        setattr(model_instance, self.attname, now)
+        return now
 
 
 class MessageSet(models.Model):
@@ -59,8 +78,6 @@ class Subscription(models.Model):
     def __unicode__(self):
         return "%s to %s" % (self.contact_key, self.message_set.short_name)
 
-from south.modelsinspector import add_introspection_rules
-add_introspection_rules([], ["^autodatetimefields\.models\.AutoNewDateTimeField", "^autodatetimefields\.models\.AutoDateTimeField"])
 
 # Auth set up stuff to ensure apikeys are created
 # ensures endpoints require username and api_key values to access
