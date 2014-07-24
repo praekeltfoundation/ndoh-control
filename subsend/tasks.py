@@ -12,20 +12,19 @@ logger = get_task_logger(__name__)
 @task()
 def process_message_queue(schedule):
     # Get all active and incomplete subscribers for schedule
-    subscribers = Subscription.objects.filter(
-        schedule=schedule, active=True, completed=False).all()
-    if len(subscribers) > 0:
-        # Make a reusable session to Vumi
-        sender = HttpApiSender(
-            account_key=settings.VUMI_GO_ACCOUNT_KEY,
-            conversation_key=settings.VUMI_GO_CONVERSATION_KEY,
-            conversation_token=settings.VUMI_GO_ACCOUNT_TOKEN
-        )
-        # Fire off message processor for each
-        for subscriber in subscribers:
-            processes_message.delay(subscriber, sender)
-    return len(subscribers)
-
+    with Subscription.objects.filter(
+        schedule=schedule, active=True, completed=False).all() as subscribers:
+        if subscribers.exists():
+            # Make a reusable session to Vumi
+            sender = HttpApiSender(
+                account_key=settings.VUMI_GO_ACCOUNT_KEY,
+                conversation_key=settings.VUMI_GO_CONVERSATION_KEY,
+                conversation_token=settings.VUMI_GO_ACCOUNT_TOKEN
+            )
+            # Fire off message processor for each
+            for subscriber in subscribers:
+                processes_message.delay(subscriber, sender)
+        return subscribers.__len__()
 
 @task()
 def processes_message(subscriber, sender):

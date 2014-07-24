@@ -31,16 +31,6 @@ class TestMessageQueueProcessor(TestCase):
         subscriptions = Subscription.objects.all()
         self.assertEqual(len(subscriptions), 4)
 
-    def test_run_single(self):
-        result = process_message_queue.delay(1)
-        self.assertTrue(result.successful())
-        self.assertEquals(result.get(), 1)
-
-    def test_run_empty(self):
-        result = process_message_queue.delay(2)
-        self.assertTrue(result.successful())
-        self.assertEquals(result.get(), 0)
-
     def test_send_message_1_en_accelerated(self):
         subscriber = Subscription.objects.get(pk=1)
         result = processes_message.delay(subscriber, self.sender)
