@@ -120,10 +120,10 @@ class ServiceRatingResource(Resource):
         resource_name = 'rate'
         list_allowed_methods = ['post']
         object_class = ServiceRatingObject
-        # authentication = ApiKeyAuthentication()
-        # authorization = Authorization()
+        authentication = ApiKeyAuthentication()
+        authorization = Authorization()
 
-    # The following methods will need overriding regardless of your
+    # The following methods need overriding regardless of the
     # data source.
     def detail_uri_kwargs(self, bundle_or_obj):
         kwargs = {}
@@ -139,16 +139,15 @@ class ServiceRatingResource(Resource):
     def obj_create(self, bundle, **kwargs):
         bundle.obj = ServiceRatingObject(initial=kwargs)
         bundle = self.full_hydrate(bundle)
-        # Get the pre-existing User Account, we don't except everything
+        # Get the pre-existing User Account, we don't accept everything
         user_account = UserAccount.objects.get(key=bundle.obj.user_account)
-        # Get the pre-existing Conversation, we don't except everything
+        # Get the pre-existing Conversation, we don't accept everything
         conversation = Conversation.objects.get(key=bundle.obj.conversation_key)
         contact = Contact(conversation=conversation,
                           key = bundle.obj.contact["key"],
                           value = bundle.obj.contact,
                           msisdn = bundle.obj.contact["msisdn"])
         contact.save()
-        # print contact.pk
         for key, value in bundle.obj.contact["extra"].items():
             extra = Extra(contact=contact, key=key, value=value)
             extra.save()
