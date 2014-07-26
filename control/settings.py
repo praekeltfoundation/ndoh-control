@@ -148,7 +148,8 @@ INSTALLED_APPS = (
     # Custom apps
     'subscription',
     'subsend',
-    'servicerating'
+    'servicerating',
+    'snappybouncer'
 )
 
 # A sample logging configuration. The only tangible logging
@@ -222,6 +223,11 @@ VUMI_GO_BASE_URL = "http://go.vumi.org/api/v1/go/http_api_nostream"
 VUMI_GO_ACCOUNT_KEY = "replaceme"
 VUMI_GO_CONVERSATION_KEY = "replaceme"
 VUMI_GO_ACCOUNT_TOKEN = "replaceme"
+
+SNAPPY_BASE_URL = "https://app.besnappy.com/api/v1"
+SNAPPY_API_KEY = "replaceme"
+SNAPPY_MAILBOX_ID = 1
+SNAPPY_EMAIL = "replaceme@example.org"
 
 try:
     from local_settings import *
