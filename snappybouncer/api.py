@@ -8,6 +8,7 @@ from snappybouncer.tasks import send_helpdesk_response
 import logging, json, re, urlparse
 from HTMLParser import HTMLParser
 from django.core.exceptions import ObjectDoesNotExist
+from django.conf.urls import url
 
 logger = logging.getLogger(__name__)
 
@@ -41,6 +42,13 @@ class ConversationResource(ModelResource):
             'key': ALL,
             'user_account': ALL
         }
+
+    def prepend_urls(self):
+        return [
+            url(r"^(?P<resource_name>%s)/key/(?P<key>[\w\d_.-]+)/$" %
+                self._meta.resource_name,
+                self.wrap_view('dispatch_detail'), name="api_dispatch_detail"),
+        ]
 
 
 class TicketResource(ModelResource):
