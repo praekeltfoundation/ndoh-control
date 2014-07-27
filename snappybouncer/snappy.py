@@ -43,7 +43,8 @@ class SnappyApiSender(object):
             else:
                 r = self.session.get(url, auth=auth, headers=headers, verify=False)
         r.raise_for_status()
-        return r.json()
+        # return whole response because some calls are just single text response not json
+        return r
 
     def note(self, mailbox_id, subject, message, to_addr=None, from_addr=None, **kwargs):
         """ Send a note to a mailbox. Needs a to or from.
@@ -68,4 +69,5 @@ class SnappyApiSender(object):
             data["to"] = to_addr
         if from_addr is not None:
             data["from"] = from_addr
-        return self._api_request('POST', 'note', data)
+        response = self._api_request('POST', 'note', data)
+        return response.text

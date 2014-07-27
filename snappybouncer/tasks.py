@@ -31,7 +31,7 @@ def create_snappy_ticket(ticket):
     snappy_ticket = snappy_api.note(settings.SNAPPY_MAILBOX_ID, 
         "Support for %s" % (ticket.msisdn), ticket.message, None, 
         [{"name": ticket.msisdn, "address": settings.SNAPPY_EMAIL}])
-    ticket.support_nonce = snappy_ticket.text
+    ticket.support_nonce = snappy_ticket
     ticket.save()
     ## TODO: Log ticket created metric
     return True
