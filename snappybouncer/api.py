@@ -5,16 +5,21 @@ from tastypie.authorization import Authorization
 from tastypie.serializers import Serializer
 from snappybouncer.models import Conversation, UserAccount, Ticket
 from snappybouncer.tasks import send_helpdesk_response
-import logging, json, re, urlparse
+import logging
+import json
+import re
+import urlparse
 from HTMLParser import HTMLParser
 from django.core.exceptions import ObjectDoesNotExist
 from django.conf.urls import url
 
 logger = logging.getLogger(__name__)
 
-### ModelResource access using standard format
+# ModelResource access using standard format
+
 
 class UserAccountResource(ModelResource):
+
     class Meta:
         queryset = UserAccount.objects.all()
         resource_name = 'useraccount'
@@ -30,6 +35,7 @@ class UserAccountResource(ModelResource):
 
 class ConversationResource(ModelResource):
     user_account = fields.ToOneField(UserAccountResource, 'user_account')
+
     class Meta:
         queryset = Conversation.objects.all()
         resource_name = 'conversation'
@@ -53,6 +59,7 @@ class ConversationResource(ModelResource):
 
 class TicketResource(ModelResource):
     conversation = fields.ToOneField(ConversationResource, 'conversation')
+
     class Meta:
         queryset = Ticket.objects.all()
         resource_name = 'ticket'
@@ -68,7 +75,7 @@ class TicketResource(ModelResource):
         }
 
 
-### Resource custom API for WebHooks
+# Resource custom API for WebHooks
 
 class urlencodeSerializer(Serializer):
     formats = ['json', 'jsonp', 'xml', 'yaml', 'html', 'plist', 'urlencode']
@@ -80,25 +87,30 @@ class urlencodeSerializer(Serializer):
         'html': 'text/html',
         'plist': 'application/x-plist',
         'urlencode': 'application/x-www-form-urlencoded',
-        }
-    def from_urlencode(self, data,options=None):
+    }
+
+    def from_urlencode(self, data, options=None):
         """ handles basic formencoded url posts """
-        qs = dict((k, v if len(v)>1 else v[0] )
-            for k, v in urlparse.parse_qs(data).iteritems())
+        qs = dict((k, v if len(v) > 1 else v[0])
+                  for k, v in urlparse.parse_qs(data).iteritems())
         return qs
 
-    def to_urlencode(self,content): 
+    def to_urlencode(self, content):
         pass
 
 
 class MLStripper(HTMLParser):
+
     def __init__(self):
         self.reset()
         self.fed = []
+
     def handle_data(self, d):
         self.fed.append(d)
+
     def get_data(self):
         return ''.join(self.fed)
+
 
 def strip_tags(html):
     s = MLStripper()
@@ -106,7 +118,10 @@ def strip_tags(html):
     return s.get_data()
 
 # We need a generic object to shove data in/get data from.
+
+
 class WebhookObject(object):
+
     def __init__(self, initial=None):
         self.__dict__['_data'] = {}
 
@@ -149,11 +164,10 @@ class WebhookResource(Resource):
 
         return kwargs
 
-
     def obj_create(self, bundle, **kwargs):
         bundle.obj = WebhookObject(initial=kwargs)
         bundle = self.full_hydrate(bundle)
-        # React to the specific events 
+        # React to the specific events
         allowed_events = ['message.outgoing']
         if bundle.obj.event in allowed_events:
             # strips newlines from dodgy json from API - bug logged
@@ -161,15 +175,17 @@ class WebhookResource(Resource):
             bundle.obj.data = json.loads(re.sub("\\n", "", bundle.obj.data))
             if bundle.obj.event == 'message.outgoing':
                 # Get the pre-existing ticket
-                ticket = Ticket.objects.get(support_nonce=bundle.obj.data["note"]["ticket"]["nonce"])
+                ticket = Ticket.objects.get(
+                    support_nonce=bundle.obj.data["note"]["ticket"]["nonce"])
                 try:
-                    ticket.response = strip_tags(bundle.obj.data["note"]["content"])
-                    ticket.support_id = int(bundle.obj.data["note"]["ticket"]["id"])
+                    ticket.response = strip_tags(
+                        bundle.obj.data["note"]["content"])
+                    ticket.support_id = int(
+                        bundle.obj.data["note"]["ticket"]["id"])
                     ticket.save()
                     # Send the message out to user via Vumi via Celery
                     send_helpdesk_response.delay(ticket)
                 except ObjectDoesNotExist:
-                    logger.error('Webhook received for unrecognised support ticket', exc_info=True)
+                    logger.error(
+                        'Webhook received for unrecognised support ticket', exc_info=True)
         return bundle
-
-        
