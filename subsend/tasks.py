@@ -14,7 +14,7 @@ logger = get_task_logger(__name__)
 def process_message_queue(schedule):
     # Get all active and incomplete subscribers for schedule
     with Subscription.objects.filter(
-        schedule=schedule, active=True, completed=False, in_process=0).all() as subscribers:
+        schedule=schedule, active=True, completed=False, process_status=0).all() as subscribers:
         if subscribers.exists():
             # Make a reusable session to Vumi
             sender = HttpApiSender(
@@ -24,7 +24,7 @@ def process_message_queue(schedule):
             )
             # Fire off message processor for each
             for subscriber in subscribers:
-                subscriber.in_process = 1
+                subscriber.process_status = 1
                 subscriber.save()
                 processes_message.delay(subscriber, sender)
         return subscribers.count()
@@ -53,14 +53,14 @@ def processes_message(subscriber, sender):
                 # clone existing minus PK as recommended in
                 # https://docs.djangoproject.com/en/1.6/topics/db/queries/#copying-model-instances
                 subscriber.pk = None
-                subscriber.in_process = 0
+                subscriber.process_status = 0
                 subscription = subscriber
                 subscription.message_set = message_set.next_set
                 subscription.save()
         else:
             # More in this set so interate by one
             subscriber.next_sequence_number = subscriber.next_sequence_number + 1
-            subscriber.in_process = 0
+            subscriber.process_status = 0
             subscriber.save()
         return response
     except SoftTimeLimitExceeded:
