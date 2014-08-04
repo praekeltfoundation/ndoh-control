@@ -9,6 +9,6 @@ Warning: Don't create a superuser on syncdb as TastyPie migrations have not yet 
 
     $ virtualenv ve
     $ source ve/bin/activate
-    (ve)$ pip install -r requirements.pip
+    (ve)$ pip install -r requirements.txt
     (ve)$ ./manage.py syncdb --migrate --noinput
 
