@@ -13,6 +13,7 @@ logger = get_task_logger(__name__)
 @task()
 def process_message_queue(schedule):
     # Get all active and incomplete subscribers for schedule
+    # subscribers = 
     with Subscription.objects.filter(
         schedule=schedule, active=True, completed=False, process_status=0).all() as subscribers:
         if subscribers.exists():

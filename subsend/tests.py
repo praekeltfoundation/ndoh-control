@@ -31,6 +31,11 @@ class TestMessageQueueProcessor(TestCase):
         subscriptions = Subscription.objects.all()
         self.assertEqual(len(subscriptions), 5)
 
+    def test_multisend(self):
+        schedule = 6
+        result = process_message_queue.delay(schedule)
+        self.assertEquals(result.get(), 4)
+
     def test_send_message_1_en_accelerated(self):
         subscriber = Subscription.objects.get(pk=1)
         result = processes_message.delay(subscriber, self.sender)
