@@ -29,7 +29,7 @@ class SubscriptionResource(ModelResource):
     class Meta:
         queryset = Subscription.objects.all()
         resource_name = 'subscription'
-        list_allowed_methods = ['post', 'get']
+        list_allowed_methods = ['post', 'get', 'put', 'patch']
         include_resource_uri = True
         always_return_data = True
         authentication = ApiKeyAuthentication()
