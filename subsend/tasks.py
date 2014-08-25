@@ -27,7 +27,7 @@ def process_message_queue(schedule, sender=None):
         # sender = LoggingSender('go_http.test')
             # Fire off message processor for each
     for subscriber in subscribers:
-        subscriber.process_status = 1
+        subscriber.process_status = 1 # In Proceses
         subscriber.save()
         processes_message.delay(subscriber, sender)
     return subscribers.count()
@@ -50,6 +50,7 @@ def processes_message(subscriber, sender):
                 # Mark current as completed
                 subscriber.completed = True
                 subscriber.active = False
+                subscriber.process_status = 2 # Completed
                 subscriber.save()
                 # If next set defined create new subscription
                 message_set = subscriber.message_set
@@ -57,18 +58,21 @@ def processes_message(subscriber, sender):
                     # clone existing minus PK as recommended in
                     # https://docs.djangoproject.com/en/1.6/topics/db/queries/#copying-model-instances
                     subscriber.pk = None
-                    subscriber.process_status = 0
+                    subscriber.process_status = 0 # Ready
+                    subscriber.active = True
+                    subscriber.completed = False
+                    subscriber.next_sequence_number = 1
                     subscription = subscriber
                     subscription.message_set = message_set.next_set
                     subscription.save()
             else:
                 # More in this set so interate by one
                 subscriber.next_sequence_number = subscriber.next_sequence_number + 1
-                subscriber.process_status = 0
+                subscriber.process_status = 0 # Ready
                 subscriber.save()
             return response
         except ObjectDoesNotExist:
-            subscriber.process_status = -1
+            subscriber.process_status = -1 # Errored
             subscriber.save()
             logger.error('Missing subscription message', exc_info=True)
     except SoftTimeLimitExceeded:
