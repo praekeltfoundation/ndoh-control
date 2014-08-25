@@ -33,8 +33,14 @@ class TestMessageQueueProcessor(TestCase):
 
     def test_multisend(self):
         schedule = 6
-        result = process_message_queue.delay(schedule)
-        self.assertEquals(result.get(), 4)
+        result = process_message_queue.delay(schedule, self.sender)
+        self.assertEquals(result.get(), 2)
+        # self.assertEquals(1, 2)
+
+    def test_multisend_none(self):
+        schedule = 2
+        result = process_message_queue.delay(schedule, self.sender)
+        self.assertEquals(result.get(), 0)
 
     def test_send_message_1_en_accelerated(self):
         subscriber = Subscription.objects.get(pk=1)
@@ -46,6 +52,7 @@ class TestMessageQueueProcessor(TestCase):
         })
         subscriber_updated = Subscription.objects.get(pk=1)
         self.assertEquals(subscriber_updated.next_sequence_number, 2)
+        self.assertEquals(subscriber_updated.process_status, 0)
 
     def test_next_message_2_post_send_en_accelerated(self):
         subscriber = Subscription.objects.get(pk=1)
