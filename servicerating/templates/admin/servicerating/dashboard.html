@@ -1,0 +1,237 @@
+{% load staticfiles %}
+
+<!DOCTYPE html>
+<html>
+
+  <head>
+    <meta charset="utf-8">
+    <!-- <link rel="stylesheet" href="{% static '/admin/servicerating/sapphire.css' %}" /> -->
+    <link rel="stylesheet" href="https://rawgit.com/praekelt/sapphire/develop/build/sapphire.css">
+    <style type="text/css">
+      body {
+        background: #f2f2f2;
+      }
+    </style>
+  </head>
+
+  <body>
+    <script src="http://d3js.org/d3.v3.min.js"></script>
+    <script src="https://rawgit.com/justinvdm/strain/master/strain.js"></script>
+    <script src="https://rawgit.com/praekelt/sapphire/develop/build/sapphire.js"></script>
+    <script>
+
+
+      var dashboard = sapphire.dashboard()
+        .numcols(9)
+        .rowspan(2)
+        .scale(125);
+
+
+      dashboard.types().get('bars')
+        .xTicks(0)
+        .yTicks(4);
+
+
+      dashboard.types().get('lines')
+        .key(function(d) { return d.metricTitle; })
+        .metricTitle(function(d) { return d.metricTitle; })
+        .xTicks(0);
+
+
+      var el = d3.select('body').append('div')
+        .attr('class', 'sapphire')
+        .append('div')
+        .datum({
+          title: 'Clinic Servicerating Metrics',
+          widgets: 
+          [
+            // WIDGET 1
+            {
+              title: 'Level of Satisfaction of Pregnant Women',
+              type: 'lines',
+              col: 2,
+              row: 0,
+              colspan: 4,
+              metrics: [
+                
+                {
+                  key: '1',
+                  metricTitle: 'Q1 Friendliness',
+                  values: [
+                    {
+                      x: 1,
+                      y: {{ averages.question_1_friendliness }}
+                    }, {
+                      x: 2,
+                      y: {{ averages.question_1_friendliness }}
+                    }
+                  ]
+                },
+
+                {
+                  key: '2',
+                  metricTitle: 'Q2 Waiting Times Feel',
+                  values: [
+                    {
+                      x: 1,
+                      y: {{ averages.question_2_waiting_times_feel }}
+                    }, {
+                      x: 2,
+                      y: {{ averages.question_2_waiting_times_feel }}
+                    }
+                  ]
+                },
+
+                {
+                  key: '3',
+                  metricTitle: 'Q4 Cleanliness',
+                  values: [
+                    {
+                      x: 1,
+                      y: {{ averages.question_4_cleanliness }}
+                    }, {
+                      x: 2,
+                      y: {{ averages.question_4_cleanliness }}
+                    }
+                  ]
+                },
+
+                {
+                  key: '4',
+                  metricTitle: 'Q5 Privacy',
+                  values: [
+                    {
+                      x: 1,
+                      y: {{ averages.question_5_privacy }}
+                    }, {
+                      x: 2,
+                      y: {{ averages.question_5_privacy }}
+                    }
+                  ]
+                }
+              ]
+            },
+
+            // WIDGET 2
+            {
+              title: 'Waiting Times Distribution (Percentages)',
+              type: 'lines',
+              col: 2,
+              row: 0,
+              colspan: 4,
+              metrics: [
+                
+                {
+                  key: '1',
+                  metricTitle: 'Less Than an Hour',
+                  values: [
+                    {
+                      x: 1,
+                      y: {{ waiting_times.less_than_an_hour }}
+                    }, {
+                      x: 2,
+                      y: {{ waiting_times.less_than_an_hour }}
+                    }
+                  ]
+                },
+
+                {
+                  key: '2',
+                  metricTitle: 'Between 1 and 3 Hours',
+                  values: [
+                    {
+                      x: 1,
+                      y: {{ waiting_times.between_1_and_3_hours }}
+                    }, {
+                      x: 2,
+                      y: {{ waiting_times.between_1_and_3_hours }}
+                    }
+                  ]
+                },
+
+                {
+                  key: '3',
+                  metricTitle: 'More Than 4 Hours',
+                  values: [
+                    {
+                      x: 1,
+                      y: {{ waiting_times.more_than_4_hours }}
+                    }, {
+                      x: 2,
+                      y: {{ waiting_times.more_than_4_hours }}
+                    }
+                  ]
+                },
+
+                {
+                  key: '4',
+                  metricTitle: 'All Day',
+                  values: [
+                    {
+                      x: 1,
+                      y: {{ waiting_times.all_day }}
+                    }, {
+                      x: 2,
+                      y: {{ waiting_times.all_day }}
+                    }
+                  ]
+                }
+
+              ]
+
+            }
+
+            // {
+            //   title: 'Level of Satisfaction of Pregnant Women',
+            //   type: 'bars',
+            //   col: 3,
+            //   row: 0,
+            //   colspan: 3,
+            //   values: [
+            //     {
+            //       x: 1,
+            //       y: {{ averages.question_1_friendliness }}
+            //     }, {
+            //       x: 2,
+            //       y: {{ averages.question_2_waiting_times_feel }}
+            //     }, {
+            //       x: 3,
+            //       y: {{ averages.question_4_cleanliness }}
+            //     }, {
+            //       x: 4,
+            //       y: {{ averages.question_5_privacy }}
+            //     }
+            //   ]
+            // },
+            // {
+            //   title: 'Waiting Times Percentages',
+            //   type: 'bars',
+            //   col: 2,
+            //   row: 0,
+            //   colspan: 4,
+            //   values: [
+            //     {
+            //       x: 1,
+            //       y: {{ waiting_times.less_than_an_hour }}
+            //     }, {
+            //       x: 2,
+            //       y: {{ waiting_times.between_1_and_3_hours }}
+            //     }, {
+            //       x: 3,
+            //       y: {{ waiting_times.more_than_4_hours }}
+            //     }, {
+            //       x: 4,
+            //       y: {{ waiting_times.all_day }}
+            //     }
+            //   ]
+            // }
+
+          ]
+        });
+
+
+      dashboard(el);
+
+    </script>
+  </body>
+</html>
