@@ -17,5 +17,6 @@ api_resources.prepend_urls()
 
 # Setting the urlpatterns to hook into the api urls
 urlpatterns = patterns('',
-    url(r'^api/', include(api_resources.urls))
+    url(r'^api/', include(api_resources.urls)),
+    url(r'^admin/servicerating/report/', 'servicerating.views.report_responses')
 )
