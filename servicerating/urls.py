@@ -20,5 +20,6 @@ urlpatterns = patterns('',
     # Setting the urlpatterns to hook into the api urls
     url(r'^api/', include(api_resources.urls)),
     # Admin servicerating dashboard hookup
-    url(r'^admin/', views.dashboard, name='dashboard'),
+    url(r'^admin/servicerating/dashboard/', 'servicerating.views.dashboard'),
+    url(r'^admin/servicerating/report/', 'servicerating.views.report_responses')
 )
