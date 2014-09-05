@@ -12,9 +12,9 @@ def report_responses(request):
 
     writer = csv.writer(response)
 
-    writer.writerow(["Contact", "Key", "Value", "Created At", "Updated At", "Clinic Code"])
+    writer.writerow(["Rating ID", "Contact ID", "Key", "Value", "Created At", "Updated At", "Clinic Code"])
     for obj in qs:
-        writer.writerow([obj.contact, obj.key, obj.value, obj.created_at,
+        writer.writerow([obj.id, obj.contact_id, obj.key, obj.value, obj.created_at,
                         obj.updated_at, obj.clinic_code])
 
     return response
