@@ -4,6 +4,7 @@ from django.shortcuts import render
 
 from servicerating.models import Response
 
+
 def empty_response_map():
     response_map = {
         'question_1_friendliness':
@@ -11,7 +12,7 @@ def empty_response_map():
                 'very-satisfied': 0,
                 'satisfied': 0,
                 'not-satisfied': 0,
-                'very-unsatisfied': 0 
+                'very-unsatisfied': 0
             },
         'question_2_waiting_times_feel':
             {
@@ -53,7 +54,7 @@ def dashboard(request):
     num_questions = 5.0
     total_responses = 0
 
-    response_map = empty_response_map();
+    response_map = empty_response_map()
 
     for response in all_responses:
         total_responses += 1
@@ -75,14 +76,14 @@ def dashboard(request):
         'more_than_4_hours': round((response_map['question_3_waiting_times_length']['more-than-4-hours'] / num_ratings * 100), 1),
         'all_day': round((response_map['question_3_waiting_times_length']['all-day'] / num_ratings * 100), 1)
     }
-    
+
     for question in averages_questions:
         averages[question] = round((
             (response_map[question]['very-satisfied'] * 4) +
             (response_map[question]['satisfied'] * 3) +
             (response_map[question]['not-satisfied'] * 2) +
             (response_map[question]['very-unsatisfied'] * 1)
-            ) / num_ratings, 1)
+        ) / num_ratings, 1)
 
     context = {
         'averages': averages,
