@@ -33,20 +33,6 @@ class ConversationAdmin(admin.ModelAdmin):
         )]
 
 
-class ResponseAdmin(admin.ModelAdmin):
-    actions = [export_select_fields_csv_action(
-        "Export selected objects as CSV file",
-        fields = [
-            ("contact", "Contact"),
-            ("key", "Key"),
-            ("value", "Value"),
-            ("created_at", "Created At"),
-            ("updated_at", "Updated At"),
-        ],
-        header=True
-        )]
-
-
 class UserAccountAdmin(admin.ModelAdmin):
     actions = [export_select_fields_csv_action(
         "Export selected objects as CSV file",
@@ -77,6 +63,6 @@ class ExtraAdmin(admin.ModelAdmin):
 
 admin.site.register(Contact, ContactAdmin)
 admin.site.register(Conversation, ConversationAdmin)
-admin.site.register(Response, ResponseAdmin)
+admin.site.register(Response)
 admin.site.register(UserAccount, UserAccountAdmin)
 admin.site.register(Extra, ExtraAdmin)
