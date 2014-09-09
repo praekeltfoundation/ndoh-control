@@ -1,7 +1,10 @@
 from celery import task
+from celery.exceptions import SoftTimeLimitExceeded
+from go_http import HttpApiSender
 import csv
 from subscription.models import Message
-from django.db import IntegrityError, transaction
+import control.settings as settings
+from django.db import IntegrityError, transaction, connection
 import logging
 logger = logging.getLogger(__name__)
 
@@ -28,3 +31,33 @@ def ingest_csv(csv_data, message_set):
                     message = None
                     # crappy CSV data
                     logger.error(e)
+
+
+@task()
+def ensure_one_subscription():
+    """ 
+    Fixes issues caused by upstream failures
+    that lead to users having multiple active subscriptions
+    Runs daily
+    """
+    cursor = connection.cursor()
+    cursor.execute("UPDATE subscription_subscription SET active = False WHERE id NOT IN \
+              (SELECT MAX(id) as id FROM subscription_subscription GROUP BY to_addr)")
+    affected = cursor.rowcount
+    vumi_fire_metric.delay(metric="subscription.duplicates", value=affected, agg="last")
+    return affected
+
+
+@task()
+def vumi_fire_metric(metric, value, agg, sender=None):
+    try:
+        if sender is None: 
+            sender = HttpApiSender(
+                account_key=settings.VUMI_GO_ACCOUNT_KEY,
+                conversation_key=settings.VUMI_GO_CONVERSATION_KEY,
+                conversation_token=settings.VUMI_GO_ACCOUNT_TOKEN
+            )
+        sender.fire_metric(metric, value, agg=agg)
+        return sender
+    except SoftTimeLimitExceeded:
+        logger.error('Soft time limit exceed processing metric fire to Vumi HTTP API via Celery', exc_info=True)
