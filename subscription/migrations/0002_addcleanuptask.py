@@ -7,7 +7,14 @@ from django.db import models
 class Migration(DataMigration):
 
     def forwards(self, orm):
-        crontab = orm['djcelery.CrontabSchedule'].objects.get(id=7)
+        crontab = orm['djcelery.CrontabSchedule'](
+            month_of_year="*",
+            day_of_week="*",
+            hour="5",
+            minute="0",
+            day_of_month="*"
+        )
+        crontab.save()
         task = orm['djcelery.PeriodicTask'](
             task="subscription.tasks.ensure_one_subscription", 
             name="Ensure Clean Subscriptions", 
