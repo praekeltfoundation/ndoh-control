@@ -5,10 +5,14 @@ from tastypie.test import ResourceTestCase
 from django.test import TestCase
 from django.contrib.auth.models import User
 from django.core.urlresolvers import reverse
-from subscription.models import MessageSet, Message
-from subscription.tasks import ingest_csv
+from django.test.utils import override_settings
+from subscription.models import MessageSet, Message, Subscription
+from subscription.tasks import ingest_csv, ensure_one_subscription, vumi_fire_metric
 from StringIO import StringIO
 import json
+import logging
+from go_http.send import LoggingSender
+from requests_testadapter import TestAdapter
 
 
 class SubscriptionResourceTest(ResourceTestCase):
@@ -201,4 +205,46 @@ class TestUploadCSV(TestCase):
         self.assertEquals(len(imported_en_dirty), 1)
 
 
-    
+class RecordingHandler(logging.Handler):
+    """ Record logs. """
+    logs = None
+
+    def emit(self, record):
+        if self.logs is None:
+            self.logs = []
+        print record
+        self.logs.append(record)
+
+class TestEnsureCleanSubscriptions(TestCase):
+
+    fixtures = ["test.json"]
+
+    @override_settings(CELERY_EAGER_PROPAGATES_EXCEPTIONS = True,
+                       CELERY_ALWAYS_EAGER = True,
+                       BROKER_BACKEND = 'memory',)
+
+    def setUp(self):
+        self.sender = LoggingSender('go_http.test')
+        self.handler = RecordingHandler()
+        logger = logging.getLogger('go_http.test')
+        logger.setLevel(logging.INFO)
+        logger.addHandler(self.handler)
+
+    def check_logs(self, msg, levelno=logging.INFO):
+        [log] = self.handler.logs
+        self.assertEqual(log.msg, msg)
+        self.assertEqual(log.levelno, levelno)
+
+    def test_data_loaded(self):
+        subscriptions = Subscription.objects.all()
+        self.assertEqual(len(subscriptions), 3)
+
+    def test_ensure_one_subscription(self):
+        results = ensure_one_subscription.delay()
+        self.assertEqual(results.get(), 1)
+
+    def test_fire_metric(self):
+        results = vumi_fire_metric.delay(metric="subscription.duplicates", value=1,
+                                         agg="last", sender=self.sender)
+        self.check_logs("Metric: 'subscription.duplicates' [last] -> 1")
+
