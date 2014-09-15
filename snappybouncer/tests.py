@@ -4,6 +4,7 @@ Tests for Service Rating Application
 from tastypie.test import ResourceTestCase
 from django.contrib.auth.models import User
 from snappybouncer.models import Conversation, UserAccount, Ticket
+from requests_testadapter import TestAdapter
 import json
 
 

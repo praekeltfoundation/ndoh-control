@@ -27,7 +27,10 @@ class SnappyApiSender(object):
             api_url = "https://app.besnappy.com/api/v1"
         self.api_url = api_url
         if session is None:
-             session = requests.Session()
+            print "SESSION IS NONE"
+            session = requests.Session()
+        else:
+            print "SESSION IS NOT NONE"
         self.session = session
 
     def _api_request(self, method, endpoint, py_data=None):
@@ -69,5 +72,7 @@ class SnappyApiSender(object):
             data["to"] = to_addr
         if from_addr is not None:
             data["from"] = from_addr
+        for key, value in kwargs.iteritems():
+            data[key] = value
         response = self._api_request('POST', 'note', data)
         return response.text
