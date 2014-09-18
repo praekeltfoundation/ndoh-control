@@ -6,6 +6,10 @@ from django.db import models
 
 class Migration(DataMigration):
 
+    depends_on = (
+        ("subscription", "0002_addcleanuptask"),
+    )
+
     def forwards(self, orm):
         crontab = orm['djcelery.CrontabSchedule'](
             month_of_year="*",
