@@ -3,21 +3,51 @@ Tests for Service Rating Application
 """
 from tastypie.test import ResourceTestCase
 from django.contrib.auth.models import User
-from snappybouncer.models import Conversation, UserAccount, Ticket
+from django.db.models.signals import post_save
+from django.core import management
+from snappybouncer.models import Conversation, UserAccount, Ticket, fire_snappy_if_new
+from requests_testadapter import TestAdapter
 import json
 
 
 class SnappyBouncerResourceTest(ResourceTestCase):
-    fixtures = ["test_snappybouncer.json"]
+    # fixtures = ["test_snappybouncer.json"]
+
+    def _replace_post_save_hooks(self):
+        has_listeners = lambda: post_save.has_listeners(Ticket)
+        assert has_listeners(), (
+            "Ticket model has no post_save listeners. Make sure"
+            " helpers cleaned up properly in earlier tests.")
+        post_save.disconnect(fire_snappy_if_new,
+            sender=Ticket)
+        assert not has_listeners(), (
+            "Ticket model still has post_save listeners. Make sure"
+            " helpers cleaned up properly in earlier tests.")
+
+    def _restore_post_save_hooks(self):
+        has_listeners = lambda: post_save.has_listeners(Ticket)
+        assert not has_listeners(), (
+            "Ticket model still has post_save listeners. Make sure"
+            " helpers removed them properly in earlier tests.")
+        post_save.connect(
+            fire_snappy_if_new,
+            sender=Ticket)
+
     def setUp(self):
         super(SnappyBouncerResourceTest, self).setUp()
-
+        self._replace_post_save_hooks()
+        management.call_command('loaddata', 'test_snappybouncer.json', verbosity=0)
+        
         # Create a user.
         self.username = 'testuser'
         self.password = 'testpass'
         self.user = User.objects.create_user(self.username,
             'testuser@example.com', self.password)
         self.api_key = self.user.api_key.key
+
+    def tearDown(self):
+        self._restore_post_save_hooks()
+
 
     def get_credentials(self):
         return self.create_apikey(self.username, self.api_key)
@@ -27,8 +57,10 @@ class SnappyBouncerResourceTest(ResourceTestCase):
         self.assertEqual(useraccounts.count(), 1)
         conversations = Conversation.objects.all()
         self.assertEqual(conversations.count(), 1)
+
         tickets = Ticket.objects.all()
         self.assertEqual(tickets.count(), 3)
+
 
     def test_get_list_unauthorzied(self):
         self.assertHttpUnauthorized(self.api_client.get('/api/v1/snappybouncer/useraccount/', format='json'))

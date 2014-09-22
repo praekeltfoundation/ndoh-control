@@ -1,5 +1,6 @@
 from django.http import HttpResponse
 from django.shortcuts import render
+from django.contrib.auth.decorators import login_required
 
 from servicerating.models import Response
 
@@ -48,7 +49,7 @@ def empty_response_map():
     return response_map
 
 
-# Create your views here.
+@login_required
 def dashboard(request):
     averages = {}
 

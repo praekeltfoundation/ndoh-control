@@ -1,7 +1,7 @@
 """ Utilities for sending to Snappy HTTP API.
 """
 import json
-import requests
+from requests import Session
 
 class SnappyApiSender(object):
     """
@@ -27,7 +27,7 @@ class SnappyApiSender(object):
             api_url = "https://app.besnappy.com/api/v1"
         self.api_url = api_url
         if session is None:
-             session = requests.Session()
+            session = Session()
         self.session = session
 
     def _api_request(self, method, endpoint, py_data=None):
@@ -36,7 +36,7 @@ class SnappyApiSender(object):
         auth = (self.api_key, "x")
         if method is "POST":
             data = json.dumps(py_data)
-            r = requests.post(url, auth=auth, data=data, headers=headers, verify=False)
+            r = self.session.post(url, auth=auth, data=data, headers=headers, verify=False)
         elif method is "GET":
             if py_data is not None:
                 r = self.session.get(url, auth=auth, params=data, headers=headers, verify=False)
@@ -69,5 +69,7 @@ class SnappyApiSender(object):
             data["to"] = to_addr
         if from_addr is not None:
             data["from"] = from_addr
+        for key, value in kwargs.iteritems():
+            data[key] = value
         response = self._api_request('POST', 'note', data)
         return response.text
