@@ -25,13 +25,13 @@ class SnappyBouncerResourceTest(ResourceTestCase):
             " helpers cleaned up properly in earlier tests.")
 
     def _restore_post_save_hooks(self):
+        has_listeners = lambda: post_save.has_listeners(Ticket)
+        assert not has_listeners(), (
+            "Ticket model still has post_save listeners. Make sure"
+            " helpers removed them properly in earlier tests.")
         post_save.connect(
             fire_snappy_if_new,
             sender=Ticket)
-        has_listeners = lambda: post_save.has_listeners(Ticket)
-        assert has_listeners(), (
-            "Ticket model has no post_save listeners. Make sure"
-            " helpers cleaned up properly in earlier tests.")
 
     def setUp(self):
         super(SnappyBouncerResourceTest, self).setUp()
