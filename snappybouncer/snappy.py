@@ -27,11 +27,9 @@ class SnappyApiSender(object):
             api_url = "https://app.besnappy.com/api/v1"
         self.api_url = api_url
         if session is None:
-            print "SESSION IS NONE"
             session = requests.Session()
         else:
-            print "SESSION IS NOT NONE"
-        self.session = session
+            self.session = session
 
     def _api_request(self, method, endpoint, py_data=None):
         url = "%s/%s" % (self.api_url, endpoint)
