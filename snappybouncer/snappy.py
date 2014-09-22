@@ -28,8 +28,7 @@ class SnappyApiSender(object):
         self.api_url = api_url
         if session is None:
             session = requests.Session()
-        else:
-            self.session = session
+        self.session = session
 
     def _api_request(self, method, endpoint, py_data=None):
         url = "%s/%s" % (self.api_url, endpoint)
