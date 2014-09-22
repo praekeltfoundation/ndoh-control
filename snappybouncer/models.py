@@ -73,7 +73,6 @@ from django.dispatch import receiver
 
 @receiver(post_save, sender=Ticket)
 def fire_snappy_if_new(sender, instance, created, **kwargs):
-    print "Holla"
     if created:
         create_snappy_ticket.delay(instance)
 
