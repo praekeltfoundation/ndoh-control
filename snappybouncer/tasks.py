@@ -3,7 +3,8 @@ from celery.utils.log import get_task_logger
 
 from go_http.send import HttpApiSender
 from go_http.contacts import ContactsApiClient
-from snappy import SnappyApiSender
+from besnappy import SnappyApiSender
+
 import control.settings as settings
 
 logger = get_task_logger(__name__)
