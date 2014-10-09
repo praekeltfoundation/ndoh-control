@@ -10,11 +10,12 @@ import json
 
 def setup_model_data():
     user_account = UserAccount.objects.create(
-        name="Dummy User Account", key="useraccountkey")
+        pk=1, name="Dummy User Account", key="useraccountkey")
     conversation = Conversation.objects.create(
-        user_account=user_account, key="dummyconversation",
+        pk=1, user_account=user_account, key="dummyconversation",
         name="Dummy Conversation")
     Ticket.objects.create(**{
+        "pk": 1,
         "msisdn": "+27001",
         "support_nonce": "1fevtx5rzcj5094h",
         "conversation": conversation,
@@ -23,6 +24,7 @@ def setup_model_data():
         "response": "",
     })
     Ticket.objects.create(**{
+        "pk": 2,
         "msisdn": "+27001",
         "support_nonce": "",
         "conversation": conversation,
@@ -31,6 +33,7 @@ def setup_model_data():
         "response": "",
     })
     Ticket.objects.create(**{
+        "pk": 3,
         "msisdn": "+27001",
         "support_id": 383380,
         "support_nonce": "1fevtx5rzcj6073i",
@@ -84,9 +87,6 @@ class SnappyBouncerResourceTest(ResourceTestCase):
 
     def test_data_loaded(self):
         useraccounts = UserAccount.objects.all()
-        print "XXX"
-        print useraccounts
-        print "XXX"
         self.assertEqual(useraccounts.count(), 1)
         conversations = Conversation.objects.all()
         self.assertEqual(conversations.count(), 1)
@@ -143,7 +143,6 @@ class SnappyBouncerResourceTest(ResourceTestCase):
                                         authentication=self.get_credentials(),
                                         data=data)
         json_item = json.loads(response.content)
-        print json_item
         self.assertEqual("dummycontactkey2", json_item["contact_key"])
         self.assertEqual("/api/v1/snappybouncer/conversation/1/", json_item["conversation"])
         self.assertEqual("+271234", json_item["msisdn"])
