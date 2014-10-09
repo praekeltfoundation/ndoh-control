@@ -143,6 +143,7 @@ class SnappyBouncerResourceTest(ResourceTestCase):
                                         authentication=self.get_credentials(),
                                         data=data)
         json_item = json.loads(response.content)
+        print json_item
         self.assertEqual("dummycontactkey2", json_item["contact_key"])
         self.assertEqual("/api/v1/snappybouncer/conversation/1/", json_item["conversation"])
         self.assertEqual("+271234", json_item["msisdn"])
