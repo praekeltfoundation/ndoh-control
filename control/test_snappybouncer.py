@@ -15,7 +15,6 @@ def setup_model_data():
         pk=1, user_account=user_account, key="dummyconversation",
         name="Dummy Conversation")
     Ticket.objects.create(**{
-        "pk": 1,
         "msisdn": "+27001",
         "support_nonce": "1fevtx5rzcj5094h",
         "conversation": conversation,
@@ -24,7 +23,6 @@ def setup_model_data():
         "response": "",
     })
     Ticket.objects.create(**{
-        "pk": 2,
         "msisdn": "+27001",
         "support_nonce": "",
         "conversation": conversation,
@@ -33,7 +31,6 @@ def setup_model_data():
         "response": "",
     })
     Ticket.objects.create(**{
-        "pk": 3,
         "msisdn": "+27001",
         "support_id": 383380,
         "support_nonce": "1fevtx5rzcj6073i",
@@ -146,7 +143,9 @@ class SnappyBouncerResourceTest(ResourceTestCase):
         self.assertEqual("dummycontactkey2", json_item["contact_key"])
         self.assertEqual("/api/v1/snappybouncer/conversation/1/", json_item["conversation"])
         self.assertEqual("+271234", json_item["msisdn"])
-        self.assertEqual("/api/v1/snappybouncer/ticket/4/", json_item["resource_uri"])
+        ticket_pk = json_item["resource_uri"].split("/")[-2]
+        ticket_uri = "/api/v1/snappybouncer/ticket/%s/" % (ticket_pk,)
+        self.assertEqual(ticket_uri, json_item["resource_uri"])
 
     def test_post_ticket_bad_conversation(self):
         data = {
