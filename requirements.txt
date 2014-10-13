@@ -17,4 +17,4 @@ go-http==0.1.1
 flower==0.7.1
 redis==2.10.1
 besnappy==0.1.0
-django-snappy-vumi-bouncer
+django-snappy-vumi-bouncer==0.1.0

@@ -5,7 +5,6 @@ python:
 before_script:
   - ./setuptests.sh
 install:
-  - "pip install git+https://github.com/westerncapelabs/django-snappy-vumi-bouncer.git@feature/issue-1-basic-implementation"
   - "pip install -r requirements.txt --use-wheel"
   - "pip install -r requirements-dev.txt --use-wheel"
 script:
