@@ -13,6 +13,15 @@ def abspath(*args):
     """convert relative paths to absolute paths relative to PROJECT_ROOT"""
     return os.path.join(PROJECT_ROOT, *args)
 
+# BASE_DIR = os.path.dirname(os.path.dirname(__file__))
+# SITE_ROOT = '/'.join(os.path.dirname(os.path.realpath(__file__)).split('/')[0:-2])
+
+# STATIC_URL = '/static/'
+# MEDIA_URL = '/media/'
+
+# STATIC_ROOT = os.path.join(SITE_ROOT, 'static/')
+# MEDIA_ROOT = os.path.join(SITE_ROOT, 'media/')
+
 DEBUG = True
 TEMPLATE_DEBUG = DEBUG
 
@@ -146,6 +155,7 @@ INSTALLED_APPS = (
     'djcelery_email',
     'tastypie',
     # Custom apps
+    'control',
     'subscription',
     'subsend',
     'servicerating',
