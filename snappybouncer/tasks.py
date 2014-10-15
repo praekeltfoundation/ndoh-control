@@ -61,7 +61,7 @@ def update_snappy_ticket_with_extras(snappy_api, nonce, contact_key, subject):
             subject=subject, 
             message=extra_info, 
             to_addr=[{"name": "Internal Information", "address": settings.SNAPPY_EMAIL}],
-            id=nonce,
+            ticket_id=nonce,
             scope="private",
             staff_id=settings.SNAPPY_STAFF_ID
         )
