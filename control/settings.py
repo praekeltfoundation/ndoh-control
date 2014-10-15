@@ -159,7 +159,8 @@ INSTALLED_APPS = (
     'subscription',
     'subsend',
     'servicerating',
-    'snappybouncer'
+    'snappybouncer',
+    'controlinterface'
 )
 
 # A sample logging configuration. The only tangible logging

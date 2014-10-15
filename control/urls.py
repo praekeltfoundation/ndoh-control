@@ -22,5 +22,6 @@ urlpatterns = patterns('',
     url(r'^', include('subscription.urls')),
     url(r'^', include('servicerating.urls')),
     url(r'^', include('snappybouncer.urls')),
+    url(r'^', include('controlinterface.urls')),
 
 ) + staticfiles_urlpatterns()
