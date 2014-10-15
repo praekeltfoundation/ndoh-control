@@ -32,7 +32,7 @@ def create_snappy_ticket(ticket):
     )
     # Send message
     subject = "Support for %s" % (ticket.msisdn)
-    snappy_ticket = snappy_api.note(
+    snappy_ticket = snappy_api.create_note(
         mailbox_id=settings.SNAPPY_MAILBOX_ID, 
         subject=subject, 
         message=ticket.message, 
@@ -56,7 +56,7 @@ def update_snappy_ticket_with_extras(snappy_api, nonce, contact_key, subject):
         extra_info += extra + ": " + contact["extra"][extra] + "\n"
     if extra_info != "":
     # Send private note
-        snappy_ticket = snappy_api.note(
+        snappy_ticket = snappy_api.create_note(
             mailbox_id=settings.SNAPPY_MAILBOX_ID, 
             subject=subject, 
             message=extra_info, 
