@@ -1,3 +1,4 @@
+name: ndoh-control-ci
 buildscript: scripts/build
 postinstall: scripts/postinstall.sh
 pip:
