@@ -1,6 +1,6 @@
 #!/bin/bash
 
 cp -a $REPO ./build/
-
+mv ./build/${REPO} ./build/${REPO}-ci
 ${PIP} install -r $REPO/requirements.txt
 
