@@ -1,4 +1,6 @@
 from django.test import TestCase
+from django.test.utils import override_settings
+
 from StringIO import StringIO
 
 from subscription.management.commands import set_seq
@@ -54,3 +56,17 @@ class TestSetSeqCommand(TestCase):
             set([2014]),
             set([self.command.year_from_month(month)
                  for month in range(9, 12)]))
+
+    @override_settings(VUMI_GO_API_TOKEN='token')
+    def test_stubbed_contacts(self):
+        command = self.mk_command(contacts=[
+            {
+                'uuid': 'contact-key',
+                'extra': {
+                    'due_date_day': 'foo',
+                    'due_date_month': 'bar',
+                }
+            }
+        ])
+        command.handle()
+        self.assertEqual('Completed', command.stdout.getvalue().strip())
