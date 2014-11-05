@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, datetime
 from math import floor
 
 from django.core.management.base import BaseCommand
@@ -84,6 +84,8 @@ class Command(BaseCommand):
 
         # Make a reuseable contact api connection
         contacts = ContactsApiClient(settings.VUMI_GO_API_TOKEN)
+        counter = 0.0
+        started = datetime.now()
         for subscriber in subscribers:
             self.stdout.write("Getting: " + subscriber.contact_key)
             try:
@@ -100,29 +102,32 @@ class Command(BaseCommand):
                     weeks = self.calc_weeks(due_date)
                     self.stdout.write("Mother due %s" % due_date.isoformat())
                     self.stdout.write("Week of preg %s" % weeks)
-                else:
-                    if "extra" in contact \
-                            and "due_date_month" in contact["extra"]:
-                        year = self.year_from_month(
-                            contact["extra"]["due_date_month"])
-                        month = self.clean_month(
-                            contact["extra"]["due_date_month"])
-                        day = 14
-                        self.stdout.write(
-                            "Contact %s has no due day data so making it 14" %
-                            subscriber.contact_key)
-                        weeks = self.calc_weeks(due_date)
-                        self.stdout.write(
-                            "Mother due %s" % due_date.isoformat())
-                        self.stdout.write("Week of preg %s" % weeks)
+                elif "extra" in contact \
+                        and "due_date_month" in contact["extra"]:
+                    year = self.year_from_month(
+                        contact["extra"]["due_date_month"])
+                    month = self.clean_month(
+                        contact["extra"]["due_date_month"])
+                    day = 14
+                    self.stdout.write(
+                        "Contact %s has no due day data so making it 14" %
+                        subscriber.contact_key)
+                    weeks = self.calc_weeks(due_date)
+                    self.stdout.write(
+                        "Mother due %s" % due_date.isoformat())
+                    self.stdout.write("Week of preg %s" % weeks)
                 sub_type = int(contact["extra"]["subscription_type"])
                 self.stdout.write("Sub type is %s" % sub_type)
                 new_seq_num = self.calc_sequence_start(weeks, sub_type)
                 self.stdout.write("Setting to seq %s" % new_seq_num)
                 subscriber.next_sequence_number = new_seq_num
                 subscriber.save()
+                counter += 1.0
+                per_second = (counter / float((datetime.now() - started).seconds))
+                self.stdout.write("Updated %s subscribers at %s per second" % (counter, per_second))
 
             except HTTPError as err:
                 self.stdout.write(
                     "Contact %s threw %s" % (subscriber.contact_key,
                                              err.response.status_code))
+        self.stdout.write("Completed")
