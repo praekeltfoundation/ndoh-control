@@ -4,13 +4,11 @@ Tests for Subscription Application
 # Django
 from tastypie.test import ResourceTestCase
 from django.test import TestCase
-from django.core.management import call_command
 from django.contrib.auth.models import User
 from django.core.urlresolvers import reverse
 from django.test.utils import override_settings
 from subscription.models import MessageSet, Message, Subscription
 from subscription.tasks import ingest_csv, ensure_one_subscription, vumi_fire_metric
-from subscription.management.commands import Command
 from StringIO import StringIO
 from datetime import date
 import json
@@ -259,4 +257,5 @@ class TestSetSeqCommand(TestCase):
     def test_due_date_calc(self):
         pass
         # https://gist.github.com/imsickofmaps/236129fbe7da6300629b
+        # https://gist.github.com/imsickofmaps/b9712fde824853d00da3
 
