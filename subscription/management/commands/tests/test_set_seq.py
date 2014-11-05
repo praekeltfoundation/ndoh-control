@@ -1,5 +1,3 @@
-from unittest import skip
-
 from datetime import date, datetime
 
 from django.test import TestCase
@@ -99,11 +97,6 @@ class TestSetSeqCommand(TestCase):
             set([2014]),
             set([self.command.year_from_month(month)
                  for month in range(9, 12)]))
-
-    @skip('no fixtures and not a very useful test')
-    def test_data_loaded(self):
-        subscriptions = Subscription.objects.all()
-        self.assertEqual(len(subscriptions), 3)
 
     @override_settings(VUMI_GO_API_TOKEN='token')
     def test_stubbed_contacts(self):
