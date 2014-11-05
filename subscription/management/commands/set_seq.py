@@ -119,7 +119,7 @@ class Command(BaseCommand):
                 sub_type = int(contact["extra"]["subscription_type"])
                 self.stdout.write("Sub type is %s" % sub_type)
                 new_seq_num = self.calc_sequence_start(weeks, sub_type)
-                self.stdout.write("Setting to seq %s" % new_seq_num)
+                self.stdout.write("Setting to seq %s from %s" % (new_seq_num, str(subscriber.next_sequence_number)))
                 subscriber.next_sequence_number = new_seq_num
                 subscriber.save()
                 counter += 1.0
