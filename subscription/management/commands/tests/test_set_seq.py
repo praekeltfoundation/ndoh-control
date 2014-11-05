@@ -1,5 +1,7 @@
 from unittest import skip
 
+from datetime import date, datetime
+
 from django.test import TestCase
 from django.test.utils import override_settings
 
@@ -8,6 +10,8 @@ from djcelery.models import PeriodicTask, IntervalSchedule
 from StringIO import StringIO
 
 from subscription.management.commands import set_seq
+from subscription.management.commands.set_seq import (
+    SUBSCRIPTION_STANDARD, SUBSCRIPTION_LATER)
 from subscription.models import Subscription, MessageSet, Message
 
 
@@ -18,7 +22,7 @@ class FakeClient(object):
 
     def get_contact(self, contact_id):
         for s in self.stubs:
-            if s['uuid'] == contact_id:
+            if s['key'] == contact_id:
                 return s
 
 
@@ -34,10 +38,13 @@ class TestSetSeqCommand(TestCase):
         command = set_seq.Command()
         command.stdout = StringIO()
         command.client_class = lambda *a: fake_client
+        # set the date so tests continue to work in the future
+        command.get_now = lambda *a: datetime(2014, 11, 5)
         return command
 
-    def mk_message_set(self, set_size=10, language='english'):
-        msg_set = MessageSet.objects.create(short_name='message set')
+    def mk_message_set(self, set_size=10, short_name='standard',
+                       language='english'):
+        msg_set = MessageSet.objects.create(short_name=short_name)
         for i in range(set_size):
             Message.objects.create(
                 message_set=msg_set,
@@ -55,7 +62,7 @@ class TestSetSeqCommand(TestCase):
         return scheduled
 
     def mk_subscription(self, user_account, contact_key, to_addr,
-                         message_set, lang='english', schedule=None):
+                        message_set, lang='english', schedule=None):
         schedule = schedule or self.mk_default_schedule()
         return Subscription.objects.create(
             user_account=user_account,
@@ -93,7 +100,7 @@ class TestSetSeqCommand(TestCase):
             set([self.command.year_from_month(month)
                  for month in range(9, 12)]))
 
-    @skip('no fixtures')
+    @skip('no fixtures and not a very useful test')
     def test_data_loaded(self):
         subscriptions = Subscription.objects.all()
         self.assertEqual(len(subscriptions), 3)
@@ -102,7 +109,7 @@ class TestSetSeqCommand(TestCase):
     def test_stubbed_contacts(self):
         command = self.mk_command(contacts=[
             {
-                'uuid': 'contact-key',
+                'key': 'contact-key',
                 'extra': {
                     'due_date_day': 'foo',
                     'due_date_month': 'bar',
@@ -113,7 +120,7 @@ class TestSetSeqCommand(TestCase):
         self.assertEqual('Completed', command.stdout.getvalue().strip())
 
     @override_settings(VUMI_GO_API_TOKEN='token')
-    def test_subscription_updated(self):
+    def test_standard_subscription_updated(self):
 
         msg_set = self.mk_message_set()
         sub = self.mk_subscription(
@@ -129,11 +136,79 @@ class TestSetSeqCommand(TestCase):
             {u'$VERSION': 2,
              u'created_at': u'2014-10-13 07:39:05.503410',
              u'extra': {u'due_date_day': u'21',
-                        u'due_date_month': u'11'},
+                        u'due_date_month': u'11',
+                        u'subscription_type': SUBSCRIPTION_STANDARD},
              u'key': u'82309423098',
              u'msisdn': u'+271234'}
         ])
         command.handle()
-        updated = Subscription.objects.get(pk=1)
-        self.assertEqual(1, updated.next_sequence_number)
-        self.assertEqual('Completed', command.stdout.getvalue().strip())
+
+        weeks = command.calc_weeks(date(2014, 11, 21))
+        # two weeks to due date based on `get_now()`
+        self.assertEqual(weeks, 38)
+        sequence_number = command.calc_sequence_start(
+            weeks, SUBSCRIPTION_STANDARD)
+        # start at week 4
+        # 38 - 4 -> 34
+        # At two per week -> 68
+        # Fix because sequence starts at 1 and we have two per week -> 67
+        self.assertEqual(sequence_number, 67)
+
+        updated = Subscription.objects.get(contact_key='82309423098')
+        self.assertEqual(sequence_number, updated.next_sequence_number)
+        self.assertEqual('\n'.join([
+            'Getting: 82309423098',
+            'Mother due 2014-11-21',
+            'Week of preg 38',
+            'Sub type is 1',
+            'Setting to seq 67 from 1',
+            'Updated 1.0 subscribers at unknown per second',
+            'Completed'
+        ]), command.stdout.getvalue().strip())
+
+    @override_settings(VUMI_GO_API_TOKEN='token')
+    def test_later_subscription_updated(self):
+
+        msg_set = self.mk_message_set()
+        sub = self.mk_subscription(
+            user_account='82309423098',
+            contact_key='82309423098',
+            to_addr='+271234',
+            message_set=msg_set)
+        sub.active = True
+        sub.completed = False
+        sub.save()
+
+        command = self.mk_command(contacts=[
+            {u'$VERSION': 2,
+             u'created_at': u'2014-10-13 07:39:05.503410',
+             u'extra': {u'due_date_day': u'21',
+                        u'due_date_month': u'11',
+                        u'subscription_type': SUBSCRIPTION_LATER},
+             u'key': u'82309423098',
+             u'msisdn': u'+271234'}
+        ])
+        command.handle()
+
+        weeks = command.calc_weeks(date(2014, 11, 21))
+        # two weeks to due date based on `get_now()`
+        self.assertEqual(weeks, 38)
+        sequence_number = command.calc_sequence_start(
+            weeks, SUBSCRIPTION_LATER)
+        # start at week 30
+        # 38 - 30 -> 8
+        # At three per week -> 24
+        # Fix because sequence starts at 1 and we have 3 per week -> 22
+        self.assertEqual(sequence_number, 22)
+
+        updated = Subscription.objects.get(contact_key='82309423098')
+        self.assertEqual(sequence_number, updated.next_sequence_number)
+        self.assertEqual('\n'.join([
+            'Getting: 82309423098',
+            'Mother due 2014-11-21',
+            'Week of preg 38',
+            'Sub type is 2',
+            'Setting to seq 22 from 1',
+            'Updated 1.0 subscribers at unknown per second',
+            'Completed'
+        ]), command.stdout.getvalue().strip())

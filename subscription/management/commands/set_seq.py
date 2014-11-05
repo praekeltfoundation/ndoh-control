@@ -10,6 +10,10 @@ from go_http.contacts import ContactsApiClient
 from subscription.models import Subscription
 
 
+SUBSCRIPTION_STANDARD = 1  # less than week 32 when reg
+SUBSCRIPTION_LATER = 2  # 32-35 when reg
+
+
 class Command(BaseCommand):
     help = "Ensure a mom's subscription is inline with protocol schedule"
 
@@ -52,8 +56,6 @@ class Command(BaseCommand):
 
     def calc_sequence_start(self, weeks, schedule):
         # calculates which sms in the sequence to start with
-        SUBSCRIPTION_STANDARD = 1 # less than week 32 when reg
-        SUBSCRIPTION_LATER = 2 # 32-35 when reg
         if schedule == SUBSCRIPTION_STANDARD:
             if weeks < 5:
                 # Start from beginning
@@ -64,7 +66,7 @@ class Command(BaseCommand):
                 PER_WEEK = 2
                 seq_start = ((weeks - START_OFFSET) * PER_WEEK) - (PER_WEEK - 1)
             else:
-                self.stdout.write("Fast forwarding to end")
+                self.stdout.write("Fast forwarding to end\n")
                 # Start of last week on schedule
                 seq_start = 73
         elif schedule == SUBSCRIPTION_LATER:
@@ -74,23 +76,24 @@ class Command(BaseCommand):
                 PER_WEEK = 3
                 seq_start = ((weeks - START_OFFSET) * PER_WEEK) - (PER_WEEK - 1)
             else:
-                self.stdout.write("Fast forwarding to end")
+                self.stdout.write("Fast forwarding to end\n")
                 # Start of last week on schedule
                 seq_start = 28
         return seq_start
 
+    def get_now(self):
+        return datetime.now()
+
     def handle(self, *args, **options):
-        # Get all subscribers
         subscribers = Subscription.objects.filter(
-            active=True, completed=False, message_set__lte=2).all()
-        print subscribers.count()
+            active=True, completed=False, message_set__short_name='standard').all()
 
         # Make a reuseable contact api connection
         contacts = self.client_class(settings.VUMI_GO_API_TOKEN)
         counter = 0.0
-        started = datetime.now()
+        started = self.get_now()
         for subscriber in subscribers:
-            self.stdout.write("Getting: " + subscriber.contact_key)
+            self.stdout.write("Getting: %s\n" % (subscriber.contact_key,))
             try:
                 contact = contacts.get_contact(subscriber.contact_key)
                 if "extra" in contact \
@@ -103,8 +106,8 @@ class Command(BaseCommand):
                     day = self.clean_day(contact["extra"]["due_date_day"])
                     due_date = date(year, month, day)
                     weeks = self.calc_weeks(due_date)
-                    self.stdout.write("Mother due %s" % due_date.isoformat())
-                    self.stdout.write("Week of preg %s" % weeks)
+                    self.stdout.write("Mother due %s\n" % due_date.isoformat())
+                    self.stdout.write("Week of preg %s\n" % weeks)
                 elif "extra" in contact \
                         and "due_date_month" in contact["extra"]:
                     year = self.year_from_month(
@@ -120,17 +123,22 @@ class Command(BaseCommand):
                         "Mother due %s" % due_date.isoformat())
                     self.stdout.write("Week of preg %s" % weeks)
                 sub_type = int(contact["extra"]["subscription_type"])
-                self.stdout.write("Sub type is %s" % sub_type)
+                self.stdout.write("Sub type is %s\n" % sub_type)
                 new_seq_num = self.calc_sequence_start(weeks, sub_type)
-                self.stdout.write("Setting to seq %s from %s" % (new_seq_num, str(subscriber.next_sequence_number)))
+                self.stdout.write("Setting to seq %s from %s\n" % (new_seq_num, str(subscriber.next_sequence_number)))
                 subscriber.next_sequence_number = new_seq_num
                 subscriber.save()
                 counter += 1.0
-                per_second = (counter / float((datetime.now() - started).seconds))
-                self.stdout.write("Updated %s subscribers at %s per second" % (counter, per_second))
+                delta = self.get_now() - started
+                # Make sure we're not dividing by zero
+                if delta.seconds > 0:
+                    per_second = (counter / float((self.get_now() - started).seconds))
+                else:
+                    per_second = 'unknown'
+                self.stdout.write("Updated %s subscribers at %s per second\n" % (counter, per_second))
 
             except HTTPError as err:
                 self.stdout.write(
-                    "Contact %s threw %s" % (subscriber.contact_key,
+                    "Contact %s threw %s\n" % (subscriber.contact_key,
                                              err.response.status_code))
-        self.stdout.write("Completed")
+        self.stdout.write("Completed\n")
