@@ -24,7 +24,8 @@ class Command(BaseCommand):
             return int(day)
         else:
             self.stdout.write(
-                "Contact has malformed due day data so making it 14")
+                "Contact has malformed due day data \
+                    of %s so making it 14" % day)
             return 14
 
     def clean_month(self, month):
