@@ -58,7 +58,7 @@ class TestSetSeqCommand(TestCase):
         return scheduled
 
     def mk_subscription(self, user_account, contact_key, to_addr,
-                        message_set, lang='english', schedule=None):
+                        message_set, lang='eng', schedule=None):
         schedule = schedule or self.mk_default_schedule()
         return Subscription.objects.create(
             user_account=user_account,
