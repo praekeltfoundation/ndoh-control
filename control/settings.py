@@ -182,7 +182,6 @@ LOGGING = {
 }
 
 # Celery configuration options
-BROKER_URL = "amqp://guest:guest@localhost:5672/"
 CELERY_RESULT_BACKEND = "database"
 CELERYBEAT_SCHEDULER = 'djcelery.schedulers.DatabaseScheduler'
 
@@ -228,6 +227,8 @@ SNAPPY_BASE_URL = "https://app.besnappy.com/api/v1"
 SNAPPY_API_KEY = "replaceme"
 SNAPPY_MAILBOX_ID = 1
 SNAPPY_EMAIL = "replaceme@example.org"
+
+BROKER_URL = 'redis://localhost:6379/0'
 
 try:
     from local_settings import *
