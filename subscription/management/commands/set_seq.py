@@ -83,6 +83,7 @@ class Command(BaseCommand):
         # Get all subscribers
         subscribers = Subscription.objects.filter(
             active=True, completed=False, message_set__lte=2).all()
+        print subscribers.count()
 
         # Make a reuseable contact api connection
         contacts = self.client_class(settings.VUMI_GO_API_TOKEN)

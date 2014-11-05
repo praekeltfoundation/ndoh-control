@@ -1,10 +1,14 @@
+from unittest import skip
+
 from django.test import TestCase
 from django.test.utils import override_settings
+
+from djcelery.models import PeriodicTask, IntervalSchedule
 
 from StringIO import StringIO
 
 from subscription.management.commands import set_seq
-from subscription.models import Subscription
+from subscription.models import Subscription, MessageSet, Message
 
 
 class FakeClient(object):
@@ -19,7 +23,9 @@ class FakeClient(object):
 
 
 class TestSetSeqCommand(TestCase):
-    fixtures = ["test.json"]
+
+    # fixtures = ["test.json"]
+
     def setUp(self):
         self.command = self.mk_command()
 
@@ -29,6 +35,35 @@ class TestSetSeqCommand(TestCase):
         command.stdout = StringIO()
         command.client_class = lambda *a: fake_client
         return command
+
+    def mk_message_set(self, set_size=10, language='english'):
+        msg_set = MessageSet.objects.create(short_name='message set')
+        for i in range(set_size):
+            Message.objects.create(
+                message_set=msg_set,
+                sequence_number=i,
+                lang=language,
+                content='message %s' % (i,)
+            )
+        return msg_set
+
+    def mk_default_schedule(self):
+        interval, _ = IntervalSchedule.objects.get_or_create(
+            every=2, period='days')
+        scheduled, _ = PeriodicTask.objects.get_or_create(
+            name='default', interval=interval)
+        return scheduled
+
+    def mk_subscription(self, user_account, contact_key, to_addr,
+                         message_set, lang='english', schedule=None):
+        schedule = schedule or self.mk_default_schedule()
+        return Subscription.objects.create(
+            user_account=user_account,
+            contact_key=contact_key,
+            to_addr=to_addr,
+            message_set=message_set,
+            lang=lang,
+            schedule=schedule)
 
     def test_calc_sequence_start(self):
         self.assertEqual(self.command.calc_sequence_start(3, 1), 1)
@@ -58,6 +93,7 @@ class TestSetSeqCommand(TestCase):
             set([self.command.year_from_month(month)
                  for month in range(9, 12)]))
 
+    @skip('no fixtures')
     def test_data_loaded(self):
         subscriptions = Subscription.objects.all()
         self.assertEqual(len(subscriptions), 3)
@@ -78,6 +114,17 @@ class TestSetSeqCommand(TestCase):
 
     @override_settings(VUMI_GO_API_TOKEN='token')
     def test_subscription_updated(self):
+
+        msg_set = self.mk_message_set()
+        sub = self.mk_subscription(
+            user_account='82309423098',
+            contact_key='82309423098',
+            to_addr='+271234',
+            message_set=msg_set)
+        sub.active = True
+        sub.completed = False
+        sub.save()
+
         command = self.mk_command(contacts=[
             {u'$VERSION': 2,
              u'created_at': u'2014-10-13 07:39:05.503410',
@@ -90,4 +137,3 @@ class TestSetSeqCommand(TestCase):
         updated = Subscription.objects.get(pk=1)
         self.assertEqual(1, updated.next_sequence_number)
         self.assertEqual('Completed', command.stdout.getvalue().strip())
-
