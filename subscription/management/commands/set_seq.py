@@ -13,6 +13,8 @@ from subscription.models import Subscription
 class Command(BaseCommand):
     help = "Ensure a mom's subscription is inline with protocol schedule"
 
+    client_class = ContactsApiClient
+
     def year_from_month(self, month):
         if int(month) > 8:
             return 2014  # due in 2014
@@ -64,7 +66,7 @@ class Command(BaseCommand):
             else:
                 self.stdout.write("Fast forwarding to end")
                 # Start of last week on schedule
-                seq_start = 73 
+                seq_start = 73
         elif schedule == SUBSCRIPTION_LATER:
             if weeks < 40:
                 # Message starts at week 31, sequence starts at 1
@@ -83,7 +85,7 @@ class Command(BaseCommand):
             active=True, completed=False, message_set__lte=2).all()
 
         # Make a reuseable contact api connection
-        contacts = ContactsApiClient(settings.VUMI_GO_API_TOKEN)
+        contacts = self.client_class(settings.VUMI_GO_API_TOKEN)
         counter = 0.0
         started = datetime.now()
         for subscriber in subscribers:
