@@ -3,6 +3,7 @@ from math import floor
 
 from django.core.management.base import BaseCommand
 from django.conf import settings
+from django.db.models import Q
 
 from requests import HTTPError
 from go_http.contacts import ContactsApiClient
@@ -64,7 +65,8 @@ class Command(BaseCommand):
                 # Message starts at week 5, sequence starts at 1
                 START_OFFSET = 4
                 PER_WEEK = 2
-                seq_start = ((weeks - START_OFFSET) * PER_WEEK) - (PER_WEEK - 1)
+                seq_start = (
+                    (weeks - START_OFFSET) * PER_WEEK) - (PER_WEEK - 1)
             else:
                 self.stdout.write("Fast forwarding to end\n")
                 # Start of last week on schedule
@@ -74,11 +76,15 @@ class Command(BaseCommand):
                 # Message starts at week 31, sequence starts at 1
                 START_OFFSET = 30
                 PER_WEEK = 3
-                seq_start = ((weeks - START_OFFSET) * PER_WEEK) - (PER_WEEK - 1)
+                seq_start = (
+                    (weeks - START_OFFSET) * PER_WEEK) - (PER_WEEK - 1)
             else:
                 self.stdout.write("Fast forwarding to end\n")
                 # Start of last week on schedule
                 seq_start = 28
+        else:
+            self.stdout.write("Unexpected schedule\n")
+            seq_start = 0
         return seq_start
 
     def get_now(self):
@@ -86,7 +92,8 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         subscribers = Subscription.objects.filter(
-            active=True, completed=False, message_set__short_name='standard').all()
+            Q(active=True), Q(completed=False),
+            Q(message_set__short_name='standard') | Q(message_set__short_name='later'))
 
         # Make a reuseable contact api connection
         contacts = self.client_class(settings.VUMI_GO_API_TOKEN)
@@ -123,22 +130,29 @@ class Command(BaseCommand):
                         "Mother due %s" % due_date.isoformat())
                     self.stdout.write("Week of preg %s" % weeks)
                 sub_type = int(contact["extra"]["subscription_type"])
-                self.stdout.write("Sub type is %s\n" % sub_type)
-                new_seq_num = self.calc_sequence_start(weeks, sub_type)
-                self.stdout.write("Setting to seq %s from %s\n" % (new_seq_num, str(subscriber.next_sequence_number)))
-                subscriber.next_sequence_number = new_seq_num
-                subscriber.save()
-                counter += 1.0
-                delta = self.get_now() - started
-                # Make sure we're not dividing by zero
-                if delta.seconds > 0:
-                    per_second = (counter / float((self.get_now() - started).seconds))
+                if sub_type is not int(subscriber.message_set_id):
+                    self.stdout.write("Sub type %s does not match contact sub type %s\n" % (
+                        sub_type, int(subscriber.message_set_id)))
                 else:
-                    per_second = 'unknown'
-                self.stdout.write("Updated %s subscribers at %s per second\n" % (counter, per_second))
+                    self.stdout.write("Sub type is %s\n" % sub_type)
+                    new_seq_num = self.calc_sequence_start(weeks, sub_type)
+                    self.stdout.write("Setting to seq %s from %s\n" % (
+                        new_seq_num, str(subscriber.next_sequence_number)))
+                    subscriber.next_sequence_number = new_seq_num
+                    subscriber.save()
+                    counter += 1.0
+                    delta = self.get_now() - started
+                    # Make sure we're not dividing by zero
+                    if delta.seconds > 0:
+                        per_second = (
+                            counter / float((self.get_now() - started).seconds))
+                    else:
+                        per_second = 'unknown'
+                    self.stdout.write(
+                        "Updated %s subscribers at %s per second\n" % (counter, per_second))
 
             except HTTPError as err:
                 self.stdout.write(
                     "Contact %s threw %s\n" % (subscriber.contact_key,
-                                             err.response.status_code))
+                                               err.response.status_code))
         self.stdout.write("Completed\n")
