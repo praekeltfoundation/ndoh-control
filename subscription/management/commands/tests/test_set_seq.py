@@ -26,8 +26,6 @@ class FakeClient(object):
 
 class TestSetSeqCommand(TestCase):
 
-    # fixtures = ["test.json"]
-
     def setUp(self):
         self.command = self.mk_command()
 
@@ -41,7 +39,7 @@ class TestSetSeqCommand(TestCase):
         return command
 
     def mk_message_set(self, set_size=10, short_name='standard',
-                       language='english'):
+                       language='eng'):
         msg_set = MessageSet.objects.create(short_name=short_name)
         for i in range(set_size):
             Message.objects.create(
