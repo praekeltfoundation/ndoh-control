@@ -50,19 +50,30 @@ class Command(BaseCommand):
 
     def calc_sequence_start(self, weeks, schedule):
         # calculates which sms in the sequence to start with
-        if schedule == 1:
+        SUBSCRIPTION_STANDARD = 1 # less than week 32 when reg
+        SUBSCRIPTION_LATER = 2 # 32-35 when reg
+        if schedule == SUBSCRIPTION_STANDARD:
             if weeks < 5:
+                # Start from beginning
                 seq_start = 1
             elif weeks < 41:
-                seq_start = ((weeks - 4) * 2) - 1
+                # Message starts at week 5, sequence starts at 1
+                START_OFFSET = 4
+                PER_WEEK = 2
+                seq_start = ((weeks - START_OFFSET) * PER_WEEK) - (PER_WEEK - 1)
             else:
                 self.stdout.write("Fast forwarding to end")
-                seq_start = 73
-        else:
+                # Start of last week on schedule
+                seq_start = 73 
+        elif schedule == SUBSCRIPTION_LATER:
             if weeks < 40:
-                seq_start = ((weeks - 30) * 3) - 2
+                # Message starts at week 31, sequence starts at 1
+                START_OFFSET = 30
+                PER_WEEK = 3
+                seq_start = ((weeks - START_OFFSET) * PER_WEEK) - (PER_WEEK - 1)
             else:
                 self.stdout.write("Fast forwarding to end")
+                # Start of last week on schedule
                 seq_start = 28
         return seq_start
 
