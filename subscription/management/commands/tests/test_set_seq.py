@@ -4,6 +4,7 @@ from django.test.utils import override_settings
 from StringIO import StringIO
 
 from subscription.management.commands import set_seq
+from subscription.models import Subscription
 
 
 class FakeClient(object):
@@ -18,7 +19,7 @@ class FakeClient(object):
 
 
 class TestSetSeqCommand(TestCase):
-
+    fixtures = ["test.json"]
     def setUp(self):
         self.command = self.mk_command()
 
@@ -57,6 +58,10 @@ class TestSetSeqCommand(TestCase):
             set([self.command.year_from_month(month)
                  for month in range(9, 12)]))
 
+    def test_data_loaded(self):
+        subscriptions = Subscription.objects.all()
+        self.assertEqual(len(subscriptions), 3)
+
     @override_settings(VUMI_GO_API_TOKEN='token')
     def test_stubbed_contacts(self):
         command = self.mk_command(contacts=[
@@ -70,3 +75,19 @@ class TestSetSeqCommand(TestCase):
         ])
         command.handle()
         self.assertEqual('Completed', command.stdout.getvalue().strip())
+
+    @override_settings(VUMI_GO_API_TOKEN='token')
+    def test_subscription_updated(self):
+        command = self.mk_command(contacts=[
+            {u'$VERSION': 2,
+             u'created_at': u'2014-10-13 07:39:05.503410',
+             u'extra': {u'due_date_day': u'21',
+                        u'due_date_month': u'11'},
+             u'key': u'82309423098',
+             u'msisdn': u'+271234'}
+        ])
+        command.handle()
+        updated = Subscription.objects.get(pk=1)
+        self.assertEqual(1, updated.next_sequence_number)
+        self.assertEqual('Completed', command.stdout.getvalue().strip())
+
