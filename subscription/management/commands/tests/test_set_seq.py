@@ -113,7 +113,9 @@ class TestSetSeqCommand(TestCase):
     @override_settings(VUMI_GO_API_TOKEN='token')
     def test_standard_subscription_updated(self):
 
-        msg_set = self.mk_message_set()
+        msg_set = MessageSet.objects.get(short_name='standard')
+        self.assertEqual(msg_set.pk, SUBSCRIPTION_STANDARD)
+
         sub = self.mk_subscription(
             user_account='82309423098',
             contact_key='82309423098',
@@ -147,21 +149,23 @@ class TestSetSeqCommand(TestCase):
 
         updated = Subscription.objects.get(contact_key='82309423098')
         # don't test this because broken fixtures
-        # self.assertEqual(sequence_number, updated.next_sequence_number)
-        # self.assertEqual('\n'.join([
-        #     'Getting: 82309423098',
-        #     'Mother due 2014-11-21',
-        #     'Week of preg 38',
-        #     'Sub type is 1',
-        #     'Setting to seq 67 from 1',
-        #     'Updated 1.0 subscribers at unknown per second',
-        #     'Completed'
-        # ]), command.stdout.getvalue().strip())
+        self.assertEqual(sequence_number, updated.next_sequence_number)
+        self.assertEqual('\n'.join([
+            'Getting: 82309423098',
+            'Mother due 2014-11-21',
+            'Week of preg 38',
+            'Sub type is 1',
+            'Setting to seq 67 from 1',
+            'Updated 1.0 subscribers at unknown per second',
+            'Completed'
+        ]), command.stdout.getvalue().strip())
 
     @override_settings(VUMI_GO_API_TOKEN='token')
     def test_later_subscription_updated(self):
 
-        msg_set = self.mk_message_set(short_name='later', language='en')
+        msg_set = MessageSet.objects.get(short_name='later')
+        self.assertEqual(msg_set.pk, SUBSCRIPTION_LATER)
+
         sub = self.mk_subscription(
             user_account='82309423098',
             contact_key='82309423098',
@@ -195,13 +199,13 @@ class TestSetSeqCommand(TestCase):
 
         updated = Subscription.objects.get(contact_key='82309423098')
         # don't test this because broken fixtures
-        # self.assertEqual(sequence_number, updated.next_sequence_number)
-        # self.assertEqual('\n'.join([
-        #     'Getting: 82309423098',
-        #     'Mother due 2014-11-21',
-        #     'Week of preg 38',
-        #     'Sub type is 2',
-        #     'Setting to seq 22 from 1',
-        #     'Updated 1.0 subscribers at unknown per second',
-        #     'Completed'
-        # ]), command.stdout.getvalue().strip())
+        self.assertEqual(sequence_number, updated.next_sequence_number)
+        self.assertEqual('\n'.join([
+            'Getting: 82309423098',
+            'Mother due 2014-11-21',
+            'Week of preg 38',
+            'Sub type is 2',
+            'Setting to seq 22 from 1',
+            'Updated 1.0 subscribers at unknown per second',
+            'Completed'
+        ]), command.stdout.getvalue().strip())
