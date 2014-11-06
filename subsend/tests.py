@@ -85,7 +85,7 @@ class TestMessageQueueProcessor(TestCase):
         self.assertEquals(new_subscription.message_set.pk, 4)
         self.assertEquals(new_subscription.to_addr, "+271234")
 
-    def test_no_new_subscription_created_post_send_en_accelerated_2(self):
+    def test_no_new_subscription_created_post_send_en_baby_2(self):
         subscriber = Subscription.objects.get(pk=4)
         result = processes_message.delay(subscriber, self.sender)
         self.assertTrue(result.successful())
@@ -98,7 +98,7 @@ class TestMessageQueueProcessor(TestCase):
         self.assertEquals(subscriber_updated.active, False)
 
 
-        
+
 
 class RecordingAdapter(TestAdapter):
     """ Record the request that was handled by the adapter.
