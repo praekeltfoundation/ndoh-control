@@ -2,7 +2,9 @@ from celery import task
 from celery.utils.log import get_task_logger
 
 from go_http.send import HttpApiSender
-from snappy import SnappyApiSender
+from go_http.contacts import ContactsApiClient
+from besnappy import SnappyApiSender
+
 import control.settings as settings
 
 logger = get_task_logger(__name__)
@@ -23,16 +25,45 @@ def send_helpdesk_response(ticket):
 
 @task()
 def create_snappy_ticket(ticket):
-    # Make a session to Vumi
+    # Make a session to Snappy
     snappy_api = SnappyApiSender(
-        api_key=settings.SNAPPY_API_KEY
+        api_key=settings.SNAPPY_API_KEY,
+        api_url=settings.SNAPPY_BASE_URL
     )
     # Send message
-    snappy_ticket = snappy_api.note(settings.SNAPPY_MAILBOX_ID, 
-        "Support for %s" % (ticket.msisdn), ticket.message, None, 
-        [{"name": ticket.msisdn, "address": settings.SNAPPY_EMAIL}])
+    subject = "Support for %s" % (ticket.msisdn)
+    snappy_ticket = snappy_api.create_note(
+        mailbox_id=settings.SNAPPY_MAILBOX_ID, 
+        subject=subject, 
+        message=ticket.message, 
+        to_addr=None, 
+        from_addr=[{"name": ticket.msisdn, "address": settings.SNAPPY_EMAIL}]
+    )
     ticket.support_nonce = snappy_ticket
     ticket.save()
+    update_snappy_ticket_with_extras.delay(snappy_api, ticket.support_nonce,
+                                           ticket.contact_key, subject)
     ## TODO: Log ticket created metric
+    return True
+
+@task()
+def update_snappy_ticket_with_extras(snappy_api, nonce, contact_key, subject):
+    # Gets more extras from Vumi and creates a private note with them
+    contacts_api = ContactsApiClient(auth_token=settings.VUMI_GO_API_TOKEN)
+    contact = contacts_api.get_contact(contact_key)
+    extra_info = ""
+    for extra in settings.SNAPPY_EXTRAS:
+        extra_info += extra + ": " + contact["extra"][extra] + "\n"
+    if extra_info != "":
+    # Send private note
+        snappy_ticket = snappy_api.create_note(
+            mailbox_id=settings.SNAPPY_MAILBOX_ID, 
+            subject=subject, 
+            message=extra_info, 
+            to_addr=[{"name": "Internal Information", "address": settings.SNAPPY_EMAIL}],
+            ticket_id=nonce,
+            scope="private",
+            staff_id=settings.SNAPPY_STAFF_ID
+        )
     return True
 
