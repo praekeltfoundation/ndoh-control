@@ -40,7 +40,7 @@ class Command(BaseCommand):
 
     def calc_weeks(self, due_date, today=None):
         if today is None:
-            today = date.today()
+            today = self.get_now().date()
         # calc diff betwen now and due day
         diff = (due_date - today).days
         # get it in weeks
