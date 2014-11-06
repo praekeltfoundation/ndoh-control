@@ -155,6 +155,10 @@ class Command(BaseCommand):
                 self.stdout.write(
                     "Contact %s threw %s\n" % (subscriber.contact_key, err))
 
+            except KeyError as err:
+                self.stdout.write(
+                    "Contact %s threw KeyError on %s\n" % (subscriber.contact_key, err))
+
             except HTTPError as err:
                 self.stdout.write(
                     "Contact %s threw %s\n" % (subscriber.contact_key,

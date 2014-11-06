@@ -241,3 +241,64 @@ class TestSetSeqCommand(TestCase):
             'Contact 82309423098 threw day is out of range for month',
             'Completed'
         ]), command.stdout.getvalue().strip())
+
+    @override_settings(VUMI_GO_API_TOKEN='token')
+    def test_contact_missing_fields(self):
+
+        msg_set = self.mk_message_set(short_name='standard')
+        self.assertEqual(msg_set.pk, SUBSCRIPTION_STANDARD)
+
+        sub = self.mk_subscription(
+            user_account='82309423098',
+            contact_key='82309423098',
+            to_addr='+271234',
+            message_set=msg_set)
+        sub.active = True
+        sub.completed = False
+        sub.save()
+
+        command = self.mk_command(contacts=[
+            {u'$VERSION': 2,
+             u'bbm_pin': None,
+             u'created_at': u'2014-09-11 12:42:00.470711',
+             u'dob': None,
+             u'email_address': None,
+             u'extra': {u'birth_day': u'30',
+                        u'birth_month': u'12',
+                        u'birth_year': u'1996',
+                        u'clinic_code': u'123456',
+                        u'dob': u'1996-12-30',
+                        u'due_date_day': u'23',
+                        u'due_date_month': u'01',
+                        u'id_type': u'sa_id',
+                        u'is_registered': u'true',
+                        u'is_registered_by': u'clinic',
+                        u'language_choice': u'zu',
+                        u'last_stage': u'states_faq_end',
+                        u'metric_sessions_to_register': u'0',
+                        u'metric_sum_sessions': u'55',
+                        u'sa_id': u'xxxx',
+                        u'service_rating_reminder': u'0',
+                        u'ussd_sessions': u'54'},
+             u'facebook_id': None,
+             u'groups': [u'4baf3a89aa0243feb328ca664d1a5e8c'],
+             u'gtalk_id': None,
+             u'key': u'82309423098',
+             u'msisdn': u'+27715323385',
+             u'mxit_id': None,
+             u'name': None,
+             u'subscription': {},
+             u'surname': None,
+             u'twitter_handle': None,
+             u'user_account': u'useraccountkey',
+             u'wechat_id': None}
+        ])
+        command.handle()
+
+        self.assertEqual('\n'.join([
+            "Getting: 82309423098",
+            "Mother due 2015-01-23",
+            "Week of preg 29",
+            "Contact 82309423098 threw KeyError on 'subscription_type'",
+            "Completed"
+        ]), command.stdout.getvalue().strip())
