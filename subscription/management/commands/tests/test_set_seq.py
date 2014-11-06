@@ -40,14 +40,16 @@ class TestSetSeqCommand(TestCase):
 
     def mk_message_set(self, set_size=10, short_name='standard',
                        language='eng'):
-        msg_set = MessageSet.objects.create(short_name=short_name)
-        for i in range(set_size):
-            Message.objects.create(
-                message_set=msg_set,
-                sequence_number=i,
-                lang=language,
-                content='message %s' % (i,)
-            )
+        msg_set, created = MessageSet.objects.get_or_create(
+            short_name=short_name)
+        if created:
+            for i in range(set_size):
+                Message.objects.create(
+                    message_set=msg_set,
+                    sequence_number=i,
+                    lang=language,
+                    content='message %s' % (i,)
+                )
         return msg_set
 
     def mk_default_schedule(self):
@@ -113,7 +115,7 @@ class TestSetSeqCommand(TestCase):
     @override_settings(VUMI_GO_API_TOKEN='token')
     def test_standard_subscription_updated(self):
 
-        msg_set = MessageSet.objects.get(short_name='standard')
+        msg_set = self.mk_message_set(short_name='standard')
         self.assertEqual(msg_set.pk, SUBSCRIPTION_STANDARD)
 
         sub = self.mk_subscription(
@@ -163,7 +165,7 @@ class TestSetSeqCommand(TestCase):
     @override_settings(VUMI_GO_API_TOKEN='token')
     def test_later_subscription_updated(self):
 
-        msg_set = MessageSet.objects.get(short_name='later')
+        msg_set = self.mk_message_set(short_name='later')
         self.assertEqual(msg_set.pk, SUBSCRIPTION_LATER)
 
         sub = self.mk_subscription(
