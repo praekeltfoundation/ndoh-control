@@ -209,3 +209,35 @@ class TestSetSeqCommand(TestCase):
             'Updated 1.0 subscribers at unknown per second',
             'Completed'
         ]), command.stdout.getvalue().strip())
+
+    @override_settings(VUMI_GO_API_TOKEN='token')
+    def test_leap_year_due_date(self):
+
+        msg_set = self.mk_message_set(short_name='standard')
+        self.assertEqual(msg_set.pk, SUBSCRIPTION_STANDARD)
+
+        sub = self.mk_subscription(
+            user_account='82309423098',
+            contact_key='82309423098',
+            to_addr='+271234',
+            message_set=msg_set)
+        sub.active = True
+        sub.completed = False
+        sub.save()
+
+        command = self.mk_command(contacts=[
+            {u'$VERSION': 2,
+             u'created_at': u'2014-10-13 07:39:05.503410',
+             u'extra': {u'due_date_day': u'29',
+                        u'due_date_month': u'02',
+                        u'subscription_type': SUBSCRIPTION_STANDARD},
+             u'key': u'82309423098',
+             u'msisdn': u'+271234'}
+        ])
+        command.handle()
+
+        self.assertEqual('\n'.join([
+            'Getting: 82309423098',
+            'Contact 82309423098 threw day is out of range for month',
+            'Completed'
+        ]), command.stdout.getvalue().strip())
