@@ -151,6 +151,10 @@ class Command(BaseCommand):
                     self.stdout.write(
                         "Updated %s subscribers at %s per second\n" % (counter, per_second))
 
+            except ValueError as err:
+                self.stdout.write(
+                    "Contact %s threw %s\n" % (subscriber.contact_key, err))
+
             except HTTPError as err:
                 self.stdout.write(
                     "Contact %s threw %s\n" % (subscriber.contact_key,
