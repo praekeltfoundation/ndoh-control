@@ -150,7 +150,6 @@ class TestSetSeqCommand(TestCase):
         self.assertEqual(sequence_number, 67)
 
         updated = Subscription.objects.get(contact_key='82309423098')
-        # don't test this because broken fixtures
         self.assertEqual(sequence_number, updated.next_sequence_number)
         self.assertEqual('\n'.join([
             'Getting: 82309423098',
@@ -200,7 +199,6 @@ class TestSetSeqCommand(TestCase):
         self.assertEqual(sequence_number, 22)
 
         updated = Subscription.objects.get(contact_key='82309423098')
-        # don't test this because broken fixtures
         self.assertEqual(sequence_number, updated.next_sequence_number)
         self.assertEqual('\n'.join([
             'Getting: 82309423098',
