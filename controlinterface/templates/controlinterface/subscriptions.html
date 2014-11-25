@@ -1,0 +1,82 @@
+{% extends "controlinterface/base.html" %}
+{% load staticfiles %}
+
+
+{% block content %}
+
+          <div class="row">
+            <div class="col-sm-3 col-md-3">
+              <h1 class="page-header">Subscriptions</h1>
+            </div>
+
+            <div class="col-sm-3 col-md-3">
+              <div class="input-group">
+                <form id="search-filter" class="form-inline" name="search-filter" action="" method="get" role="search">
+                  <div class="form-group">
+                    <input class="form-control" type="text" id="search-filter-input" name="q" value="" placeholder="+27821234444">
+                  </div>
+                  <button type="submit" id="search-filter-btn" class="btn btn-default btn-search">
+                    <span class="glyphicon glyphicon-search"></span>
+                  </button>
+                </form>
+              </div><!-- /input-group -->
+            </div>
+          </div>
+
+          {% if subscriptions|length != 0 %}
+            <div class="table-responsive">
+              <table class="table table-padded">
+                <thead>
+                  <tr>
+                    <th>Subscriber <span class="glyphicon glyphicon-chevron-down"></span></th>
+                    <th>Message Set</th>
+                    <th>Next Message</th>
+                    <th>Language</th>
+                    <th>Active</th>
+                    <th>Completed</th>
+                    <th>Schedule</th>
+                    <th>Actions</th>
+                    <th>&nbsp;</th>
+                  </tr>
+                </thead>
+                <tbody>
+
+                  {% for subscription in subscriptions %}
+                    <tr>
+                      <td><strong>{{ subscription.subscriber }}</strong></td>
+                      <td>{{ subscription.message_set }}</td>
+                      <td>{{ subscription.next_message }}</td>
+                      <td>{{ subscription.language }}</td>
+                      <td>{{ subscription.active }}</td>
+                      <td>{{ subscription.completed }}</td>
+                      <td>{{ subscription.schedule }}</td>
+                      <!-- Button to deactivate individual subscriptions -->
+                      {% if subscription.active == True %}
+                        <td><button type="button" class="btn btn-default btn-sm btn-header"><span class="glyphicon glyphicon-stop"></span> Deactivate</button></td>
+                      {% else %}
+                        <td><button type="button" class="btn btn-default disabled btn-sm btn-header"><span class="glyphicon glyphicon-stop"></span> Deactivate</button></td>
+                      {% endif %}
+                    </tr>
+                  {% endfor %}
+
+                </tbody>
+              </table>
+
+              <!-- buttons bottom of page -->
+              <div class="col-sm-3 col-md-4">
+              </div>
+              <div class="col-sm-3 col-md-2">
+                <button type="button" class="btn btn-default btn-md btn-header"><span class="glyphicon glyphicon-stop"></span> OPT OUT </button>
+              </div>
+              <div class="col-sm-3 col-md-2">
+                <button type="button" class="btn btn-default btn-md btn-header"><span class="glyphicon glyphicon-chevron-right"></span> MOVE TO BABY </button>
+
+            </div>
+          {% else %}
+            <p> No subscriptions available for the number entered.</p>
+          {% endif %}
+
+
+
+
+{% endblock %}
