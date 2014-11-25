@@ -24,8 +24,8 @@ class MessageSetResource(ModelResource):
         authentication = ApiKeyAuthentication()
 
 class SubscriptionResource(ModelResource):
-    schedule = fields.ToOneField(PeriodicTaskResource, 'schedule')
-    message_set = fields.ToOneField(MessageSetResource, 'message_set')
+    schedule = fields.ToOneField(PeriodicTaskResource, 'schedule', full=True)
+    message_set = fields.ToOneField(MessageSetResource, 'message_set', full=True)
     class Meta:
         queryset = Subscription.objects.all()
         resource_name = 'subscription'
