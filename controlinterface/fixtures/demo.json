@@ -1,0 +1,131 @@
+[
+{
+    "pk": 1, 
+    "model": "controlinterface.widgetdata", 
+    "fields": {
+        "data_type": "private", 
+        "title": "Unique Clinic Users", 
+        "created_at": "2014-10-24T11:12:22Z", 
+        "updated_at": "2014-11-27T19:40:26.076Z", 
+        "source": "vumi", 
+        "key": "stores.ndoh_prd_live.prd.clinic.sum.unique_users.last"
+    }
+},
+{
+    "pk": 2, 
+    "model": "controlinterface.widgetdata", 
+    "fields": {
+        "data_type": "private", 
+        "title": "Unique Personal Users", 
+        "created_at": "2014-11-27T19:40:44.242Z", 
+        "updated_at": "2014-11-27T19:40:44.242Z", 
+        "source": "vumi", 
+        "key": "stores.ndoh_prd_live.prd.personal.sum.unique_users.last"
+    }
+},
+{
+    "pk": 3, 
+    "model": "controlinterface.widgetdata", 
+    "fields": {
+        "data_type": "private", 
+        "title": "Unique CHW Users", 
+        "created_at": "2014-11-27T19:41:00.296Z", 
+        "updated_at": "2014-11-27T19:41:00.296Z", 
+        "source": "vumi", 
+        "key": "stores.ndoh_prd_live.prd.chw.sum.unique_users.last"
+    }
+},
+{
+    "pk": 1, 
+    "model": "controlinterface.widget", 
+    "fields": {
+        "interval": "1d", 
+        "title": "Unique Clinic Users (last 30 days)", 
+        "created_at": "2014-10-24T11:12:33Z", 
+        "nulls": "omit", 
+        "updated_at": "2014-11-27T19:41:23.053Z", 
+        "data": [
+            1
+        ], 
+        "data_from": "-30d", 
+        "type_of": "last"
+    }
+},
+{
+    "pk": 2, 
+    "model": "controlinterface.widget", 
+    "fields": {
+        "interval": "1d", 
+        "title": "Unique Personal Users (last 30 days)", 
+        "created_at": "2014-11-27T19:41:59.413Z", 
+        "nulls": "omit", 
+        "updated_at": "2014-11-27T19:41:59.413Z", 
+        "data": [
+            2
+        ], 
+        "data_from": "-30d", 
+        "type_of": "last"
+    }
+},
+{
+    "pk": 3, 
+    "model": "controlinterface.widget", 
+    "fields": {
+        "interval": "1d", 
+        "title": "Unique CHW Users (last 30 days)", 
+        "created_at": "2014-11-27T19:42:19.577Z", 
+        "nulls": "omit", 
+        "updated_at": "2014-11-27T19:42:19.577Z", 
+        "data": [
+            3
+        ], 
+        "data_from": "-30d", 
+        "type_of": "last"
+    }
+},
+{
+    "pk": 4, 
+    "model": "controlinterface.widget", 
+    "fields": {
+        "interval": "1h", 
+        "title": "Unique Users (last 24 hours)", 
+        "created_at": "2014-11-27T19:42:44.256Z", 
+        "nulls": "omit", 
+        "updated_at": "2014-11-27T19:42:44.256Z", 
+        "data": [
+            1, 
+            2, 
+            3
+        ], 
+        "data_from": "-1d", 
+        "type_of": "lines"
+    }
+},
+{
+    "pk": 1, 
+    "model": "controlinterface.dashboard", 
+    "fields": {
+        "updated_at": "2014-11-27T19:43:24.320Z", 
+        "widgets": [
+            1, 
+            2, 
+            3, 
+            4
+        ], 
+        "created_at": "2014-10-24T10:52:10Z", 
+        "name": "Internal Summary", 
+        "dashboard_type": "private"
+    }
+},
+{
+    "pk": 2, 
+    "model": "controlinterface.dashboard", 
+    "fields": {
+        "updated_at": "2014-10-24T11:13:00.202Z", 
+        "widgets": [], 
+        "created_at": "2014-10-24T10:52:28Z", 
+        "name": "Public Summary", 
+        "dashboard_type": "public"
+    }
+}
+]

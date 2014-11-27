@@ -1,0 +1,88 @@
+{% extends "controlinterface/base.html" %}
+{% load staticfiles %}
+
+
+{% block content %}
+<link rel="stylesheet" href="{% static "controlinterface/css/sapphire.css" %}">
+<link rel="stylesheet" href="{% static "controlinterface/css/c3.css" %}">
+<div class="sapphire">
+  <div class="row">
+    <div class="col-sm-3 col-md-4">
+      <h1 class="page-header">Service Ratings</h1>
+    </div>
+    <div class="col-sm-3 col-md-5">
+      <a href="/controlinterface/servicerating/download/"><button type="button" class="btn btn-default btn-md btn-header"><span class="glyphicon glyphicon-cloud-download"></span> Download Service Ratings</button></a>
+    </div>
+    <div class="col-sm-3 col-md-3">
+      <div class="input-group">
+        <input type="text" class="form-control" placeholder="">
+        <span class="input-group-btn">
+          <button class="btn btn-default btn-search" type="button"><span class="glyphicon glyphicon-search"></span></button>
+        </span>
+      </div><!-- /input-group -->
+    </div>
+  </div>
+  <div class="row">
+    <h3>National Averages</h3>
+    <div class="col-md-6"><div id="national_satisfaction"></div></div>
+    <div class="col-md-6"><div id="national_waiting"></div></div>
+
+  </div> 
+   <script src="{% static "controlinterface/js/d3.v3.min.js" %}"></script>
+   <script src="{% static "controlinterface/js/c3.0.3.0.min.js" %}"></script>
+ <script type="text/javascript">
+    var chart = c3.generate({
+        bindto: '#national_satisfaction',
+        data: {
+          x: 'x',
+          columns: [
+            ['x', 'Q1 Friendliness', 'Q2 Waiting Times Feel', 'Q4 Cleanliness', 'Q5 Privacy'],
+            ['National Average', {{ averages.question_1_friendliness }}, {{ averages.question_2_waiting_times_feel }}, {{ averages.question_4_cleanliness }}, {{ averages.question_5_privacy }}]
+          ],
+          type: 'bar'
+        },
+        bar: {
+            width: {
+                ratio: 0.5 // this makes bar width 50% of length between ticks
+            }
+        },
+        axis: {
+            x: {
+                type: 'category',
+                height: 130
+            },
+            y: {
+              max: 4,
+            }
+        }
+    });
+
+    chart = c3.generate({
+        bindto: '#national_waiting',
+        data: {
+          x: 'x',
+          columns: [
+            ['x', 'Less Than an Hour', 'Between 1 and 3 Hours', 'More Than 4 Hours', 'All Day'],
+            ['National Average Waiting Times %', {{ waiting_times.less_than_an_hour }}, {{  waiting_times.between_1_and_3_hours }}, {{ waiting_times.more_than_4_hours }}, {{ waiting_times.all_day }}]
+          ],
+          type: 'bar'
+        },
+        bar: {
+            width: {
+                ratio: 0.5 // this makes bar width 50% of length between ticks
+            }
+        },
+        axis: {
+            x: {
+                type: 'category',
+                height: 130
+            }
+        }
+    });
+
+    </script>
+</div>
+
+
+{% endblock %}
+
