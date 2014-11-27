@@ -1,0 +1,57 @@
+{% extends "controlinterface/base.html" %}
+{% load staticfiles %}
+
+       
+{% block content %}
+<link rel="stylesheet" href="{% static "controlinterface/css/sapphire.css" %}">
+<div class="sapphire">
+  <div class="row">
+    <div class="col-sm-3 col-md-4">
+      <h1 class="page-header">Dashboard</h1>
+    </div>
+    <div class="col-sm-3 col-md-5">
+      <!-- <button type="button" class="btn btn-default btn-md btn-header"><span class="glyphicon glyphicon-plus"></span> Add New Widget</button> -->
+    </div>
+    <div class="col-sm-3 col-md-3">
+      <div class="input-group">
+        <input type="text" class="form-control" placeholder="">
+        <span class="input-group-btn">
+          <button class="btn btn-default btn-search" type="button"><span class="glyphicon glyphicon-search"></span></button>
+        </span>
+      </div><!-- /input-group -->
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-4">
+      <div id="a"></div>
+    </div>
+
+    <div class="col-md-4">
+      <div id="b"></div>
+    </div>
+
+    <div class="col-md-4">
+      <div id="c"></div>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-12">
+      <div id="all"></div>
+    </div>
+  </div>
+</div>
+<!--     <div class="sapphire">
+      <div id="a"></div>
+      <div id="b"></div>
+      <div id="c"></div>
+      <div id="all"></div>
+    </div> -->
+
+    <script src="{% static "controlinterface/js/d3.v3.min.js" %}"></script>
+    <script src="{% static "controlinterface/js/strain.js" %}"></script>
+    <script src="{% static "controlinterface/js/sapphire.js" %}"></script>
+    <script src="{% static "controlinterface/js/superagent.js" %}"></script>
+    <script src="{% static "controlinterface/js/index.js" %}"></script>
+
+{% endblock %}
+        

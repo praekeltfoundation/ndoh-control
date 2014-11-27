@@ -1,6 +1,7 @@
 """
 Tests for Subscription Application 
 """
+# Django
 from tastypie.test import ResourceTestCase
 from django.test import TestCase
 from django.contrib.auth.models import User
@@ -9,6 +10,7 @@ from django.test.utils import override_settings
 from subscription.models import MessageSet, Message, Subscription
 from subscription.tasks import ingest_csv, ensure_one_subscription, vumi_fire_metric
 from StringIO import StringIO
+from datetime import date
 import json
 import logging
 from go_http.send import LoggingSender
@@ -247,4 +249,13 @@ class TestEnsureCleanSubscriptions(TestCase):
         results = vumi_fire_metric.delay(metric="subscription.duplicates", value=1,
                                          agg="last", sender=self.sender)
         self.check_logs("Metric: 'subscription.duplicates' [last] -> 1")
+
+class TestSetSeqCommand(TestCase):
+    def setUp(self):
+        pass
+
+    def test_due_date_calc(self):
+        pass
+        # https://gist.github.com/imsickofmaps/236129fbe7da6300629b
+        # https://gist.github.com/imsickofmaps/b9712fde824853d00da3
 

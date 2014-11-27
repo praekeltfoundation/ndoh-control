@@ -146,10 +146,12 @@ INSTALLED_APPS = (
     'djcelery_email',
     'tastypie',
     # Custom apps
+    'control',
     'subscription',
     'subsend',
     'servicerating',
-    'snappybouncer'
+    'snappybouncer',
+    'controlinterface'
 )
 
 # A sample logging configuration. The only tangible logging
