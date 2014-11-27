@@ -1,4 +1,5 @@
 from django.conf.urls import patterns, include, url
+from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 from control import views
 
 # Uncomment the next two lines to enable the admin:
@@ -21,5 +22,6 @@ urlpatterns = patterns('',
     url(r'^', include('subscription.urls')),
     url(r'^', include('servicerating.urls')),
     url(r'^', include('snappybouncer.urls')),
+    url(r'^', include('controlinterface.urls')),
 
-)
+) + staticfiles_urlpatterns()

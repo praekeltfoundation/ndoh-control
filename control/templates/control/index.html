@@ -1,3 +1,4 @@
+{% load staticfiles %}
 <!DOCTYPE html>
 <!--[if lt IE 7]>      <html class="no-js lt-ie9 lt-ie8 lt-ie7"> <![endif]-->
 <!--[if IE 7]>         <html class="no-js lt-ie9 lt-ie8"> <![endif]-->
@@ -10,16 +11,16 @@
         <meta name="description" content="">
         <meta name="viewport" content="width=device-width, initial-scale=1">
 
-        <link rel="stylesheet" href="/static/control/css/normalize.min.css">
-        <link rel="stylesheet" href="/static/control/css/main.css">
+        <link rel="stylesheet" href="{% static "control/css/normalize.min.css" %}">
+        <link rel="stylesheet" href="{% static "control/css/main.css" %}">
 
-        <script src="/static/control/js/vendor/modernizr-2.6.2-respond-1.1.0.min.js"></script>
+        <script src="{% static "control/js/vendor/modernizr-2.6.2-respond-1.1.0.min.js" %}"></script>
     </head>
     <body>
 
         <div class="main-container" style="background-color: #ffcb05">
             <div class="main wrapper clearfix">
-                <img src="/static/control/img/landing.png">
+                <img src="{% static "/static/control/img/landing.png" %}">
             </div> <!-- #main -->
         </div> <!-- #main-container -->
 
@@ -31,7 +32,7 @@
             </footer>
         </div>
 
-        <script src="/static/control/js/main.js"></script>
+        <script src="{% static "control/js/main.js" %}"></script>
 
         <!-- Google Analytics: change UA-XXXXX-X to be your site's ID. -->
         <script>

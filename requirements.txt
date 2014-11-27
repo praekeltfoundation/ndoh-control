@@ -13,7 +13,7 @@ django-celery-email==1.0.4
 pep8==1.5.7
 pyflakes==0.8.1
 django-tastypie==0.11.1
-go-http==0.2.0
+go-http==0.2.2
 flower==0.7.1
 redis==2.10.1
 besnappy==0.1.0
