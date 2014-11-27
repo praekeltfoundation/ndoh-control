@@ -1,7 +1,7 @@
 {% extends "controlinterface/base.html" %}
 {% load staticfiles %}
 
-       
+
 {% block content %}
 <link rel="stylesheet" href="{% static "controlinterface/css/sapphire.css" %}">
 <div class="sapphire">
@@ -40,6 +40,48 @@
     </div>
   </div>
 </div>
+
+    <div>
+      var data = {
+      url: '/api/v1/controlinterface/metric/',
+      token: 'dashboards:dashboards',
+      step: 10000,
+      widgets: {
+        {% for widget in widgets %}
+<!--         all: {
+          from: '-1d',
+          interval: '1h',
+          nulls: 'omit',
+          type: 'lines',
+          title: 'Unique Users (last 24 hours)',
+          metrics: [{
+            title: 'Clinic',
+            key: 'stores.ndoh_prd_live.prd.clinic.sum.unique_users.last'
+          }, {
+            title: 'Personal',
+            key: 'stores.ndoh_prd_live.prd.personal.sum.unique_users.last',
+          }, {
+            title: 'CHW',
+            key: 'stores.ndoh_prd_live.prd.chw.sum.unique_users.last',
+          }],
+        }, -->
+        {{ widget.id }}: {
+          title: '{{ widget.title }}',
+          {% for datapoint in widget_data %}
+            <!-- needs completing -->
+          {% endfor %}
+          key: 'stores.ndoh_prd_live.prd.clinic.sum.unique_users.last',
+          from: '{{ widget.data_from }}',
+          interval: '{{ widget.interval }}',
+          nulls: '{{ widget.nulls }}',
+          type: '{{ widget.type_of}}'
+        }
+      {% endfor %}
+      }
+    };
+
+    </div>
+
 <!--     <div class="sapphire">
       <div id="a"></div>
       <div id="b"></div>
@@ -54,4 +96,4 @@
     <script src="{% static "controlinterface/js/index.js" %}"></script>
 
 {% endblock %}
-        
+
