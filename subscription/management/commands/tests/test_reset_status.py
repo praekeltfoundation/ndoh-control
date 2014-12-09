@@ -6,7 +6,7 @@ from djcelery.models import PeriodicTask, IntervalSchedule
 from StringIO import StringIO
 
 from subscription.management.commands.reset_status import (
-    SUBSCRIPTION_STANDARD, SUBSCRIPTION_LATER, SUBSCRIPTION_ACCELERATED)
+    SUBSCRIPTION_ACCELERATED)
 from subscription.management.commands import reset_status
 from subscription.models import Subscription, MessageSet, Message
 
