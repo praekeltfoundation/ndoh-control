@@ -22,7 +22,7 @@ class TestResetStatusCommand(TestCase):
         return command
 
     def mk_message_set(self, set_size=10, short_name='standard',
-                       language='eng'):
+                       language='en'):
         msg_set, created = MessageSet.objects.get_or_create(
             short_name=short_name)
         if created:
@@ -43,7 +43,7 @@ class TestResetStatusCommand(TestCase):
         return scheduled
 
     def mk_subscription(self, user_account, contact_key, to_addr,
-                        message_set, lang='eng', schedule=None):
+                        message_set, lang='en', schedule=None):
         schedule = schedule or self.mk_default_schedule()
         return Subscription.objects.create(
             user_account=user_account,
@@ -70,6 +70,17 @@ class TestResetStatusCommand(TestCase):
         sub.process_status = -1
         sub.save()
 
+        sub = self.mk_subscription(
+            user_account='82309423099',
+            contact_key='82309423099',
+            to_addr='+271235',
+            message_set=msg_set)
+        sub.active = True
+        sub.completed = False
+        sub.next_sequence_number = 12
+        sub.process_status = 0
+        sub.save()
+
         set_process_status = 0
         set_active = False
         set_completed = True
@@ -91,3 +102,8 @@ class TestResetStatusCommand(TestCase):
             'Affected records: 1',
             'Records updated'
         ]), command.stdout.getvalue().strip())
+
+        not_updated = Subscription.objects.get(contact_key='82309423099')
+        self.assertEqual(0, not_updated.process_status)
+        self.assertEqual(True, not_updated.active)
+        self.assertEqual(False, not_updated.completed)

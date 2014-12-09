@@ -13,7 +13,7 @@ SUBSCRIPTION_ACCELERATED = 3  # over 35 weeks when reg
 class Command(BaseCommand):
     help = "Set status on subscriptions matching criteria"
     option_list = BaseCommand.option_list + (
-        make_option('--filter_messageset', dest='message_set_id', type='int', default=None,
+        make_option('--filter_messageset', dest='message_set_id', default=None, type='int',
                         help='What message set do you want to look at'),
         make_option('--filter_status', dest='process_status', default=None, type='int',
                         help='What status should the processing be at'),
@@ -28,7 +28,7 @@ class Command(BaseCommand):
     )
 
     def handle(self, *args, **options):
-       
+
         subscribers = Subscription.objects.filter(
             Q(message_set_id=options["message_set_id"]), Q(process_status=options["process_status"]),
             Q(next_sequence_number=options["next_sequence_number"]))
