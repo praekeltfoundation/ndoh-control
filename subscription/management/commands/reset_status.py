@@ -18,34 +18,60 @@ class Command(BaseCommand):
         make_option('--filter_status', dest='process_status', default=None, type='int',
                         help='What status should the processing be at'),
         make_option('--filter_seq', dest='next_sequence_number', default=None, type='int',
-                        help='What status should the processing be at'),
-        make_option('--set_active', dest='active', default=None, type='str',
+                        help='What sequence number should the processing be at'),
+        make_option('--filter_active', dest='is_active', default=None, type='str',
+                        help='Should the subscription be active'),
+        make_option('--filter_lang', dest='language', default=None, type='str',
+                        help='What language should the subscription be'),
+
+        make_option('--set_active', dest='set_active', default=None, type='str',
                         help='What should active be set to'),
-        make_option('--set_completed', dest='completed', default=None, type='str',
+        make_option('--set_completed', dest='set_completed', default=None, type='str',
                         help='What should completed be set to'),
-        make_option('--set_process_status', dest='new_process_status', default=None, type='int',
+        make_option('--set_process_status', dest='set_process_status', default=None, type='int',
                         help='What should process_status be set to'),
     )
 
     def handle(self, *args, **options):
 
         subscribers = Subscription.objects.filter(
-            Q(message_set_id=options["message_set_id"]), Q(process_status=options["process_status"]),
-            Q(next_sequence_number=options["next_sequence_number"]))
+            process_status=options["process_status"]
+        )
+
+        if options["message_set_id"] is not None:
+            subscribers = subscribers.filter(
+                message_set_id=options["message_set_id"]
+            )
+
+        if options["next_sequence_number"] is not None:
+            subscribers = subscribers.filter(
+                next_sequence_number=options["next_sequence_number"]
+            )
+
+        if options["is_active"] is not None:
+            subscribers = subscribers.filter(
+                active=options["is_active"]
+            )
+
+        if options["language"] is not None:
+            subscribers = subscribers.filter(
+                lang=options["language"]
+            )
+
         self.stdout.write("Affected records: " + str(len(subscribers)) + "\n")
 
         for subscriber in subscribers:
-            if options["active"] is not None:
-                if options["active"] is "True":
+            if options["set_active"] is not None:
+                if options["set_active"] is "True":
                     subscriber.active = True
                 else:
                     subscriber.active = False
-            if options["completed"] is not None:
-                if options["completed"] is "True":
+            if options["set_completed"] is not None:
+                if options["set_completed"] is "True":
                     subscriber.completed = True
                 else:
                     subscriber.completed = False
-            if options["new_process_status"] is not None:
-                subscriber.process_status = options["new_process_status"]
+            if options["set_process_status"] is not None:
+                subscriber.process_status = options["set_process_status"]
             subscriber.save()
         self.stdout.write("Records updated\n")
