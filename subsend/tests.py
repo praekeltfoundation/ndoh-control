@@ -10,6 +10,7 @@ from requests_testadapter import TestAdapter, TestSession
 from go_http.send import HttpApiSender, LoggingSender
 from subsend.tasks import process_message_queue, processes_message
 from subscription.models import Subscription, MessageSet
+from djcelery.models import PeriodicTask
 
 
 class TestMessageQueueProcessor(TestCase):
@@ -30,6 +31,8 @@ class TestMessageQueueProcessor(TestCase):
         self.assertEqual(len(messagesets), 10)
         subscriptions = Subscription.objects.all()
         self.assertEqual(len(subscriptions), 6)
+        schedules = PeriodicTask.objects.all()
+        self.assertEqual(len(schedules), 6)
 
     def test_multisend(self):
         schedule = 6
@@ -72,6 +75,7 @@ class TestMessageQueueProcessor(TestCase):
         self.assertEquals(subscriber_updated.active, False)
 
     def test_new_subscription_created_post_send_en_accelerated_2(self):
+        twice_a_week = PeriodicTask.objects.get(pk=3)
         subscriber = Subscription.objects.get(pk=1)
         subscriber.next_sequence_number = 2
         subscriber.save()
@@ -84,8 +88,9 @@ class TestMessageQueueProcessor(TestCase):
         new_subscription = Subscription.objects.get(pk=101)
         self.assertEquals(new_subscription.message_set.pk, 4)
         self.assertEquals(new_subscription.to_addr, "+271234")
+        self.assertEquals(new_subscription.schedule, twice_a_week)
 
-    def test_no_new_subscription_created_post_send_en_accelerated_2(self):
+    def test_no_new_subscription_created_post_send_en_baby_2(self):
         subscriber = Subscription.objects.get(pk=4)
         result = processes_message.delay(subscriber, self.sender)
         self.assertTrue(result.successful())

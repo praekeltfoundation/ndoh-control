@@ -7,6 +7,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from go_http.send import HttpApiSender, LoggingSender
 import control.settings as settings
 from subscription.models import Subscription, Message
+from djcelery.models import PeriodicTask
 
 logger = get_task_logger(__name__)
 
@@ -44,7 +45,9 @@ def processes_message(subscriber, sender):
             response = sender.send_text(subscriber.to_addr, message.content)
             # Post process moving to next message, next set or finished
             # Get set max
-            set_max = Message.objects.all().aggregate(Max('sequence_number'))["sequence_number__max"]
+            set_max = Message.objects.filter(
+                message_set=subscriber.message_set
+                ).aggregate(Max('sequence_number'))["sequence_number__max"]
             # Compare user position to max
             if subscriber.next_sequence_number == set_max:
                 # Mark current as completed
@@ -64,6 +67,8 @@ def processes_message(subscriber, sender):
                     subscriber.next_sequence_number = 1
                     subscription = subscriber
                     subscription.message_set = message_set.next_set
+                    # Set msg schedule to standard two_per_week
+                    subscription.schedule = PeriodicTask.objects.get(pk=3)
                     subscription.save()
             else:
                 # More in this set so interate by one
