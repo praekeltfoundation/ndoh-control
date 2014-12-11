@@ -91,10 +91,8 @@ class TestResetStatusCommand(TestCase):
                    "next_sequence_number": 16}
         command.handle(None, **options)
 
-        subs = Subscription.objects.all()
-        print subs
         updated = Subscription.objects.get(contact_key='82309423100',
-            message_set_id=SUBSCRIPTION_BABY1)
+            message_set_id=SUBSCRIPTION_ACCELERATED)
         self.assertEqual(2, updated.process_status)
         self.assertEqual(False, updated.active)
         self.assertEqual(True, updated.completed)
@@ -102,6 +100,12 @@ class TestResetStatusCommand(TestCase):
             'Affected records: 1',
             'Records updated'
         ]), command.stdout.getvalue().strip())
+
+        new_sub = Subscription.objects.get(contact_key='82309423100',
+            message_set_id=SUBSCRIPTION_BABY1)
+        self.assertEqual(0, new_sub.process_status)
+        self.assertEqual(True, new_sub.active)
+        self.assertEqual(False, new_sub.completed)
 
         not_updated = Subscription.objects.get(contact_key='82309423101')
         self.assertEqual(0, not_updated.process_status)

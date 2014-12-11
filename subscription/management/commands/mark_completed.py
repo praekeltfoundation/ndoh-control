@@ -1,5 +1,6 @@
 from django.core.management.base import BaseCommand
 from optparse import make_option
+from datetime import datetime
 from django.db.models import Q
 from djcelery.models import PeriodicTask
 from django.db.models import Max
@@ -29,6 +30,9 @@ class Command(BaseCommand):
                         help='What status should the processing be at'),
     )
 
+    def get_now(self):
+        return datetime.now()
+
     def handle(self, *args, **options):
 
         subscribers = Subscription.objects.filter(
@@ -42,17 +46,24 @@ class Command(BaseCommand):
         message_set = MessageSet.objects.get(
             Q(id=options["message_set_id"]))
 
+
         for subscriber in subscribers:
+            # make current subscription completed
+            subscriber.next_sequence_number = set_max
+            subscriber.active = False
+            subscriber.completed = True
+            subscriber.process_status = 2
+            subscriber.save()
+
             # if there is a next set, make a new subscription
             if message_set.next_set:
                 # clone existing minus PK as recommended in
                 # https://docs.djangoproject.com/en/1.6/topics/db/queries/#copying-model-instances
                 subscriber.pk = None
-                subscriber.process_status = 0 # Ready
-                subscriber.active = True
-                subscriber.completed = False
-                subscriber.next_sequence_number = 1
                 new_subscription = subscriber
+                new_subscription.process_status = 0 # Ready
+                new_subscription.active = True
+                new_subscription.completed = False
                 new_subscription.message_set = message_set.next_set
                 if message_set.next_set.short_name == 'baby2':
                     new_subscription.schedule = PeriodicTask.objects.get(pk=2)
@@ -60,13 +71,13 @@ class Command(BaseCommand):
                 else:
                     new_subscription.schedule = PeriodicTask.objects.get(pk=3)
                     # PeriodicTask(pk=3) is twice a week
+
                 new_subscription.next_sequence_number = 1
                 # TODO calculate next_sequence_number based on updated_at
+                if (message_set.short_name == 'accelerated' or
+                                            message_set.short_name == 'later'):
+                    pass
+
                 new_subscription.save()
 
-            subscriber.next_sequence_number = set_max
-            subscriber.active = False
-            subscriber.completed = True
-            subscriber.process_status = 2
-            subscriber.save()
         self.stdout.write("Records updated\n")
