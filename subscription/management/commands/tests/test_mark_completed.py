@@ -20,6 +20,8 @@ class TestMarkCompletedCommand(TestCase):
     def mk_command(self):
         command = mark_completed.Command()
         command.stdout = StringIO()
+        # set the date so tests continue to work in the future
+        command.get_now = lambda *a: datetime(2014, 12, 11)
         return command
 
     def mk_message_set(self, next_set, set_size=10, short_name='standard',
