@@ -101,7 +101,7 @@ class TestResetStatusCommand(TestCase):
         self.assertEqual(set_active, updated.active)
         self.assertEqual(set_completed, updated.completed)
         self.assertEqual('\n'.join([
-            'Affected records: 1',
+            'Affected records: 2',  # one subscription from fixtures
             'Records updated'
         ]), command.stdout.getvalue().strip())
 

@@ -1,5 +1,6 @@
 from django.test import TestCase
 from django.test.utils import override_settings
+from datetime import datetime
 
 from djcelery.models import PeriodicTask, IntervalSchedule
 
@@ -11,7 +12,7 @@ from subscription.management.commands import mark_completed
 from subscription.models import Subscription, MessageSet, Message
 
 
-class TestResetStatusCommand(TestCase):
+class TestMarkCompletedCommand(TestCase):
 
     def setUp(self):
         self.command = self.mk_command()
@@ -42,7 +43,8 @@ class TestResetStatusCommand(TestCase):
         return scheduled
 
     def mk_subscription(self, user_account, contact_key, to_addr,
-                        message_set, lang='en', schedule=None):
+                        message_set, lang='en', schedule=None,
+                        updated_at=None):
         schedule = schedule or self.mk_default_schedule()
         return Subscription.objects.create(
             user_account=user_account,
@@ -50,7 +52,16 @@ class TestResetStatusCommand(TestCase):
             to_addr=to_addr,
             message_set=message_set,
             lang=lang,
-            schedule=schedule)
+            schedule=schedule,
+            updated_at=updated_at)
+
+    def test_calc_baby1_start(self):
+        self.assertEqual(self.command.calc_baby1_start(0), 1)
+        self.assertEqual(self.command.calc_baby1_start(3), 1)
+        self.assertEqual(self.command.calc_baby1_start(4), 2)
+        self.assertEqual(self.command.calc_baby1_start(7), 3)
+        self.assertEqual(self.command.calc_baby1_start(8), 3)
+        self.assertEqual(self.command.calc_baby1_start(70), 21)
 
     @override_settings(VUMI_GO_API_TOKEN='token')
     def test_accelerated_subscription_completed(self):
@@ -63,24 +74,13 @@ class TestResetStatusCommand(TestCase):
         self.assertEqual(msg_set_accel.pk, SUBSCRIPTION_ACCELERATED)
 
         sub = self.mk_subscription(
-            user_account='82309423100',
-            contact_key='82309423100',
-            to_addr='+271234',
-            message_set=msg_set_accel)
-        sub.active = True
-        sub.completed = False
-        sub.next_sequence_number = 16
-        sub.process_status = -1
-        sub.save()
-
-        sub = self.mk_subscription(
             user_account='82309423101',
             contact_key='82309423101',
             to_addr='+271235',
             message_set=msg_set_accel)
         sub.active = True
         sub.completed = False
-        sub.next_sequence_number = 12
+        sub.next_sequence_number = 10
         sub.process_status = 0
         sub.save()
 
@@ -96,6 +96,7 @@ class TestResetStatusCommand(TestCase):
         self.assertEqual(2, updated.process_status)
         self.assertEqual(False, updated.active)
         self.assertEqual(True, updated.completed)
+        self.assertEqual(9, updated.next_sequence_number)
         self.assertEqual('\n'.join([
             'Affected records: 1',
             'Records updated'
@@ -106,8 +107,10 @@ class TestResetStatusCommand(TestCase):
         self.assertEqual(0, new_sub.process_status)
         self.assertEqual(True, new_sub.active)
         self.assertEqual(False, new_sub.completed)
+        self.assertEqual(12, new_sub.next_sequence_number)
 
         not_updated = Subscription.objects.get(contact_key='82309423101')
         self.assertEqual(0, not_updated.process_status)
         self.assertEqual(True, not_updated.active)
         self.assertEqual(False, not_updated.completed)
+        self.assertEqual(10, sub.next_sequence_number)

@@ -1,9 +1,10 @@
 from django.core.management.base import BaseCommand
 from optparse import make_option
-from datetime import datetime
 from django.db.models import Q
 from djcelery.models import PeriodicTask
 from django.db.models import Max
+from datetime import datetime
+from math import floor
 
 from subscription.models import Subscription, MessageSet, Message
 
@@ -33,6 +34,18 @@ class Command(BaseCommand):
     def get_now(self):
         return datetime.now()
 
+    def calc_days(self, updated_at, today=None):
+        if today is None:
+            today = self.get_now().date()
+        # calc diff betwen now and updated_at
+        days = (today - updated_at).days
+        return days
+
+    def calc_baby1_start(self, days):
+        schedule_interval = 7 / 2.0  # twice a week for baby1
+        seq_start = int(floor(days/schedule_interval)) + 1
+        return seq_start
+
     def handle(self, *args, **options):
 
         subscribers = Subscription.objects.filter(
@@ -53,6 +66,10 @@ class Command(BaseCommand):
             subscriber.active = False
             subscriber.completed = True
             subscriber.process_status = 2
+            last_update = subscriber.updated_at.date()
+            print '111 Last update:'
+            print last_update
+
             subscriber.save()
 
             # if there is a next set, make a new subscription
@@ -72,11 +89,13 @@ class Command(BaseCommand):
                     new_subscription.schedule = PeriodicTask.objects.get(pk=3)
                     # PeriodicTask(pk=3) is twice a week
 
-                new_subscription.next_sequence_number = 1
                 # TODO calculate next_sequence_number based on updated_at
                 if (message_set.short_name == 'accelerated' or
-                                            message_set.short_name == 'later'):
-                    pass
+                        message_set.short_name == 'later'):
+                    days_missed = self.calc_days(last_update)
+                    new_subscription.next_sequence_number = self.calc_baby1_start(days_missed)
+                else:
+                    new_subscription.next_sequence_number = 1
 
                 new_subscription.save()
 

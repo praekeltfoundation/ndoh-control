@@ -1,5 +1,5 @@
 """
-Tests for Subscription Application 
+Tests for Subscription Application
 """
 # Django
 from tastypie.test import ResourceTestCase
@@ -36,14 +36,14 @@ class SubscriptionResourceTest(ResourceTestCase):
         self.assertHttpUnauthorized(self.api_client.get('/api/v1/subscription/', format='json'))
 
     def test_api_keys_created(self):
-        self.assertEqual(True, self.api_key is not None) 
+        self.assertEqual(True, self.api_key is not None)
 
     def test_get_list_json(self):
         resp = self.api_client.get('/api/v1/subscription/', format='json', authentication=self.get_credentials())
         self.assertValidJSONResponse(resp)
 
         # Scope out the data for correctness.
-        self.assertEqual(len(self.deserialize(resp)['objects']), 0)
+        self.assertEqual(len(self.deserialize(resp)['objects']), 1)
 
     def test_get_filtered_list_json(self):
         data = {
@@ -67,7 +67,7 @@ class SubscriptionResourceTest(ResourceTestCase):
             "to_addr": json_item['to_addr']
         }
 
-        resp = self.api_client.get('/api/v1/subscription/', data=filter_data, 
+        resp = self.api_client.get('/api/v1/subscription/', data=filter_data,
                                    format='json', authentication=self.get_credentials())
         self.assertValidJSONResponse(resp)
 
@@ -97,7 +97,7 @@ class SubscriptionResourceTest(ResourceTestCase):
             "lang": "en"
         }
 
-        resp = self.api_client.get('/api/v1/subscription/', data=filter_data, 
+        resp = self.api_client.get('/api/v1/subscription/', data=filter_data,
                                    format='json', authentication=self.get_credentials())
         json_item = json.loads(resp.content)
         self.assertHttpBadRequest(resp)
@@ -239,11 +239,11 @@ class TestEnsureCleanSubscriptions(TestCase):
 
     def test_data_loaded(self):
         subscriptions = Subscription.objects.all()
-        self.assertEqual(len(subscriptions), 3)
+        self.assertEqual(len(subscriptions), 4)
 
-    def test_ensure_one_subscription(self):
+    def test_ensure_two_subscriptions(self):
         results = ensure_one_subscription.delay()
-        self.assertEqual(results.get(), 1)
+        self.assertEqual(results.get(), 2)
 
     def test_fire_metric(self):
         results = vumi_fire_metric.delay(metric="subscription.duplicates", value=1,
