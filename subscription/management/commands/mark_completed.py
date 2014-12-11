@@ -68,8 +68,6 @@ class Command(BaseCommand):
             subscriber.completed = True
             subscriber.process_status = 2
             last_update = subscriber.updated_at.date()
-            print '111 Last update:'
-            print last_update
 
             subscriber.save()
 
@@ -90,7 +88,6 @@ class Command(BaseCommand):
                     new_subscription.schedule = PeriodicTask.objects.get(pk=3)
                     # PeriodicTask(pk=3) is twice a week
 
-                # TODO calculate next_sequence_number based on updated_at
                 if (message_set.short_name == 'accelerated' or
                         message_set.short_name == 'later'):
                     days_missed = self.calc_days(last_update)
