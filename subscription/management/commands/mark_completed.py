@@ -21,7 +21,8 @@ SUBSCRIPTION_CHW = 10 # chw line reg
 
 
 class Command(BaseCommand):
-    help = "Set status on subscriptions matching criteria"
+    help = "Set status on subscriptions matching criteria and creates new \
+            sub if follow-on messageset exists"
     option_list = BaseCommand.option_list + (
         make_option('--filter_messageset', dest='message_set_id', default=None, type='int',
                         help='What message set do you want to look at'),
