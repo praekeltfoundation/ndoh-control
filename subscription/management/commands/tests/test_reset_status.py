@@ -93,7 +93,8 @@ class TestResetStatusCommand(TestCase):
                    "language": 'en',
                    "set_process_status": set_process_status,
                    "set_active": str(set_active),
-                   "set_completed": str(set_completed)}
+                   "set_completed": str(set_completed),
+                   "dry_run": None}
         command.handle(None, **options)
 
         updated = Subscription.objects.get(contact_key='82309423098')
@@ -159,7 +160,8 @@ class TestResetStatusCommand(TestCase):
                    "language": None,
                    "set_active": None,
                    "set_completed": None,
-                   "set_process_status": 0}
+                   "set_process_status": 0,
+                   "dry_run": None}
         command.handle(None, **options)
 
         updated = Subscription.objects.get(contact_key='82309423097')
@@ -230,7 +232,8 @@ class TestResetStatusCommand(TestCase):
                    "language": 'st',
                    "set_active": False,
                    "set_completed": False,
-                   "set_process_status": -2}
+                   "set_process_status": -2,
+                   "dry_run": None}
         command.handle(None, **options)
 
         updated = Subscription.objects.get(contact_key='82309423097')
@@ -240,6 +243,77 @@ class TestResetStatusCommand(TestCase):
             'Affected records: 1',
             'Records updated'
         ]), command.stdout.getvalue().strip())
+
+        not_updated = Subscription.objects.get(contact_key='82309423098')
+        self.assertEqual(-1, not_updated.process_status)
+        self.assertEqual(True, not_updated.active)
+        self.assertEqual(False, not_updated.completed)
+
+        not_updated = Subscription.objects.get(contact_key='82309423099')
+        self.assertEqual(0, not_updated.process_status)
+        self.assertEqual(True, not_updated.active)
+        self.assertEqual(False, not_updated.completed)
+
+    @override_settings(VUMI_GO_API_TOKEN='token')
+    def test_dry_run(self):
+
+        msg_set = self.mk_message_set(short_name='accelerated')
+        self.assertEqual(msg_set.pk, SUBSCRIPTION_ACCELERATED)
+
+        sub = self.mk_subscription(
+            user_account='82309423097',
+            contact_key='82309423097',
+            to_addr='+271233',
+            message_set=msg_set)
+        sub.active = True
+        sub.completed = False
+        sub.next_sequence_number = 1
+        sub.process_status = -1
+        sub.lang = 'st'
+        sub.save()
+
+        sub = self.mk_subscription(
+            user_account='82309423098',
+            contact_key='82309423098',
+            to_addr='+271234',
+            message_set=msg_set)
+        sub.active = True
+        sub.completed = False
+        sub.next_sequence_number = 1
+        sub.process_status = -1
+        sub.save()
+
+        sub = self.mk_subscription(
+            user_account='82309423099',
+            contact_key='82309423099',
+            to_addr='+271235',
+            message_set=msg_set)
+        sub.active = True
+        sub.completed = False
+        sub.next_sequence_number = 12
+        sub.process_status = 0
+        sub.save()
+
+        command = self.mk_command()
+        # options needed to be named after the dest from optparse
+        options = {"message_set_id": SUBSCRIPTION_ACCELERATED,
+                   "process_status": -1,
+                   "next_sequence_number": 1,
+                   "is_active": True,
+                   "language": 'st',
+                   "set_active": False,
+                   "set_completed": False,
+                   "set_process_status": -2,
+                   "dry_run": True}
+        command.handle(None, **options)
+
+        self.assertEqual('Affected records: 1',
+                         command.stdout.getvalue().strip())
+
+        not_updated = Subscription.objects.get(contact_key='82309423097')
+        self.assertEqual(-1, not_updated.process_status)
+        self.assertEqual(True, not_updated.active)
+        self.assertEqual(False, not_updated.completed)
 
         not_updated = Subscription.objects.get(contact_key='82309423098')
         self.assertEqual(-1, not_updated.process_status)

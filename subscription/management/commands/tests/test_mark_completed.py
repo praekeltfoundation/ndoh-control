@@ -90,7 +90,8 @@ class TestMarkCompletedCommand(TestCase):
         # options needed to be named after the dest from optparse
         options = {"message_set_id": SUBSCRIPTION_ACCELERATED,
                    "process_status": -1,
-                   "next_sequence_number": 16}
+                   "next_sequence_number": 16,
+                   "dry_run": None}
         command.handle(None, **options)
 
         updated = Subscription.objects.get(contact_key='82309423100',
@@ -110,6 +111,52 @@ class TestMarkCompletedCommand(TestCase):
         self.assertEqual(True, new_sub.active)
         self.assertEqual(False, new_sub.completed)
         self.assertEqual(12, new_sub.next_sequence_number)
+
+        not_updated = Subscription.objects.get(contact_key='82309423101')
+        self.assertEqual(0, not_updated.process_status)
+        self.assertEqual(True, not_updated.active)
+        self.assertEqual(False, not_updated.completed)
+        self.assertEqual(10, sub.next_sequence_number)
+
+
+    @override_settings(VUMI_GO_API_TOKEN='token')
+    def test_dry_run(self):
+
+        msg_set_baby2 = self.mk_message_set(next_set=None, short_name='baby2')
+        self.assertEqual(msg_set_baby2.pk, SUBSCRIPTION_BABY2)
+        msg_set_baby1 = self.mk_message_set(next_set=msg_set_baby2, short_name='baby1')
+        self.assertEqual(msg_set_baby1.pk, SUBSCRIPTION_BABY1)
+        msg_set_accel = self.mk_message_set(next_set=msg_set_baby1, short_name='accelerated')
+        self.assertEqual(msg_set_accel.pk, SUBSCRIPTION_ACCELERATED)
+
+        sub = self.mk_subscription(
+            user_account='82309423101',
+            contact_key='82309423101',
+            to_addr='+271235',
+            message_set=msg_set_accel)
+        sub.active = True
+        sub.completed = False
+        sub.next_sequence_number = 10
+        sub.process_status = 0
+        sub.save()
+
+        command = self.mk_command()
+        # options needed to be named after the dest from optparse
+        options = {"message_set_id": SUBSCRIPTION_ACCELERATED,
+                   "process_status": -1,
+                   "next_sequence_number": 16,
+                   "dry_run": True}
+        command.handle(None, **options)
+
+        self.assertEqual('Affected records: 1',
+                         command.stdout.getvalue().strip())
+
+        not_updated = Subscription.objects.get(contact_key='82309423100',
+            message_set_id=SUBSCRIPTION_ACCELERATED)
+        self.assertEqual(-1, not_updated.process_status)
+        self.assertEqual(True, not_updated.active)
+        self.assertEqual(False, not_updated.completed)
+        self.assertEqual(16, not_updated.next_sequence_number)
 
         not_updated = Subscription.objects.get(contact_key='82309423101')
         self.assertEqual(0, not_updated.process_status)

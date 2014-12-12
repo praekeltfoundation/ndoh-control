@@ -1,6 +1,5 @@
 from django.core.management.base import BaseCommand
 from optparse import make_option
-from django.db.models import Q
 
 
 from subscription.models import Subscription
@@ -30,6 +29,8 @@ class Command(BaseCommand):
                         help='What should completed be set to'),
         make_option('--set_process_status', dest='set_process_status', default=None, type='int',
                         help='What should process_status be set to'),
+
+        make_option('--dry_run', action='store_true', default=False),
     )
 
     def handle(self, *args, **options):
@@ -58,20 +59,21 @@ class Command(BaseCommand):
                 lang=options["language"]
             )
 
-        self.stdout.write("Affected records: " + str(len(subscribers)) + "\n")
+        self.stdout.write("Affected records: %s\n" % (subscribers.count()))
 
-        for subscriber in subscribers:
-            if options["set_active"] is not None:
-                if options["set_active"] is "True":
-                    subscriber.active = True
-                else:
-                    subscriber.active = False
-            if options["set_completed"] is not None:
-                if options["set_completed"] is "True":
-                    subscriber.completed = True
-                else:
-                    subscriber.completed = False
-            if options["set_process_status"] is not None:
-                subscriber.process_status = options["set_process_status"]
-            subscriber.save()
-        self.stdout.write("Records updated\n")
+        if not options["dry_run"]:
+            for subscriber in subscribers:
+                if options["set_active"] is not None:
+                    if options["set_active"] is "True":
+                        subscriber.active = True
+                    else:
+                        subscriber.active = False
+                if options["set_completed"] is not None:
+                    if options["set_completed"] is "True":
+                        subscriber.completed = True
+                    else:
+                        subscriber.completed = False
+                if options["set_process_status"] is not None:
+                    subscriber.process_status = options["set_process_status"]
+                subscriber.save()
+            self.stdout.write("Records updated\n")
