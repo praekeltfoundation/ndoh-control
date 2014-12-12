@@ -6,7 +6,7 @@ from django.utils import timezone
 from django.db.models import DateTimeField
 
 
-# Modelled on https://github.com/jamesmarlowe/django-AutoDateTimeFields 
+# Modelled on https://github.com/jamesmarlowe/django-AutoDateTimeFields
 # But with timezone support
 class AutoDateTimeField(DateTimeField):
     def pre_save(self, model_instance, add):
@@ -31,8 +31,11 @@ class MessageSet(models.Model):
     short_name = models.CharField(max_length=20)
     notes = models.TextField(verbose_name=u'Notes', null=True, blank=True)
     next_set = models.ForeignKey('self',
-                                         null=True,
-                                         blank=True)
+                                 null=True,
+                                 blank=True)
+    default_schedule = models.ForeignKey(PeriodicTask,
+                                         related_name='message_sets',
+                                         null=False)
     created_at = AutoNewDateTimeField(blank=True)
     updated_at = AutoDateTimeField(blank=True)
 
