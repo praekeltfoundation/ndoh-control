@@ -50,9 +50,14 @@ class Command(BaseCommand):
             )
 
         if options["is_active"] is not None:
-            subscribers = subscribers.filter(
-                active=options["is_active"]
-            )
+            if options["is_active"] == "True":
+                subscribers = subscribers.filter(
+                    active=True
+                )
+            elif options["is_active"] == "False":
+                subscribers = subscribers.filter(
+                    active=False
+                )
 
         if options["language"] is not None:
             subscribers = subscribers.filter(
