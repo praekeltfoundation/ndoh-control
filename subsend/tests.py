@@ -99,9 +99,9 @@ class TestMessageQueueProcessor(TestCase):
         self.assertTrue(result.successful())
         # Check another added and old still there
         all_subscription = Subscription.objects.all()
-        self.assertEquals(len(all_subscription),6)
+        self.assertEquals(len(all_subscription),7)
         # Check new subscription is for baby2
-        new_subscription = Subscription.objects.get(pk=6)
+        new_subscription = Subscription.objects.get(pk=101)
         self.assertEquals(new_subscription.message_set.pk, 5)
         self.assertEquals(new_subscription.to_addr, "+271112")
         self.assertEquals(new_subscription.schedule, once_a_week)
