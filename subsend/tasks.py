@@ -67,8 +67,7 @@ def processes_message(subscriber, sender):
                     subscriber.next_sequence_number = 1
                     subscription = subscriber
                     subscription.message_set = message_set.next_set
-                    # Set msg schedule to standard two_per_week
-                    subscription.schedule = PeriodicTask.objects.get(pk=3)
+                    subscription.schedule = message_set.default_schedule
                     subscription.save()
             else:
                 # More in this set so interate by one

@@ -24,7 +24,6 @@ class AutoNewDateTimeField(DateTimeField):
         return now
 
 
-DEFAULT_SCHEDULE_ID = PeriodicTask.objects.all()[0].id
 class MessageSet(models.Model):
     """ Core details about a set of messages that a user
         can be sent
@@ -36,8 +35,7 @@ class MessageSet(models.Model):
                                  blank=True)
     default_schedule = models.ForeignKey(PeriodicTask,
                                          related_name='message_sets',
-                                         null=False,
-                                         default=DEFAULT_SCHEDULE_ID)
+                                         null=False)
     created_at = AutoNewDateTimeField(blank=True)
     updated_at = AutoDateTimeField(blank=True)
 
