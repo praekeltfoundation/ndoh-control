@@ -16,20 +16,23 @@ SUBSCRIPTION_BABY2 = 5
 SUBSCRIPTION_MISCARRIAGE = 6
 SUBSCRIPTION_STILLBIRTH = 7
 SUBSCRIPTION_BABYLOSS = 8
-SUBSCRIPTION_SUBSCRIPTION = 9 # personal aka public line reg
-SUBSCRIPTION_CHW = 10 # chw line reg
+SUBSCRIPTION_SUBSCRIPTION = 9  # personal aka public line reg
+SUBSCRIPTION_CHW = 10  # chw line reg
 
 
 class Command(BaseCommand):
     help = "Set status on subscriptions matching criteria and creates new \
             sub if follow-on messageset exists"
     option_list = BaseCommand.option_list + (
-        make_option('--filter_messageset', dest='message_set_id', default=None, type='int',
-                        help='What message set do you want to look at'),
-        make_option('--filter_status', dest='process_status', default=None, type='int',
-                        help='What status should the processing be at'),
-        make_option('--filter_seq', dest='next_sequence_number', default=None, type='int',
-                        help='What status should the processing be at'),
+        make_option('--filter_messageset',
+                    dest='message_set_id', default=None, type='int',
+                    help='What message set do you want to look at'),
+        make_option('--filter_status',
+                    dest='process_status', default=None, type='int',
+                    help='What status should the processing be at'),
+        make_option('--filter_seq', dest='next_sequence_number',
+                    default=None, type='int',
+                    help='What status should the processing be at'),
     )
 
     def get_now(self):
@@ -55,11 +58,10 @@ class Command(BaseCommand):
             Q(next_sequence_number=options["next_sequence_number"]))
         self.stdout.write("Affected records: " + str(len(subscribers)) + "\n")
         set_max = Message.objects.filter(
-            Q(message_set_id=options["message_set_id"])
-                ).aggregate(Max('sequence_number'))["sequence_number__max"]
+            Q(message_set_id=options["message_set_id"])).aggregate(
+                Max('sequence_number'))["sequence_number__max"]
         message_set = MessageSet.objects.get(
             Q(id=options["message_set_id"]))
-
 
         for subscriber in subscribers:
             # make current subscription completed
@@ -77,7 +79,7 @@ class Command(BaseCommand):
                 # https://docs.djangoproject.com/en/1.6/topics/db/queries/#copying-model-instances
                 subscriber.pk = None
                 new_subscription = subscriber
-                new_subscription.process_status = 0 # Ready
+                new_subscription.process_status = 0  # Ready
                 new_subscription.active = True
                 new_subscription.completed = False
                 new_subscription.message_set = message_set.next_set
@@ -91,7 +93,8 @@ class Command(BaseCommand):
                 if (message_set.short_name == 'accelerated' or
                         message_set.short_name == 'later'):
                     days_missed = self.calc_days(last_update)
-                    new_subscription.next_sequence_number = self.calc_baby1_start(days_missed)
+                    next_seq_number = self.calc_baby1_start(days_missed)
+                    new_subscription.next_sequence_number = next_seq_number
                 else:
                     new_subscription.next_sequence_number = 1
 
