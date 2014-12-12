@@ -58,7 +58,8 @@ class Command(BaseCommand):
         subscribers = Subscription.objects.filter(
             message_set_id=options["message_set_id"],
             process_status=options["process_status"],
-            next_sequence_number=options["next_sequence_number"])
+            next_sequence_number=options["next_sequence_number"],
+            active=True)
         self.stdout.write("Affected records: %s\n" % (subscribers.count()))
 
         if not options["dry_run"]:
