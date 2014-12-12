@@ -90,6 +90,22 @@ class TestMessageQueueProcessor(TestCase):
         self.assertEquals(new_subscription.to_addr, "+271234")
         self.assertEquals(new_subscription.schedule, twice_a_week)
 
+    def test_new_subscription_created_post_send_en_baby1(self):
+        once_a_week = PeriodicTask.objects.get(pk=2)
+        subscriber = Subscription.objects.get(pk=3)
+        subscriber.next_sequence_number = 2
+        subscriber.save()
+        result = processes_message.delay(subscriber, self.sender)
+        self.assertTrue(result.successful())
+        # Check another added and old still there
+        all_subscription = Subscription.objects.all()
+        self.assertEquals(len(all_subscription),6)
+        # Check new subscription is for baby2
+        new_subscription = Subscription.objects.get(pk=6)
+        self.assertEquals(new_subscription.message_set.pk, 5)
+        self.assertEquals(new_subscription.to_addr, "+271112")
+        self.assertEquals(new_subscription.schedule, once_a_week)
+
     def test_no_new_subscription_created_post_send_en_baby_2(self):
         subscriber = Subscription.objects.get(pk=4)
         result = processes_message.delay(subscriber, self.sender)
