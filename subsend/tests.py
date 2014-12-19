@@ -30,7 +30,7 @@ class TestMessageQueueProcessor(TestCase):
         messagesets = MessageSet.objects.all()
         self.assertEqual(len(messagesets), 10)
         subscriptions = Subscription.objects.all()
-        self.assertEqual(len(subscriptions), 5)
+        self.assertEqual(len(subscriptions), 6)
         schedules = PeriodicTask.objects.all()
         self.assertEqual(len(schedules), 6)
 
@@ -83,12 +83,28 @@ class TestMessageQueueProcessor(TestCase):
         self.assertTrue(result.successful())
         # Check another added and old still there
         all_subscription = Subscription.objects.all()
-        self.assertEquals(len(all_subscription),6)
+        self.assertEquals(len(all_subscription),7)
         # Check new subscription is for baby1
-        new_subscription = Subscription.objects.get(pk=6)
+        new_subscription = Subscription.objects.get(pk=101)
         self.assertEquals(new_subscription.message_set.pk, 4)
         self.assertEquals(new_subscription.to_addr, "+271234")
         self.assertEquals(new_subscription.schedule, twice_a_week)
+
+    def test_new_subscription_created_post_send_en_baby1(self):
+        once_a_week = PeriodicTask.objects.get(pk=2)
+        subscriber = Subscription.objects.get(pk=3)
+        subscriber.next_sequence_number = 2
+        subscriber.save()
+        result = processes_message.delay(subscriber, self.sender)
+        self.assertTrue(result.successful())
+        # Check another added and old still there
+        all_subscription = Subscription.objects.all()
+        self.assertEquals(len(all_subscription),7)
+        # Check new subscription is for baby2
+        new_subscription = Subscription.objects.get(pk=101)
+        self.assertEquals(new_subscription.message_set.pk, 5)
+        self.assertEquals(new_subscription.to_addr, "+271112")
+        self.assertEquals(new_subscription.schedule, once_a_week)
 
     def test_no_new_subscription_created_post_send_en_baby_2(self):
         subscriber = Subscription.objects.get(pk=4)
@@ -96,7 +112,7 @@ class TestMessageQueueProcessor(TestCase):
         self.assertTrue(result.successful())
         # Check no new subscription added
         all_subscription = Subscription.objects.all()
-        self.assertEquals(len(all_subscription),5)
+        self.assertEquals(len(all_subscription),6)
         # Check old one now inactive and complete
         subscriber_updated = Subscription.objects.get(pk=4)
         self.assertEquals(subscriber_updated.completed, True)
