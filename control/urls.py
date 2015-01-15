@@ -17,8 +17,10 @@ urlpatterns = patterns('',
 
     # Uncomment the next line to enable the admin:
     url(r'^admin/', include(admin.site.urls)),
-        url(r'^admin/subscription/upload/', 'subscription.views.uploader',
-        {'page_name': 'csv_uploader'}, name="csv_uploader"),
+    url(r'^admin/subscription/upload/', 'subscription.views.uploader',
+    {'page_name': 'csv_uploader'}, name="csv_uploader"),
+    url(r'^admin/subscription/optouts/', 'subscription.views.outout_uploader',
+        {'page_name': 'outout_uploader'}, name="outout_uploader"),
     url(r'^', include('subscription.urls')),
     url(r'^', include('servicerating.urls')),
     url(r'^', include('snappybouncer.urls')),

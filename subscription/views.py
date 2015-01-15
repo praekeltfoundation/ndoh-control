@@ -6,7 +6,7 @@ from django.template import RequestContext
 from django.contrib import messages
 from django.core.context_processors import csrf
 
-from forms import CSVUploader
+from forms import CSVUploader, OptOutCSVUploader
 
 
 @staff_member_required
@@ -35,3 +35,32 @@ def uploader(request, page_name):
         context.update(csrf(request))
         return render_to_response("custom_admin/upload.html", context,
                                   context_instance=RequestContext(request))
+
+
+@staff_member_required
+def outout_uploader(request, page_name):
+    if request.method == "POST":
+        form = OptOutCSVUploader(request.POST, request.FILES)
+        if form.is_valid():
+            form.save()
+            messages.success(request,
+                             "CSV has been uploaded for processing",
+                             extra_tags="success")
+            context = {"form": form}
+        else:
+            for errors_key, error_value in form.errors.iteritems():
+                messages.error(request,
+                               "%s: %s" % (errors_key, error_value),
+                               extra_tags="danger")
+            context = {"form": form}
+        context.update(csrf(request))
+
+        return render_to_response("custom_admin/upload_optout.html", context,
+                                  context_instance=RequestContext(request))
+    else:
+        form = OptOutCSVUploader()
+        context = {"form": form}
+        context.update(csrf(request))
+        return render_to_response("custom_admin/upload_optout.html", context,
+                                  context_instance=RequestContext(request))
+
