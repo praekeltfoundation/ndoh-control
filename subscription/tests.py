@@ -227,13 +227,13 @@ class TestUploadOptOutCSV(TestCase):
             'test', 'test@example.com', "pass123")
 
     def test_upload_view_not_logged_in_blocked(self):
-        response = self.client.get(reverse("outout_uploader"))
+        response = self.client.get(reverse("optout_uploader"))
         self.assertEqual(response.template_name, "admin/login.html")
 
     def test_upload_view_logged_in(self):
         self.client.login(username="test", password="pass123")
 
-        response = self.client.get(reverse("outout_uploader"))
+        response = self.client.get(reverse("optout_uploader"))
         self.assertIn("Upload Optouts CSV", response.content)
 
     def test_upload_csv(self):

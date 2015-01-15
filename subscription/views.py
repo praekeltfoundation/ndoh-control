@@ -38,7 +38,7 @@ def uploader(request, page_name):
 
 
 @staff_member_required
-def outout_uploader(request, page_name):
+def optout_uploader(request, page_name):
     if request.method == "POST":
         form = OptOutCSVUploader(request.POST, request.FILES)
         if form.is_valid():
