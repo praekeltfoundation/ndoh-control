@@ -8,7 +8,8 @@ from django.contrib.auth.models import User
 from django.core.urlresolvers import reverse
 from django.test.utils import override_settings
 from subscription.models import MessageSet, Message, Subscription
-from subscription.tasks import ingest_csv, ensure_one_subscription, vumi_fire_metric
+from subscription.tasks import (ingest_csv, ensure_one_subscription,
+                                vumi_fire_metric, ingest_opt_opts_csv)
 from StringIO import StringIO
 from datetime import date
 import json
@@ -205,6 +206,47 @@ class TestUploadCSV(TestCase):
         self.assertEquals(imported_en.content, "hello")
         imported_en_dirty = Message.objects.filter(lang="en")
         self.assertEquals(len(imported_en_dirty), 1)
+
+
+class TestUploadOptOutCSV(TestCase):
+
+    fixtures = ["test_optout.json"]
+
+    CSV_HEADER = ("Address Type, Address, Message ID, Timestamp\r\n")
+    CSV_HEADER2 = ("============================================\r\n")
+    CSV_LINE_CLEAN_1 = (
+        "msisdn, +271234, 9943d8b8d9ba4fd086fceb43ecc6138d, 2014-09-22 12:21:44.901527\r\n")
+    CSV_LINE_CLEAN_2 = (
+        "msisdn, 271111, 9943d8b8d9ba4fd086fceb43ecc6138d, 2014-09-22 12:21:44.901527\r\n")
+
+    @override_settings(CELERY_EAGER_PROPAGATES_EXCEPTIONS = True,
+                       CELERY_ALWAYS_EAGER = True,
+                       BROKER_BACKEND = 'memory',)
+    def setUp(self):
+        self.admin = User.objects.create_superuser(
+            'test', 'test@example.com', "pass123")
+
+    def test_upload_view_not_logged_in_blocked(self):
+        response = self.client.get(reverse("optout_uploader"))
+        self.assertEqual(response.template_name, "admin/login.html")
+
+    def test_upload_view_logged_in(self):
+        self.client.login(username="test", password="pass123")
+
+        response = self.client.get(reverse("optout_uploader"))
+        self.assertIn("Upload Optouts CSV", response.content)
+
+    def test_upload_csv(self):
+        clean_sample = self.CSV_HEADER + self.CSV_HEADER2 + \
+            self.CSV_LINE_CLEAN_1 + self.CSV_LINE_CLEAN_2
+        uploaded = StringIO(clean_sample)
+        active_count = Subscription.objects.filter(active=True).count()
+        # one from initial_data - four from test file
+        self.assertEquals(active_count, 5)
+        results = ingest_opt_opts_csv.delay(uploaded)
+        self.assertEqual(results.get(), 4)
+        new_active_count = Subscription.objects.filter(active=True).count()
+        self.assertEquals(new_active_count, 1)
 
 
 class RecordingHandler(logging.Handler):
