@@ -53,10 +53,11 @@ def update_snappy_ticket_with_extras(snappy_api, nonce, contact_key, subject):
     contact = contacts_api.get_contact(contact_key)
     extra_info = ""
     for extra in settings.SNAPPY_EXTRAS:
-        extra_info += extra + ": " + contact["extra"][extra] + "\n"
+        if extra in contact["extra"]:
+            extra_info += extra + ": " + contact["extra"][extra] + "\n"
     if extra_info != "":
     # Send private note
-        snappy_ticket = snappy_api.create_note(
+        snappy_api.create_note(
             mailbox_id=settings.SNAPPY_MAILBOX_ID, 
             subject=subject, 
             message=extra_info, 
