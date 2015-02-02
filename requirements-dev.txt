@@ -6,3 +6,4 @@ pytest-xdist
 pytest-cov
 requests_testadapter
 pytest-django
+flake8
