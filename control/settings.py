@@ -192,7 +192,31 @@ CELERYBEAT_SCHEDULER = 'djcelery.schedulers.DatabaseScheduler'
 CELERY_ALWAYS_EAGER = DEBUG
 
 # Tell Celery where to find the tasks
-CELERY_IMPORTS = ('subsend.tasks','subscription.tasks',)
+CELERY_IMPORTS = (
+    'subsend.tasks',
+    'subscription.tasks',
+    'snappybouncer.tasks',
+)
+
+# Enabling priority routing for snappy bouncer tasks to allow those to
+# go through as normal regardless of the size of the default queue
+# http://docs.celeryproject.org
+#    /en/latest/userguide/routing.html#routing-automatic
+# This alleviates the problem of these being backlogged if a large outbound
+# send is happening.
+CELERY_CREATE_MISSING_QUEUES = True
+CELERY_ROUTES = {
+    'snappybouncer.tasks.send_helpdesk_response': {
+        'queue': 'snappybouncer',
+    },
+    'snappybouncer.tasks.create_snappy_ticket': {
+        'queue': 'snappybouncer',
+    },
+    'snappybouncer.tasks.update_snappy_ticket_with_extras': {
+        'queue': 'snappybouncer',
+    }
+}
+
 
 # Defer email sending to Celery, except if we're in debug mode,
 # then just print the emails to stdout for debugging.
