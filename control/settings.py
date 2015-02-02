@@ -207,13 +207,13 @@ CELERY_IMPORTS = (
 CELERY_CREATE_MISSING_QUEUES = True
 CELERY_ROUTES = {
     'snappybouncer.tasks.send_helpdesk_response': {
-        'queue': 'snappybouncer',
+        'queue': 'priority',
     },
     'snappybouncer.tasks.create_snappy_ticket': {
-        'queue': 'snappybouncer',
+        'queue': 'priority',
     },
     'snappybouncer.tasks.update_snappy_ticket_with_extras': {
-        'queue': 'snappybouncer',
+        'queue': 'priority',
     }
 }
 
