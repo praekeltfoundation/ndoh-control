@@ -5,6 +5,7 @@ from tastypie.authorization import Authorization
 from subscription.models import Subscription, MessageSet
 from djcelery.models import PeriodicTask
 
+
 class PeriodicTaskResource(ModelResource):
     class Meta:
         queryset = PeriodicTask.objects.all()
@@ -13,6 +14,7 @@ class PeriodicTaskResource(ModelResource):
         include_resource_uri = True
         always_return_data = True
         authentication = ApiKeyAuthentication()
+
 
 class MessageSetResource(ModelResource):
     class Meta:
@@ -23,9 +25,11 @@ class MessageSetResource(ModelResource):
         always_return_data = True
         authentication = ApiKeyAuthentication()
 
+
 class SubscriptionResource(ModelResource):
     schedule = fields.ToOneField(PeriodicTaskResource, 'schedule')
     message_set = fields.ToOneField(MessageSetResource, 'message_set')
+
     class Meta:
         queryset = Subscription.objects.all()
         resource_name = 'subscription'

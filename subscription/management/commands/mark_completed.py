@@ -82,7 +82,8 @@ class Command(BaseCommand):
                 # if there is a next set, make a new subscription
                 if message_set.next_set:
                     # clone existing minus PK as recommended in
-                    # https://docs.djangoproject.com/en/1.6/topics/db/queries/#copying-model-instances
+                    # https://docs.djangoproject.com/en/1.6/topics/db/queries/
+                    #     #copying-model-instances
                     subscriber.pk = None
                     new_subscription = subscriber
                     new_subscription.process_status = 0  # Ready
@@ -90,10 +91,12 @@ class Command(BaseCommand):
                     new_subscription.completed = False
                     new_subscription.message_set = message_set.next_set
                     if message_set.next_set.short_name == 'baby2':
-                        new_subscription.schedule = PeriodicTask.objects.get(pk=2)
+                        new_subscription.schedule = PeriodicTask.objects.get(
+                            pk=2)
                         # PeriodicTask(pk=2) is once a week
                     else:
-                        new_subscription.schedule = PeriodicTask.objects.get(pk=3)
+                        new_subscription.schedule = PeriodicTask.objects.get(
+                            pk=3)
                         # PeriodicTask(pk=3) is twice a week
 
                     if (message_set.short_name == 'accelerated' or

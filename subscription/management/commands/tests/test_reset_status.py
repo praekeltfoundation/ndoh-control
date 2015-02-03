@@ -111,7 +111,6 @@ class TestResetStatusCommand(TestCase):
         self.assertEqual(True, not_updated.active)
         self.assertEqual(False, not_updated.completed)
 
-
     @override_settings(VUMI_GO_API_TOKEN='token')
     def test_inactive_subscriptions_updated(self):
 
@@ -181,7 +180,6 @@ class TestResetStatusCommand(TestCase):
         self.assertEqual(0, not_updated.process_status)
         self.assertEqual(True, not_updated.active)
         self.assertEqual(False, not_updated.completed)
-
 
     @override_settings(VUMI_GO_API_TOKEN='token')
     def test_empty_lang_update(self):
