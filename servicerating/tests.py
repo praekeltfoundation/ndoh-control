@@ -169,7 +169,7 @@ class TestEnsureCleanServiceratings(TestCase):
         self.assertEqual(results.get(), 5)
 
     def test_fire_metric(self):
-        results = vumi_fire_metric.delay(
+        vumi_fire_metric.delay(
             metric="servicerating.duplicates", value=1,
             agg="last", sender=self.sender)
         self.check_logs("Metric: 'servicerating.duplicates' [last] -> 1")

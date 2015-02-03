@@ -301,7 +301,7 @@ class TestEnsureCleanSubscriptions(TestCase):
         self.assertEqual(results.get(), 2)
 
     def test_fire_metric(self):
-        results = vumi_fire_metric.delay(
+        vumi_fire_metric.delay(
             metric="subscription.duplicates", value=1,
             agg="last", sender=self.sender)
         self.check_logs("Metric: 'subscription.duplicates' [last] -> 1")
