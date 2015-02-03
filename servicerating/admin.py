@@ -1,12 +1,13 @@
 from django.contrib import admin
-from servicerating.models import Contact, Conversation, Response, UserAccount, Extra
+from servicerating.models import (
+    Contact, Conversation, Response, UserAccount, Extra)
 from control.actions import export_select_fields_csv_action
 
 
 class ContactAdmin(admin.ModelAdmin):
     actions = [export_select_fields_csv_action(
         "Export selected objects as CSV file",
-        fields = [
+        fields=[
             ("contact", "Contact"),
             ("key", "Key"),
             ("value", "Value"),
@@ -15,13 +16,13 @@ class ContactAdmin(admin.ModelAdmin):
             ("updated_at", "Updated At"),
         ],
         header=True
-        )]
+    )]
 
 
 class ConversationAdmin(admin.ModelAdmin):
     actions = [export_select_fields_csv_action(
         "Export selected objects as CSV file",
-        fields = [
+        fields=[
             ("user_account", "User Account"),
             ("key", "Key"),
             ("name", "Name"),
@@ -30,13 +31,13 @@ class ConversationAdmin(admin.ModelAdmin):
             ("updated_at", "Updated At"),
         ],
         header=True
-        )]
+    )]
 
 
 class UserAccountAdmin(admin.ModelAdmin):
     actions = [export_select_fields_csv_action(
         "Export selected objects as CSV file",
-        fields = [
+        fields=[
             ("key", "Key"),
             ("name", "Name"),
             ("notes", "Notes"),
@@ -44,13 +45,13 @@ class UserAccountAdmin(admin.ModelAdmin):
             ("updated_at", "Updated At"),
         ],
         header=True
-        )]
+    )]
 
 
 class ExtraAdmin(admin.ModelAdmin):
     actions = [export_select_fields_csv_action(
         "Export selected objects as CSV file",
-        fields = [
+        fields=[
             ("contact", "Contact"),
             ("key", "Key"),
             ("value", "Value"),
@@ -58,7 +59,7 @@ class ExtraAdmin(admin.ModelAdmin):
             ("updated_at", "Updated At"),
         ],
         header=True
-        )]
+    )]
 
 
 admin.site.register(Contact, ContactAdmin)

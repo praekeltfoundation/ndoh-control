@@ -2,12 +2,14 @@ from tastypie import fields
 from tastypie.resources import ModelResource, Resource, ALL, Bundle
 from tastypie.authentication import ApiKeyAuthentication
 from tastypie.authorization import Authorization
-from servicerating.models import Contact, Conversation, Response, UserAccount, Extra
+from servicerating.models import (
+    Contact, Conversation, Response, UserAccount, Extra)
 import logging
 # Get an instance of a logger
 logger = logging.getLogger(__name__)
 
-### ModelResource access using standard format
+# ModelResource access using standard format
+
 
 class UserAccountResource(ModelResource):
     class Meta:
@@ -23,9 +25,9 @@ class UserAccountResource(ModelResource):
         }
 
 
-
 class ConversationResource(ModelResource):
     user_account = fields.ToOneField(UserAccountResource, 'user_account')
+
     class Meta:
         queryset = Conversation.objects.all()
         resource_name = 'conversation'
@@ -42,6 +44,7 @@ class ConversationResource(ModelResource):
 
 class ContactResource(ModelResource):
     user_account = fields.ToOneField(UserAccountResource, 'user_account')
+
     class Meta:
         queryset = Contact.objects.all()
         resource_name = 'contact'
@@ -59,6 +62,7 @@ class ContactResource(ModelResource):
 
 class ResponseResource(ModelResource):
     contact = fields.ToOneField(ContactResource, 'contact')
+
     class Meta:
         queryset = Response.objects.all()
         resource_name = 'response'
@@ -75,6 +79,7 @@ class ResponseResource(ModelResource):
 
 class ExtraResource(ModelResource):
     contact = fields.ToOneField(ContactResource, 'contact')
+
     class Meta:
         queryset = Extra.objects.all()
         resource_name = 'extra'
@@ -88,7 +93,8 @@ class ExtraResource(ModelResource):
             'value': ALL
         }
 
-### Resource custom API for bulk load
+# Resource custom API for bulk load
+
 
 # We need a generic object to shove data in/get data from.
 class ServiceRatingObject(object):
@@ -135,18 +141,19 @@ class ServiceRatingResource(Resource):
 
         return kwargs
 
-
     def obj_create(self, bundle, **kwargs):
         bundle.obj = ServiceRatingObject(initial=kwargs)
         bundle = self.full_hydrate(bundle)
         # Get the pre-existing User Account, we don't accept everything
-        user_account = UserAccount.objects.get(key=bundle.obj.user_account)
+        user_account = UserAccount.objects.get(
+            key=bundle.obj.user_account)
         # Get the pre-existing Conversation, we don't accept everything
-        conversation = Conversation.objects.get(key=bundle.obj.conversation_key)
+        conversation = Conversation.objects.get(
+            key=bundle.obj.conversation_key)
         contact = Contact(conversation=conversation,
-                          key = bundle.obj.contact["key"],
-                          value = bundle.obj.contact,
-                          msisdn = bundle.obj.contact["msisdn"])
+                          key=bundle.obj.contact["key"],
+                          value=bundle.obj.contact,
+                          msisdn=bundle.obj.contact["msisdn"])
         contact.save()
         for key, value in bundle.obj.contact["extra"].items():
             extra = Extra(contact=contact, key=key, value=value)
@@ -155,5 +162,3 @@ class ServiceRatingResource(Resource):
             response = Response(contact=contact, key=key, value=value)
             response.save()
         return bundle
-
-        
