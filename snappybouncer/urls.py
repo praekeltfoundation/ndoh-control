@@ -14,6 +14,7 @@ api_resources.register(api.WebhookResource())
 api_resources.prepend_urls()
 
 # Setting the urlpatterns to hook into the api urls
-urlpatterns = patterns('',
+urlpatterns = patterns(
+    '',
     url(r'^api/', include(api_resources.urls))
 )

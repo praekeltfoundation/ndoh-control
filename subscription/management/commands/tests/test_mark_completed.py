@@ -70,9 +70,11 @@ class TestMarkCompletedCommand(TestCase):
 
         msg_set_baby2 = self.mk_message_set(next_set=None, short_name='baby2')
         self.assertEqual(msg_set_baby2.pk, SUBSCRIPTION_BABY2)
-        msg_set_baby1 = self.mk_message_set(next_set=msg_set_baby2, short_name='baby1')
+        msg_set_baby1 = self.mk_message_set(next_set=msg_set_baby2,
+                                            short_name='baby1')
         self.assertEqual(msg_set_baby1.pk, SUBSCRIPTION_BABY1)
-        msg_set_accel = self.mk_message_set(next_set=msg_set_baby1, short_name='accelerated')
+        msg_set_accel = self.mk_message_set(next_set=msg_set_baby1,
+                                            short_name='accelerated')
         self.assertEqual(msg_set_accel.pk, SUBSCRIPTION_ACCELERATED)
 
         sub = self.mk_subscription(
@@ -94,7 +96,8 @@ class TestMarkCompletedCommand(TestCase):
                    "dry_run": None}
         command.handle(None, **options)
 
-        updated = Subscription.objects.get(contact_key='82309423100',
+        updated = Subscription.objects.get(
+            contact_key='82309423100',
             message_set_id=SUBSCRIPTION_ACCELERATED)
         self.assertEqual(2, updated.process_status)
         self.assertEqual(False, updated.active)
@@ -105,7 +108,8 @@ class TestMarkCompletedCommand(TestCase):
             'Records updated'
         ]), command.stdout.getvalue().strip())
 
-        new_sub = Subscription.objects.get(contact_key='82309423100',
+        new_sub = Subscription.objects.get(
+            contact_key='82309423100',
             message_set_id=SUBSCRIPTION_BABY1)
         self.assertEqual(0, new_sub.process_status)
         self.assertEqual(True, new_sub.active)
@@ -118,15 +122,16 @@ class TestMarkCompletedCommand(TestCase):
         self.assertEqual(False, not_updated.completed)
         self.assertEqual(10, sub.next_sequence_number)
 
-
     @override_settings(VUMI_GO_API_TOKEN='token')
     def test_dry_run(self):
 
         msg_set_baby2 = self.mk_message_set(next_set=None, short_name='baby2')
         self.assertEqual(msg_set_baby2.pk, SUBSCRIPTION_BABY2)
-        msg_set_baby1 = self.mk_message_set(next_set=msg_set_baby2, short_name='baby1')
+        msg_set_baby1 = self.mk_message_set(
+            next_set=msg_set_baby2, short_name='baby1')
         self.assertEqual(msg_set_baby1.pk, SUBSCRIPTION_BABY1)
-        msg_set_accel = self.mk_message_set(next_set=msg_set_baby1, short_name='accelerated')
+        msg_set_accel = self.mk_message_set(
+            next_set=msg_set_baby1, short_name='accelerated')
         self.assertEqual(msg_set_accel.pk, SUBSCRIPTION_ACCELERATED)
 
         sub = self.mk_subscription(
@@ -151,7 +156,8 @@ class TestMarkCompletedCommand(TestCase):
         self.assertEqual('Affected records: 1',
                          command.stdout.getvalue().strip())
 
-        not_updated = Subscription.objects.get(contact_key='82309423100',
+        not_updated = Subscription.objects.get(
+            contact_key='82309423100',
             message_set_id=SUBSCRIPTION_ACCELERATED)
         self.assertEqual(-1, not_updated.process_status)
         self.assertEqual(True, not_updated.active)

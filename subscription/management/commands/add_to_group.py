@@ -66,26 +66,31 @@ class Command(BaseCommand):
                     contact["groups"].append(options["set_group"])
                     updatedcontact = contacts.update_contact(
                         subscriber.contact_key, contact)
-                    self.stdout.write("Groups now: %s\n" % (str(updatedcontact["groups"])))
+                    self.stdout.write(
+                        "Groups now: %s\n" % (str(updatedcontact["groups"])))
                     # Tracker updates
                     counter += 1.0
                     delta = self.get_now() - started
                     # Make sure we're not dividing by zero
                     if delta.seconds > 0:
                         per_second = (
-                            counter / float((self.get_now() - started).seconds))
+                            counter / float(
+                                (self.get_now() - started).seconds))
                     else:
                         per_second = 'unknown'
                     self.stdout.write(
-                        "Updated %s subscribers at %s per second\n" % (counter, per_second))
+                        "Updated %s subscribers at %s per second\n" % (
+                            counter, per_second))
 
                 except ValueError as err:
                     self.stdout.write(
-                        "Contact %s threw %s\n" % (subscriber.contact_key, err))
+                        "Contact %s threw %s\n" % (
+                            subscriber.contact_key, err))
 
                 except KeyError as err:
                     self.stdout.write(
-                        "Contact %s threw KeyError on %s\n" % (subscriber.contact_key, err))
+                        "Contact %s threw KeyError on %s\n" % (
+                            subscriber.contact_key, err))
 
                 except HTTPError as err:
                     self.stdout.write(

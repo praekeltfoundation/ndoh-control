@@ -1,9 +1,10 @@
 """
-Tests for Service Rating Application 
+Tests for Service Rating Application
 """
 from tastypie.test import ResourceTestCase
 from django.contrib.auth.models import User
-from servicerating.models import Contact, Conversation, Response, UserAccount, Extra
+from servicerating.models import (
+    Contact, Conversation, Response, UserAccount, Extra)
 from django.test import TestCase
 from django.test.utils import override_settings
 from servicerating.tasks import ensure_one_servicerating, vumi_fire_metric
@@ -14,13 +15,15 @@ import json
 
 class ServiceRatingResourceTest(ResourceTestCase):
     fixtures = ["test_servicerating.json"]
+
     def setUp(self):
         super(ServiceRatingResourceTest, self).setUp()
 
         # Create a user.
         self.username = 'testuser'
         self.password = 'testpass'
-        self.user = User.objects.create_user(self.username,
+        self.user = User.objects.create_user(
+            self.username,
             'testuser@example.com', self.password)
         self.api_key = self.user.api_key.key
 
@@ -40,13 +43,18 @@ class ServiceRatingResourceTest(ResourceTestCase):
         self.assertEqual(responses.count(), 2)
 
     def test_get_list_unauthorzied(self):
-        self.assertHttpUnauthorized(self.api_client.get('/api/v1/servicerating/useraccount/', format='json'))
+        self.assertHttpUnauthorized(
+            self.api_client.get(
+                '/api/v1/servicerating/useraccount/',
+                format='json'))
 
     def test_api_keys_created(self):
         self.assertEqual(True, self.api_key is not None)
 
     def test_get_useraccount_list_json(self):
-        resp = self.api_client.get('/api/v1/servicerating/useraccount/', format='json', authentication=self.get_credentials())
+        resp = self.api_client.get(
+            '/api/v1/servicerating/useraccount/', format='json',
+            authentication=self.get_credentials())
         self.assertValidJSONResponse(resp)
 
         # Scope out the data for correctness.
@@ -57,8 +65,10 @@ class ServiceRatingResourceTest(ResourceTestCase):
             "key": "useraccountkey"
         }
 
-        resp = self.api_client.get('/api/v1/servicerating/useraccount/', data=filter_data,
-                                   format='json', authentication=self.get_credentials())
+        resp = self.api_client.get(
+            '/api/v1/servicerating/useraccount/',
+            data=filter_data, format='json',
+            authentication=self.get_credentials())
         self.assertValidJSONResponse(resp)
 
         # Scope out the data for correctness.
@@ -69,18 +79,20 @@ class ServiceRatingResourceTest(ResourceTestCase):
             "name": "useraccountkey"
         }
 
-        resp = self.api_client.get('/api/v1/servicerating/useraccount/', data=filter_data, 
-                                   format='json', authentication=self.get_credentials())
+        resp = self.api_client.get(
+            '/api/v1/servicerating/useraccount/', data=filter_data,
+            format='json', authentication=self.get_credentials())
         json_item = json.loads(resp.content)
         self.assertHttpBadRequest(resp)
-        self.assertEqual("The 'name' field does not allow filtering.", json_item["error"])
+        self.assertEqual(
+            "The 'name' field does not allow filtering.", json_item["error"])
 
     def test_post_good_json(self):
         data = {
             "user_account": "useraccountkey",
             "conversation_key": "dummyconversation",
-            "contact": { 
-                "extra": { 
+            "contact": {
+                "extra": {
                     "clinic_code": "123458",
                     "suspect_pregnancy": "yes",
                     "id_type": "none",
@@ -88,7 +100,7 @@ class ServiceRatingResourceTest(ResourceTestCase):
                     "last_stage": "states_language",
                     "language_choice": "en",
                     "is_registered": "true",
-                    "metric_sessions_to_register": "5" 
+                    "metric_sessions_to_register": "5"
                 },
                 "groups": [],
                 "subscription": {},
@@ -103,7 +115,7 @@ class ServiceRatingResourceTest(ResourceTestCase):
                 "twitter_handle": None,
                 "facebook_id": None,
                 "bbm_pin": None,
-                "gtalk_id": None 
+                "gtalk_id": None
             },
             "answers": {
                 "key1": "value1",
@@ -112,10 +124,10 @@ class ServiceRatingResourceTest(ResourceTestCase):
             }
         }
 
-        self.assertHttpCreated(self.api_client.post('/api/v1/servicerating/rate/', format='json',
-                                        authentication=self.get_credentials(),
-                                        data=data))
-
+        self.assertHttpCreated(
+            self.api_client.post('/api/v1/servicerating/rate/', format='json',
+                                 authentication=self.get_credentials(),
+                                 data=data))
 
 
 class RecordingHandler(logging.Handler):
@@ -133,10 +145,9 @@ class TestEnsureCleanServiceratings(TestCase):
 
     fixtures = ["test.json"]
 
-    @override_settings(CELERY_EAGER_PROPAGATES_EXCEPTIONS = True,
-                       CELERY_ALWAYS_EAGER = True,
-                       BROKER_BACKEND = 'memory',)
-
+    @override_settings(CELERY_EAGER_PROPAGATES_EXCEPTIONS=True,
+                       CELERY_ALWAYS_EAGER=True,
+                       BROKER_BACKEND='memory',)
     def setUp(self):
         self.sender = LoggingSender('go_http.test')
         self.handler = RecordingHandler()
@@ -158,6 +169,7 @@ class TestEnsureCleanServiceratings(TestCase):
         self.assertEqual(results.get(), 5)
 
     def test_fire_metric(self):
-        results = vumi_fire_metric.delay(metric="servicerating.duplicates", value=1,
-                                         agg="last", sender=self.sender)
+        vumi_fire_metric.delay(
+            metric="servicerating.duplicates", value=1,
+            agg="last", sender=self.sender)
         self.check_logs("Metric: 'servicerating.duplicates' [last] -> 1")

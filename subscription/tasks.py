@@ -12,7 +12,8 @@ logger = logging.getLogger(__name__)
 @task()
 def ingest_csv(csv_data, message_set):
     """ Expecting data in the following format:
-    message_id,en,safe,af,safe,zu,safe,xh,safe,ve,safe,tn,safe,ts,safe,ss,safe,st,safe,nso,safe,nr,safe
+    message_id,en,safe,af,safe,zu,safe,xh,safe,ve,safe,tn,safe,ts,safe,
+        ss,safe,st,safe,nso,safe,nr,safe
     """
     records = csv.DictReader(csv_data)
     for line in records:
@@ -35,14 +36,16 @@ def ingest_csv(csv_data, message_set):
 
 @task()
 def ensure_one_subscription():
-    """ 
+    """
     Fixes issues caused by upstream failures
     that lead to users having multiple active subscriptions
     Runs daily
     """
     cursor = connection.cursor()
-    cursor.execute("UPDATE subscription_subscription SET active = False WHERE id NOT IN \
-              (SELECT MAX(id) as id FROM subscription_subscription GROUP BY to_addr)")
+    cursor.execute(
+        "UPDATE subscription_subscription SET active = False WHERE id NOT IN \
+        (SELECT MAX(id) as id FROM subscription_subscription GROUP BY to_addr)"
+    )
     affected = cursor.rowcount
     vumi_fire_metric.delay(
         metric="subscription.duplicates", value=affected, agg="last")
@@ -80,7 +83,8 @@ def ingest_opt_opts_csv(csv_data):
     # CSV file format
     # Address Type, Address, Message ID, Timestamp
     #============================================
-    # msisdn, +2712345678, 9943d8b8d9ba4fd086fceb43ecc6138d, 2014-09-22 12:21:44.901527
+    # msisdn, +2712345678, 9943d8b8d9ba4fd086fceb43ecc6138d,
+    #     2014-09-22 12:21:44.901527
     """
     records = csv.DictReader(csv_data)
     msisdns = []

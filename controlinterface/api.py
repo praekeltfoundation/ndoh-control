@@ -4,7 +4,8 @@ from tastypie.authentication import ApiKeyAuthentication
 from tastypie.authorization import Authorization
 from go_http.metrics import MetricsApiClient
 from django.conf import settings
-### Resource custom API for bulk load
+# Resource custom API for bulk load
+
 
 # We need a generic object to shove data in/get data from.
 class MetricObject(object):
@@ -57,9 +58,9 @@ class MetricResource(Resource):
         results = []
         for metric in filters['m']:
             response = client.get_metric(metric,
-                                    filters['start'],
-                                    filters['interval'],
-                                    filters['nulls'])
+                                         filters['start'],
+                                         filters['interval'],
+                                         filters['nulls'])
             new_obj = MetricObject()
             new_obj.key = metric
             new_obj.values = response[metric]
@@ -69,4 +70,3 @@ class MetricResource(Resource):
 
     def obj_get_list(self, bundle, **kwargs):
         return self.get_object_list(bundle.request)
-

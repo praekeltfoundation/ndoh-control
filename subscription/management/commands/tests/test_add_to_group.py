@@ -1,4 +1,4 @@
-from datetime import date, datetime
+from datetime import datetime
 
 from django.test import TestCase
 from django.test.utils import override_settings
@@ -85,15 +85,16 @@ class TestAddToGroupCommand(TestCase):
             lang=lang,
             schedule=schedule)
 
-
     @override_settings(VUMI_GO_API_TOKEN='token')
     def test_contact_updated(self):
 
         msg_set_baby2 = self.mk_message_set(next_set=None, short_name='baby2')
         self.assertEqual(msg_set_baby2.pk, SUBSCRIPTION_BABY2)
-        msg_set_baby1 = self.mk_message_set(next_set=msg_set_baby2, short_name='baby1')
+        msg_set_baby1 = self.mk_message_set(next_set=msg_set_baby2,
+                                            short_name='baby1')
         self.assertEqual(msg_set_baby1.pk, SUBSCRIPTION_BABY1)
-        msg_set_accel = self.mk_message_set(next_set=msg_set_baby1, short_name='accelerated')
+        msg_set_accel = self.mk_message_set(next_set=msg_set_baby1,
+                                            short_name='accelerated')
         self.assertEqual(msg_set_accel.pk, SUBSCRIPTION_ACCELERATED)
 
         # not broken user
@@ -133,5 +134,3 @@ class TestAddToGroupCommand(TestCase):
             'Updated 1.0 subscribers at unknown per second',
             'Contacts updated'
         ]), command.stdout.getvalue().strip())
-
-

@@ -93,7 +93,8 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         subscribers = Subscription.objects.filter(
             Q(active=True), Q(completed=False),
-            Q(message_set__short_name='standard') | Q(message_set__short_name='later'))
+            Q(message_set__short_name='standard') | Q(
+                message_set__short_name='later'))
 
         # Make a reuseable contact api connection
         contacts = self.client_class(settings.VUMI_GO_API_TOKEN)
@@ -131,8 +132,9 @@ class Command(BaseCommand):
                     self.stdout.write("Week of preg %s" % weeks)
                 sub_type = int(contact["extra"]["subscription_type"])
                 if sub_type is not int(subscriber.message_set_id):
-                    self.stdout.write("Sub type %s does not match contact sub type %s\n" % (
-                        sub_type, int(subscriber.message_set_id)))
+                    self.stdout.write(
+                        "Sub type %s does not match contact sub type %s\n" % (
+                            sub_type, int(subscriber.message_set_id)))
                 else:
                     self.stdout.write("Sub type is %s\n" % sub_type)
                     new_seq_num = self.calc_sequence_start(weeks, sub_type)
@@ -145,11 +147,13 @@ class Command(BaseCommand):
                     # Make sure we're not dividing by zero
                     if delta.seconds > 0:
                         per_second = (
-                            counter / float((self.get_now() - started).seconds))
+                            counter / float(
+                                (self.get_now() - started).seconds))
                     else:
                         per_second = 'unknown'
                     self.stdout.write(
-                        "Updated %s subscribers at %s per second\n" % (counter, per_second))
+                        "Updated %s subscribers at %s per second\n" % (
+                            counter, per_second))
 
             except ValueError as err:
                 self.stdout.write(
@@ -157,7 +161,8 @@ class Command(BaseCommand):
 
             except KeyError as err:
                 self.stdout.write(
-                    "Contact %s threw KeyError on %s\n" % (subscriber.contact_key, err))
+                    "Contact %s threw KeyError on %s\n" % (
+                        subscriber.contact_key, err))
 
             except HTTPError as err:
                 self.stdout.write(

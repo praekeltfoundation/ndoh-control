@@ -6,7 +6,8 @@ from control import views
 from django.contrib import admin
 admin.autodiscover()
 
-urlpatterns = patterns('',
+urlpatterns = patterns(
+    '',
     url(r'^$', views.index, name='index'),
     # Examples:
     # url(r'^$', 'skeleton.views.home', name='home'),
@@ -18,7 +19,7 @@ urlpatterns = patterns('',
     # Uncomment the next line to enable the admin:
     url(r'^admin/', include(admin.site.urls)),
     url(r'^admin/subscription/upload/', 'subscription.views.uploader',
-    {'page_name': 'csv_uploader'}, name="csv_uploader"),
+        {'page_name': 'csv_uploader'}, name="csv_uploader"),
     url(r'^admin/subscription/optouts/', 'subscription.views.optout_uploader',
         {'page_name': 'optout_uploader'}, name="optout_uploader"),
     url(r'^', include('subscription.urls')),

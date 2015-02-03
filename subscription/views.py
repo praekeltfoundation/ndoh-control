@@ -63,4 +63,3 @@ def optout_uploader(request, page_name):
         context.update(csrf(request))
         return render_to_response("custom_admin/upload_optout.html", context,
                                   context_instance=RequestContext(request))
-

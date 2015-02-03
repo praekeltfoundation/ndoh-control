@@ -9,15 +9,14 @@ from models import Dashboard, UserDashboard
 from servicerating.models import Response
 
 
-
-
 @login_required(login_url='/controlinterface/login/')
 def index(request):
     if (request.user.has_perm('controlinterface.view_dashboard_private') or
             request.user.has_perm('controlinterface.view_dashboard_summary')):
 
         user_dashboards = UserDashboard.objects.get(user=request.user)
-        dashboard = Dashboard.objects.get(id=user_dashboards.default_dashboard.id)
+        dashboard = Dashboard.objects.get(
+            id=user_dashboards.default_dashboard.id)
         dashboard_widgets = dashboard.widgets.all()
 
         widgets = {}
@@ -39,46 +38,38 @@ def index(request):
                       'controlinterface/index_nodash.html')
 
 
-
-
-
 def empty_response_map():
     response_map = {
-        'question_1_friendliness':
-            {
-                'very-satisfied': 0,
-                'satisfied': 0,
-                'not-satisfied': 0,
-                'very-unsatisfied': 0
-            },
-        'question_2_waiting_times_feel':
-            {
-                'very-satisfied': 0,
-                'satisfied': 0,
-                'not-satisfied': 0,
-                'very-unsatisfied': 0
-            },
-        'question_3_waiting_times_length':
-            {
-                'less-than-an-hour': 0,
-                'between-1-and-3-hours': 0,
-                'more-than-4-hours': 0,
-                'all-day': 0
-            },
-        'question_4_cleanliness':
-            {
-                'very-satisfied': 0,
-                'satisfied': 0,
-                'not-satisfied': 0,
-                'very-unsatisfied': 0
-            },
-        'question_5_privacy':
-            {
-                'very-satisfied': 0,
-                'satisfied': 0,
-                'not-satisfied': 0,
-                'very-unsatisfied': 0
-            }
+        'question_1_friendliness': {
+            'very-satisfied': 0,
+            'satisfied': 0,
+            'not-satisfied': 0,
+            'very-unsatisfied': 0
+        },
+        'question_2_waiting_times_feel': {
+            'very-satisfied': 0,
+            'satisfied': 0,
+            'not-satisfied': 0,
+            'very-unsatisfied': 0
+        },
+        'question_3_waiting_times_length': {
+            'less-than-an-hour': 0,
+            'between-1-and-3-hours': 0,
+            'more-than-4-hours': 0,
+            'all-day': 0
+        },
+        'question_4_cleanliness': {
+            'very-satisfied': 0,
+            'satisfied': 0,
+            'not-satisfied': 0,
+            'very-unsatisfied': 0
+        },
+        'question_5_privacy': {
+            'very-satisfied': 0,
+            'satisfied': 0,
+            'not-satisfied': 0,
+            'very-unsatisfied': 0
+        }
     }
     return response_map
 
@@ -109,12 +100,20 @@ def servicerating(request):
             'question_5_privacy'
         ]
 
+        question_3_map = response_map['question_3_waiting_times_length']
         waiting_times = {
             'less_than_an_hour': round(
-                (response_map['question_3_waiting_times_length']['less-than-an-hour'] / num_ratings * 100), 1),
-            'between_1_and_3_hours': round((response_map['question_3_waiting_times_length']['between-1-and-3-hours'] / num_ratings * 100), 1),
-            'more_than_4_hours': round((response_map['question_3_waiting_times_length']['more-than-4-hours'] / num_ratings * 100), 1),
-            'all_day': round((response_map['question_3_waiting_times_length']['all-day'] / num_ratings * 100), 1)
+                (question_3_map['less-than-an-hour'] / num_ratings * 100),
+                1),
+            'between_1_and_3_hours': round(
+                (question_3_map['between-1-and-3-hours'] / num_ratings * 100),
+                1),
+            'more_than_4_hours': round(
+                (question_3_map['more-than-4-hours'] / num_ratings * 100),
+                1),
+            'all_day': round(
+                (question_3_map['all-day'] / num_ratings * 100),
+                1)
         }
 
         for question in averages_questions:
@@ -132,22 +131,30 @@ def servicerating(request):
 
         return render(request, 'controlinterface/serviceratings.html', context)
 
+
 @login_required(login_url='/controlinterface/login/')
 def servicerating_report(request):
     if (request.user.has_perm('controlinterface.view_dashboard_private') or
             request.user.has_perm('controlinterface.view_dashboard_summary')):
 
-        qs = Response.objects.raw("SELECT servicerating_response.*, servicerating_extra.value AS clinic_code from servicerating_response INNER JOIN servicerating_extra ON servicerating_response.contact_id = servicerating_extra.contact_id WHERE servicerating_extra.key = 'clinic_code'")
+        qs = Response.objects.raw("""
+            SELECT servicerating_response.*, servicerating_extra.value
+            AS clinic_code from servicerating_response
+            INNER JOIN servicerating_extra ON
+            servicerating_response.contact_id = servicerating_extra.contact_id
+            WHERE servicerating_extra.key = 'clinic_code'""")
 
         # Create the HttpResponse object with the appropriate CSV header.
         response = HttpResponse(content_type='text/csv')
-        response['Content-Disposition'] = 'attachment; filename="servicerating_incl_clinic_code.csv"'
+        response['Content-Disposition'] = (
+            'attachment; filename="servicerating_incl_clinic_code.csv"')
 
         writer = csv.writer(response)
 
-        writer.writerow(["Rating ID", "Contact ID", "Key", "Value", "Created At", "Updated At", "Clinic Code"])
+        writer.writerow(["Rating ID", "Contact ID", "Key", "Value",
+                         "Created At", "Updated At", "Clinic Code"])
         for obj in qs:
-            writer.writerow([obj.id, obj.contact_id, obj.key, obj.value, obj.created_at,
-                            obj.updated_at, obj.clinic_code])
+            writer.writerow([obj.id, obj.contact_id, obj.key, obj.value,
+                             obj.created_at, obj.updated_at, obj.clinic_code])
 
         return response
