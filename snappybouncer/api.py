@@ -187,5 +187,6 @@ class WebhookResource(Resource):
                     send_helpdesk_response.delay(ticket)
                 except ObjectDoesNotExist:
                     logger.error(
-                        'Webhook received for unrecognised support ticket', exc_info=True)
+                        'Webhook received for unrecognised support ticket',
+                        exc_info=True)
         return bundle
