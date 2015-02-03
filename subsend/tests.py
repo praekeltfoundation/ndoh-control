@@ -16,9 +16,9 @@ from djcelery.models import PeriodicTask
 class TestMessageQueueProcessor(TestCase):
     fixtures = ["test_subsend.json"]
 
-    @override_settings(CELERY_EAGER_PROPAGATES_EXCEPTIONS = True,
-                       CELERY_ALWAYS_EAGER = True,
-                       BROKER_BACKEND = 'memory',)
+    @override_settings(CELERY_EAGER_PROPAGATES_EXCEPTIONS=True,
+                       CELERY_ALWAYS_EAGER=True,
+                       BROKER_BACKEND='memory',)
     def setUp(self):
         self.sender = LoggingSender('go_http.test')
         self.handler = RecordingHandler()
@@ -83,7 +83,7 @@ class TestMessageQueueProcessor(TestCase):
         self.assertTrue(result.successful())
         # Check another added and old still there
         all_subscription = Subscription.objects.all()
-        self.assertEquals(len(all_subscription),7)
+        self.assertEquals(len(all_subscription), 7)
         # Check new subscription is for baby1
         new_subscription = Subscription.objects.get(pk=101)
         self.assertEquals(new_subscription.message_set.pk, 4)
@@ -99,7 +99,7 @@ class TestMessageQueueProcessor(TestCase):
         self.assertTrue(result.successful())
         # Check another added and old still there
         all_subscription = Subscription.objects.all()
-        self.assertEquals(len(all_subscription),7)
+        self.assertEquals(len(all_subscription), 7)
         # Check new subscription is for baby2
         new_subscription = Subscription.objects.get(pk=101)
         self.assertEquals(new_subscription.message_set.pk, 5)
@@ -112,13 +112,11 @@ class TestMessageQueueProcessor(TestCase):
         self.assertTrue(result.successful())
         # Check no new subscription added
         all_subscription = Subscription.objects.all()
-        self.assertEquals(len(all_subscription),6)
+        self.assertEquals(len(all_subscription), 6)
         # Check old one now inactive and complete
         subscriber_updated = Subscription.objects.get(pk=4)
         self.assertEquals(subscriber_updated.completed, True)
         self.assertEquals(subscriber_updated.active, False)
-
-
 
 
 class RecordingAdapter(TestAdapter):
