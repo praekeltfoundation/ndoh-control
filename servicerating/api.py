@@ -144,9 +144,12 @@ class ServiceRatingResource(Resource):
     def obj_create(self, bundle, **kwargs):
         bundle.obj = ServiceRatingObject(initial=kwargs)
         bundle = self.full_hydrate(bundle)
+
+        # FIXME: see https://github.com/praekelt/ndoh-control/issues/59
         # Get the pre-existing User Account, we don't accept everything
-        user_account = UserAccount.objects.get(
-            key=bundle.obj.user_account)
+        # user_account = UserAccount.objects.get(
+        #     key=bundle.obj.user_account)
+
         # Get the pre-existing Conversation, we don't accept everything
         conversation = Conversation.objects.get(
             key=bundle.obj.conversation_key)
