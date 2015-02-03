@@ -1,6 +1,6 @@
 from django.db import models
 from django.utils import timezone
-from django.contrib.auth.models import User
+
 
 # Modelled on https://github.com/jamesmarlowe/django-AutoDateTimeFields
 # But with timezone support
@@ -67,7 +67,8 @@ class Widget(models.Model):
     type_of = models.CharField(max_length=10, choices=WIDGET_TYPES)
     data_from = models.CharField(max_length=20)
     interval = models.CharField(max_length=20)
-    nulls = models.CharField(max_length=20, choices=SHOW_NULLS, null=True, blank=True)
+    nulls = models.CharField(max_length=20, choices=SHOW_NULLS,
+                             null=True, blank=True)
     data = models.ManyToManyField(WidgetData, null=True, blank=True,)
     created_at = AutoNewDateTimeField(blank=True)
     updated_at = AutoDateTimeField(blank=True)
@@ -112,7 +113,8 @@ class UserDashboard(models.Model):
 
     """ Dashboards a user is interested in
     """
-    #: the :class:`django.contrib.auth.models.User` this dashboard is a profile for
+    # the :class:`django.contrib.auth.models.User` this
+    # dashboard is a profile for
     user = models.OneToOneField('auth.User')
     dashboards = models.ManyToManyField(Dashboard, related_name='dashboards')
     default_dashboard = models.ForeignKey(Dashboard, related_name='default')
@@ -124,8 +126,8 @@ class UserDashboard(models.Model):
         verbose_name_plural = 'users dashboards'
 
     def __unicode__(self):
-        return "%s %s (%s)" % (self.user.first_name, self.user.last_name, self.user.email)
-
+        return "%s %s (%s)" % (
+            self.user.first_name, self.user.last_name, self.user.email)
 
 
 from south.modelsinspector import add_introspection_rules
