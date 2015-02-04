@@ -22,41 +22,27 @@
     </div>
   </div>
   <div class="row">
+  {% for widget, values in widgets.iteritems %}
+  
     <div class="col-md-4">
-      <div id="w1"></div>
+      <div id="w{{widget}}"></div>
     </div>
-
-    <div class="col-md-4">
-      <div id="w2"></div>
-    </div>
-
-    <div class="col-md-4">
-      <div id="w3"></div>
-    </div>
-  </div>
-  <div class="row">
-    <div class="col-md-12">
-      <div id="w4"></div>
-    </div>
-  </div>
+ 
+  {% endfor %}
+   </div>
 </div>
 
-<!--     <div class="sapphire">
-      <div id="a"></div>
-      <div id="b"></div>
-      <div id="c"></div>
-      <div id="all"></div>
-    </div> -->
 
     <script src="{% static "controlinterface/js/d3.v3.min.js" %}"></script>
     <script src="{% static "controlinterface/js/strain.js" %}"></script>
     <script src="{% static "controlinterface/js/sapphire.js" %}"></script>
+
     <script src="{% static "controlinterface/js/superagent.js" %}"></script>
     <script type="text/javascript">
     var data = {
       url: '/api/v1/controlinterface/metric/',
       token: 'dashboards:{{ dashboard_api_key }}',
-      step: 10000,
+      step: 100000,
       widgets: {
         {% for widget, values in widgets.iteritems %}
         w{{ widget }}: {
@@ -74,7 +60,7 @@
             {% endfor %}
           ],
           {% endif %}
-          from: '{{ values.config.data_from }}',
+          start: '{{ values.config.data_from }}',
           interval: '{{ values.config.interval }}',
           nulls: '{{ values.config.nulls }}',
           type: '{{ values.config.type_of}}'
@@ -87,6 +73,8 @@
   // Create the widget components. Widget configuration would be done here.
   var last = sapphire.widgets.last();
   var lines = sapphire.widgets.lines();
+  var pie = sapphire.widgets.pie();
+  var bars = sapphire.widgets.bars();
 
 
   // Update the dashboard on page load, then every `data.step` milliseconds.
@@ -138,7 +126,7 @@
       .set('Authorization', ['ApiKey', data.token].join(' '))
       .type('json')
       .query({
-        from: widget.from,
+        start: widget.start,
         interval: widget.interval,
         nulls: widget.nulls
       });
@@ -168,7 +156,11 @@
   function updateMetrics(widget, data) {
     metrics(widget)
       .forEach(function(d) {
-        d.values = data[d.key];
+        if (widget['type'] == 'pie'){
+          d.value = data[d.key][data[d.key].length-1].y;
+        } else {
+          d.values = data[d.key];
+        }
       });
   }
 
@@ -186,6 +178,7 @@
       ? widget.metrics
       : [widget];
   }
+
 
     </script>
     <!--  <script src="{% static "controlinterface/js/index.js" %}"></script>-->
