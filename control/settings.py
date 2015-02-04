@@ -256,6 +256,8 @@ SNAPPY_EMAIL = "replaceme@example.org"
 
 BROKER_URL = 'redis://localhost:6379/0'
 
+DASHBOARD_API_KEY = "replaceme"
+
 try:
     from local_settings import *
 except ImportError:
