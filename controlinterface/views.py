@@ -5,6 +5,8 @@ from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse
 
+import control.settings as settings
+
 from models import Dashboard, UserDashboard
 from servicerating.models import Response
 
@@ -27,7 +29,8 @@ def index(request):
             }
 
         context = {
-            "widgets": widgets
+            "widgets": widgets,
+            "dashboard_api_key": settings.DASHBOARD_API_KEY
         }
 
         return render(request,
