@@ -1,0 +1,48 @@
+{% extends "controlinterface/base.html" %}
+{% load staticfiles %}
+{% load bootstrap %}
+
+
+{% block content %}
+  <div class="row">
+    <div class="col-sm-3 col-md-4">
+      <h1 class="page-header">Messages</h1>
+    </div>
+  </div>
+  <div class="row">
+    {% if messages %}
+
+    {% for message in messages %}
+      <div{% if message.tags %} class="alert alert-{{ message.tags }}"{% endif %} role="alert">{{ message }}</div>
+    {% endfor %}
+    {% endif %}
+
+    <form id="message-edit-form" method="post" method="POST" action="." class="form-horizontal" style="width: 500px">
+        {% csrf_token %}
+        {% if form %}
+          <h3>Find a message to edit</h3>
+          {{ form|bootstrap }} 
+          <input type="submit" class="default" value="Find" />
+        {% else %}
+          <h3>Edit message</h3>
+          {{ updateform|bootstrap }} 
+          <b>Length:</b> <span id="counter" class="valid">{{ contentlength }}</span><br>
+          <input type="submit" class="default" value="Update" />
+        {% endif %}
+    </form>
+  </div>
+
+<script type="text/javascript">
+var $textarea = $('#id_content');
+var $counter = $('#counter');
+
+$textarea.on('change keyup', function () {
+    var value = $textarea.val();
+    var count = value.length;
+    $counter.text(count);
+}).change();
+
+</script>
+
+{% endblock %}
+
