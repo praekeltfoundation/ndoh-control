@@ -14,7 +14,9 @@ import control.settings as settings
 from models import Dashboard, UserDashboard
 from subscription.models import Message
 from servicerating.models import Response
-from subscription.forms import MessageFindForm, MessageUpdateForm
+from subscription.forms import (MessageFindForm,
+                                MessageUpdateForm,
+                                MessageConfirmForm)
 
 
 @login_required(login_url='/controlinterface/login/')
@@ -73,16 +75,32 @@ def message_edit(request):
                                extra_tags="danger")
                 context = {"form": form}
                 context.update(csrf(request))
-
     elif request.method == "POST" and \
             request.POST["messageaction"] == "update":
         # Update the record
         updateform = MessageUpdateForm(request.POST)
         if updateform.is_valid():
+            confirmform = MessageConfirmForm()
+            confirmform.fields[
+                "message_id"].initial = updateform.cleaned_data['message_id']
+            confirmform.fields[
+                "content"].initial = updateform.cleaned_data['content']
+            context = {"confirmform": confirmform,
+                       "content": updateform.cleaned_data['content']}
+            context.update(csrf(request))
+        else:
+            # Errors are handled by bootstrap form
+            context = {"updateform": updateform}
+        context.update(csrf(request))
+    elif request.method == "POST" and \
+            request.POST["messageaction"] == "confirm":
+        # Update the record
+        confirmform = MessageConfirmForm(request.POST)
+        if confirmform.is_valid():
             try:
                 message = Message.objects.get(
-                    pk=updateform.cleaned_data['message_id'])
-                message.content = updateform.cleaned_data['content']
+                    pk=confirmform.cleaned_data['message_id'])
+                message.content = confirmform.cleaned_data['content']
                 message.save()
                 messages.success(request,
                                  "Message has been updated",
@@ -95,17 +113,13 @@ def message_edit(request):
                 messages.error(request,
                                "Message could not be found",
                                extra_tags="danger")
-                context = {"updateform": updateform}
+                context = {"confirmform": confirmform}
                 context.update(csrf(request))
 
         else:
-            for errors_key, error_value in form.errors.iteritems():
-                messages.error(request,
-                               "%s: %s" % (errors_key, error_value),
-                               extra_tags="danger")
-            context = {"updateform": updateform}
+            # Errors are handled by bootstrap form
+            context = {"confirmform": confirmform}
         context.update(csrf(request))
-
     else:
         form = MessageFindForm()
         context = {"form": form}

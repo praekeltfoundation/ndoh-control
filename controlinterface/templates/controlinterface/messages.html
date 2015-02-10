@@ -22,12 +22,18 @@
         {% if form %}
           <h3>Find a message to edit</h3>
           {{ form|bootstrap }} 
-          <input type="submit" class="default" value="Find" />
-        {% else %}
+          <input type="submit" class="btn btn-default" value="Find" />
+        {% elif updateform %}
           <h3>Edit message</h3>
           {{ updateform|bootstrap }} 
           <b>Length:</b> <span id="counter" class="valid">{{ contentlength }}</span><br>
-          <input type="submit" class="default" value="Update" />
+          <input type="submit" class="btn btn-default" value="Update" />
+        {% elif confirmform %} 
+        <h3>Confirm updated message</h3>
+          {{ confirmform|bootstrap }} 
+          <p>{{ content }}</p>
+          <input type="submit" class="btn btn-success" value="Confirm" />
+          <a class="btn btn-warning" href="{% url 'controlinterface.views.message_edit' %}" role="button">Cancel</a>
         {% endif %}
     </form>
   </div>
