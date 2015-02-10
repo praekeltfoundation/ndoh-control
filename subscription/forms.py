@@ -24,8 +24,8 @@ LANG_CHOICES = [
     ('en', 'en'),
     ('af', 'af'),
     ('zu', 'zu'),
-    ('xh', 'xh'), 
-    ('ve', 've'), 
+    ('xh', 'xh'),
+    ('ve', 've'),
     ('tn', 'tn'),
     ('ts', 'ts'),
     ('ss', 'ss'),
@@ -33,6 +33,7 @@ LANG_CHOICES = [
     ('nso', 'nso'),
     ('nr', 'nr')
 ]
+
 
 class MessageFindForm(forms.Form):
     messageaction = forms.CharField(widget=forms.HiddenInput(), initial="find")
@@ -46,3 +47,10 @@ class MessageUpdateForm(forms.Form):
         widget=forms.HiddenInput(), initial="update")
     message_id = forms.IntegerField(widget=forms.HiddenInput())
     content = forms.CharField(widget=forms.Textarea)
+
+
+class MessageConfirmForm(forms.Form):
+    messageaction = forms.CharField(
+        widget=forms.HiddenInput(), initial="confirm")
+    message_id = forms.IntegerField(widget=forms.HiddenInput())
+    content = forms.CharField(widget=forms.HiddenInput())
