@@ -145,6 +145,7 @@ INSTALLED_APPS = (
     'djcelery',
     'djcelery_email',
     'tastypie',
+    'bootstrapform',
     # Custom apps
     'control',
     'subscription',

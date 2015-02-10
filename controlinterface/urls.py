@@ -14,6 +14,8 @@ urlpatterns = patterns(
     # Setting the urlpatterns to hook into the api urls
     url(r'^api/', include(api_resources.urls)),
     url(r'^controlinterface/$', views.index, name='index'),
+    url(r'^controlinterface/message/$', views.message_edit,
+        name='message_edit'),
     url(r'^controlinterface/servicerating/download/',
         views.servicerating_report, name='servicerating_report'),
     url(r'^controlinterface/servicerating/',

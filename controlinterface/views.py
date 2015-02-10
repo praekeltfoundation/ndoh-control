@@ -1,14 +1,22 @@
 import math
 import csv
 
-from django.shortcuts import render
+from django.shortcuts import render, render_to_response
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse
+from django.template import RequestContext
+from django.contrib import messages
+from django.core.context_processors import csrf
+from django.core.exceptions import ObjectDoesNotExist
 
 import control.settings as settings
 
 from models import Dashboard, UserDashboard
+from subscription.models import Message
 from servicerating.models import Response
+from subscription.forms import (MessageFindForm,
+                                MessageUpdateForm,
+                                MessageConfirmForm)
 
 
 @login_required(login_url='/controlinterface/login/')
@@ -39,6 +47,87 @@ def index(request):
     else:
         return render(request,
                       'controlinterface/index_nodash.html')
+
+
+@login_required(login_url='/controlinterface/login/')
+def message_edit(request):
+    if request.method == "POST" and request.POST["messageaction"] == "find":
+        # Locate the record
+        form = MessageFindForm(request.POST)
+        if form.is_valid():
+            try:
+                message = Message.objects.get(
+                    message_set_id=form.cleaned_data['message_set'],
+                    sequence_number=form.cleaned_data['sequence_number'],
+                    lang=form.cleaned_data['lang'])
+                updateform = MessageUpdateForm()
+                updateform.fields["message_id"].initial = message.id
+                updateform.fields["content"].initial = message.content
+                context = {
+                    "updateform": updateform,
+                    "contentlength": len(message.content)
+                }
+                context.update(csrf(request))
+
+            except ObjectDoesNotExist:
+                messages.error(request,
+                               "Message could not be found",
+                               extra_tags="danger")
+                context = {"form": form}
+                context.update(csrf(request))
+    elif request.method == "POST" and \
+            request.POST["messageaction"] == "update":
+        # Update the record
+        updateform = MessageUpdateForm(request.POST)
+        if updateform.is_valid():
+            confirmform = MessageConfirmForm()
+            confirmform.fields[
+                "message_id"].initial = updateform.cleaned_data['message_id']
+            confirmform.fields[
+                "content"].initial = updateform.cleaned_data['content']
+            context = {"confirmform": confirmform,
+                       "content": updateform.cleaned_data['content']}
+            context.update(csrf(request))
+        else:
+            # Errors are handled by bootstrap form
+            context = {"updateform": updateform}
+        context.update(csrf(request))
+    elif request.method == "POST" and \
+            request.POST["messageaction"] == "confirm":
+        # Update the record
+        confirmform = MessageConfirmForm(request.POST)
+        if confirmform.is_valid():
+            try:
+                message = Message.objects.get(
+                    pk=confirmform.cleaned_data['message_id'])
+                message.content = confirmform.cleaned_data['content']
+                message.save()
+                messages.success(request,
+                                 "Message has been updated",
+                                 extra_tags="success")
+                # Load the blank find form again
+                form = MessageFindForm()
+                context = {"form": form}
+                context.update(csrf(request))
+            except ObjectDoesNotExist:
+                messages.error(request,
+                               "Message could not be found",
+                               extra_tags="danger")
+                context = {"confirmform": confirmform}
+                context.update(csrf(request))
+
+        else:
+            # Errors are handled by bootstrap form
+            context = {"confirmform": confirmform}
+        context.update(csrf(request))
+    else:
+        form = MessageFindForm()
+        context = {"form": form}
+        context.update(csrf(request))
+
+    return render_to_response("controlinterface/messages.html",
+                              context,
+                              context_instance=RequestContext(request))
 
 
 def empty_response_map():
