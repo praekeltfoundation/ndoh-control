@@ -5,7 +5,7 @@ from subscription.models import Message
 
 
 class MessageEditViewTests(TestCase):
-    
+
     fixtures = ["test_controlinterface_message.json"]
 
     def setUp(self):
@@ -21,8 +21,9 @@ class MessageEditViewTests(TestCase):
         self.client.login(username='testuser', password='testpass')
 
     def test_message_search_view_unauthorized(self):
-        response = self.client.get(reverse('controlinterface.views.message_edit'), follow=True)
-        self.assertEqual(response.status_code, 200) 
+        response = self.client.get(
+            reverse('controlinterface.views.message_edit'), follow=True)
+        self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Please, log in to continue.")
 
     def test_message_search_view(self):
@@ -30,7 +31,8 @@ class MessageEditViewTests(TestCase):
         If no params set yet, should ask for search params
         """
         self.login()
-        response = self.client.get(reverse('controlinterface.views.message_edit'))
+        response = self.client.get(
+            reverse('controlinterface.views.message_edit'))
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Find a message to edit")
 
@@ -45,7 +47,8 @@ class MessageEditViewTests(TestCase):
             "sequence_number": 1,
             "lang": "en"
         }
-        response = self.client.post(reverse('controlinterface.views.message_edit'), searchform)
+        response = self.client.post(
+            reverse('controlinterface.views.message_edit'), searchform)
         self.assertContains(response, "Edit message")
         self.assertContains(response, "Message 1 on accelerated")
 
@@ -60,7 +63,8 @@ class MessageEditViewTests(TestCase):
             "sequence_number": 100,
             "lang": "en"
         }
-        response = self.client.post(reverse('controlinterface.views.message_edit'), searchform)
+        response = self.client.post(
+            reverse('controlinterface.views.message_edit'), searchform)
         self.assertContains(response, "Find a message to edit")
         self.assertContains(response, "Message could not be found")
 
@@ -74,7 +78,8 @@ class MessageEditViewTests(TestCase):
             "message_id": 1,
             "content": "Message 1 on accelerated now edited",
         }
-        response = self.client.post(reverse('controlinterface.views.message_edit'), editform)
+        response = self.client.post(
+            reverse('controlinterface.views.message_edit'), editform)
         self.assertContains(response, "Confirm updated message")
         self.assertContains(response, "Message 1 on accelerated now edited")
 
@@ -88,7 +93,9 @@ class MessageEditViewTests(TestCase):
             "message_id": 1,
             "content": "Message 1 on accelerated now edited",
         }
-        response = self.client.post(reverse('controlinterface.views.message_edit'), confirmform)
+        response = self.client.post(
+            reverse('controlinterface.views.message_edit'), confirmform)
         self.assertContains(response, "Message has been updated")
         message = Message.objects.get(pk=1)
-        self.assertEqual(message.content, "Message 1 on accelerated now edited")
+        self.assertEqual(
+            message.content, "Message 1 on accelerated now edited")
