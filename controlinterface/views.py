@@ -12,11 +12,17 @@ from django.core.exceptions import ObjectDoesNotExist
 import control.settings as settings
 
 from models import Dashboard, UserDashboard
-from subscription.models import Message
+from subscription.models import (Message,
+                                 Subscription,
+                                 MessageSet)
 from servicerating.models import Response
 from subscription.forms import (MessageFindForm,
                                 MessageUpdateForm,
-                                MessageConfirmForm)
+                                MessageConfirmForm,
+                                SubscriptionFindForm,
+                                SubscriptionCancelForm,
+                                SubscriptionBabyForm,
+                                )
 
 
 @login_required(login_url='/controlinterface/login/')
@@ -126,6 +132,96 @@ def message_edit(request):
         context.update(csrf(request))
 
     return render_to_response("controlinterface/messages.html",
+                              context,
+                              context_instance=RequestContext(request))
+
+
+@login_required(login_url='/controlinterface/login/')
+def subscription_edit(request):
+    if request.method == "POST" and request.POST["subaction"] == "find":
+        # Locate the record
+        form = SubscriptionFindForm(request.POST)
+        if form.is_valid():
+            subscriptions = Subscription.objects.filter(
+                to_addr=form.cleaned_data['msisdn'])
+            if subscriptions.count() == 0:
+                messages.error(request,
+                               "Subscriber could not be found",
+                               extra_tags="danger")
+                context = {"form": form}
+                context.update(csrf(request))
+            else:
+                cancelform = SubscriptionCancelForm()
+                cancelform.fields[
+                    "msisdn"].initial = form.cleaned_data['msisdn']
+                babyform = SubscriptionBabyForm()
+                babyform.fields["msisdn"].initial = form.cleaned_data['msisdn']
+                babyform.fields["existing_id"].initial = subscriptions[0].id
+                context = {
+                    "subscriptions": subscriptions,
+                    "cancelform": cancelform,
+                    "babyform": babyform,
+                }
+                context.update(csrf(request))
+    elif request.method == "POST" and \
+            request.POST["subaction"] == "cancel":
+        # Update the record
+        cancelform = SubscriptionCancelForm(request.POST)
+        if cancelform.is_valid():
+            subscriptions = Subscription.objects.filter(
+                to_addr=cancelform.cleaned_data['msisdn']).update(
+                active=False)
+            messages.success(request,
+                             "All subscriptions for %s have been cancelled" %
+                             cancelform.cleaned_data['msisdn'],
+                             extra_tags="success")
+            form = SubscriptionFindForm()
+            form.fields[
+                "msisdn"].initial = cancelform.cleaned_data['msisdn']
+            context = {"form": form}
+            context.update(csrf(request))
+
+    elif request.method == "POST" and \
+            request.POST["subaction"] == "baby":
+        # Update the record
+        babyform = SubscriptionBabyForm(request.POST)
+        if babyform.is_valid():
+            # deactivate all
+            subscriptions = Subscription.objects.filter(
+                to_addr=babyform.cleaned_data['msisdn']).update(
+                active=False)
+            # load existing to clone
+            subscription = Subscription.objects.get(
+                pk=babyform.cleaned_data['existing_id'])
+            subscription.pk = None
+            subscription.process_status = 0  # Ready
+            subscription.active = True
+            subscription.completed = False
+            subscription.next_sequence_number = 1
+            newsub = subscription
+            baby_message_set = MessageSet.objects.get(short_name="baby1")
+            newsub.message_set = baby_message_set
+            newsub.schedule = (
+                baby_message_set.default_schedule)
+            newsub.save()
+
+            messages.success(request,
+                             "All active subscriptions for %s have been "
+                             "cancelled and baby subscription added" % 
+                             babyform.cleaned_data['msisdn'],
+                             extra_tags="success")
+            # Load the blank find form again
+            form = SubscriptionFindForm()
+            form.fields[
+                "msisdn"].initial = babyform.cleaned_data['msisdn']
+            context = {"form": form}
+        context.update(csrf(request))
+    else:
+        form = SubscriptionFindForm()
+        context = {"form": form}
+        context.update(csrf(request))
+
+    return render_to_response("controlinterface/subscription.html",
                               context,
                               context_instance=RequestContext(request))
 
