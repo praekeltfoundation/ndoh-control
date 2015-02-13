@@ -207,7 +207,7 @@ def subscription_edit(request):
 
             messages.success(request,
                              "All active subscriptions for %s have been "
-                             "cancelled and baby subscription added" % 
+                             "cancelled and baby subscription added" %
                              babyform.cleaned_data['msisdn'],
                              extra_tags="success")
             # Load the blank find form again
