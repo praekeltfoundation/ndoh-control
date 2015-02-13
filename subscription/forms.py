@@ -54,3 +54,21 @@ class MessageConfirmForm(forms.Form):
         widget=forms.HiddenInput(), initial="confirm")
     message_id = forms.IntegerField(widget=forms.HiddenInput())
     content = forms.CharField(widget=forms.HiddenInput())
+
+
+class SubscriptionFindForm(forms.Form):
+    subaction = forms.CharField(widget=forms.HiddenInput(), initial="find")
+    msisdn = forms.CharField()
+
+
+class SubscriptionCancelForm(forms.Form):
+    subaction = forms.CharField(
+        widget=forms.HiddenInput(), initial="cancel")
+    msisdn = forms.CharField(widget=forms.HiddenInput())
+
+
+class SubscriptionBabyForm(forms.Form):
+    subaction = forms.CharField(
+        widget=forms.HiddenInput(), initial="baby")
+    msisdn = forms.CharField(widget=forms.HiddenInput())
+    existing_id = forms.IntegerField(widget=forms.HiddenInput())

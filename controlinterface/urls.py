@@ -16,6 +16,8 @@ urlpatterns = patterns(
     url(r'^controlinterface/$', views.index, name='index'),
     url(r'^controlinterface/message/$', views.message_edit,
         name='message_edit'),
+    url(r'^controlinterface/subscription/$', views.subscription_edit,
+        name='subscription_edit'),
     url(r'^controlinterface/servicerating/download/',
         views.servicerating_report, name='servicerating_report'),
     url(r'^controlinterface/servicerating/',

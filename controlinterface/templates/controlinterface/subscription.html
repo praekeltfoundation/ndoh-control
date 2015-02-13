@@ -1,0 +1,72 @@
+{% extends "controlinterface/base.html" %}
+{% load staticfiles %}
+{% load bootstrap %}
+
+
+{% block content %}
+  <div class="row">
+    <div class="col-sm-3 col-md-4">
+      <h1 class="page-header">Subscriptions</h1>
+    </div>
+  </div>
+  <div class="row">
+    {% if messages %}
+
+    {% for message in messages %}
+      <div{% if message.tags %} class="alert alert-{{ message.tags }}"{% endif %} role="alert">{{ message }}</div>
+    {% endfor %}
+    {% endif %}
+
+
+    {% if form %}
+      <form id="subscription-edit-form" method="post" method="POST" action="." class="form-horizontal">
+          {% csrf_token %}
+          <h3>Find a user to edit</h3>
+          <p>Please note: Cellphone numbers should be entered like <code>+27812345678</code></p>
+          {{ form|bootstrap }} 
+          <input type="submit" class="btn btn-default" value="Find" />
+      </form>
+    {% else %}       
+          <h3>Current Subscriptions</h3>
+          <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Message Set</th>
+                    <th>Next Sequence Number</th>
+                    <th>Schedule</th>
+                    <th>Active</th>
+                    <th>Completed</th>
+                </tr>
+            </thead
+            
+            <tbody>
+                {% for subscription in subscriptions %}
+                <tr>
+                    <td>
+                        <strong>{{ subscription.message_set.short_name }}</strong>
+                    </td>
+                    <td>{{ subscription.next_sequence_number }}</td>
+                    <td>{{ subscription.schedule.name }}</td>
+                    <td>{{ subscription.active }}</td>
+                    <td>{{ subscription.completed }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+          <h4>Actions:</h4>
+          <p><form id="subscription-edit-form" method="post" method="POST" action="." class="form-horizontal">
+          {% csrf_token %}
+          {{ cancelform|bootstrap }}<input type="submit" class="btn btn-default" value="Cancel All Subscriptions" />
+          </form></p>
+          <p>
+          <form id="subscription-edit-form" method="post" method="POST" action="." class="form-horizontal">
+          {% csrf_token %}
+          {{ babyform|bootstrap }}<input type="submit" class="btn btn-default" value="Switch To Baby" />
+          </form></p>
+        {% endif %}
+    </form>
+  </div>
+
+
+{% endblock %}
+
