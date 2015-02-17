@@ -29,7 +29,7 @@
     <script src="{% static "controlinterface/js/jquery.min.js" %}"></script>
     <script src="{% static "controlinterface/js/bootstrap.min.js" %}"></script>
   </head>
-    
+
 
   <body>
     <div class="container-fluid">
@@ -39,11 +39,15 @@
           <br>
           <br>
           <ul class="nav nav-sidebar">
-            <li><a href="/controlinterface/"><span class="glyphicon glyphicon-user"></span> {% firstof user.get_short_name user.get_username|capfirst %} <span class="glyphicon glyphicon-cog pull-right"></span></a> </li>
-            <li class="active"><a href="/controlinterface/"><span class="glyphicon glyphicon-dashboard"></span> Dashboard</a></li>
-            <li><a href="/controlinterface/message/"><span class="glyphicon glyphicon-th-list"></span> Messages Edit</a></li>
-            <li><a href="/controlinterface/subscription/"><span class="glyphicon glyphicon-user"></span> Subscription Edit</a></li>
-            <li><a href="/controlinterface/servicerating/"><span class="glyphicon glyphicon-stats"></span> Service Ratings</a></li>
+            <li><a><span class="glyphicon glyphicon-user"></span> {% firstof user.get_short_name user.get_username|capfirst %} <span class="glyphicon glyphicon-cog pull-right"></span></a> </li>
+            {% url 'index' as url %}
+            <li{% if request.path == url %} class="active"{% endif %}><a href="{{ url }}"><span class="glyphicon glyphicon-dashboard"></span> Dashboard</a></li>
+            {% url 'message_edit' as url %}
+            <li{% if request.path == url %} class="active"{% endif %}><a href="{{ url }}"><span class="glyphicon glyphicon-th-list"></span> Messages Edit</a></li>
+            {% url 'subscription_edit' as url %}
+            <li{% if request.path == url %} class="active"{% endif %}><a href="{{ url }}"><span class="glyphicon glyphicon-user"></span> Subscription Edit</a></li>
+            {% url 'servicerating' as url %}
+            <li{% if request.path == url %} class="active"{% endif %}><a href="{{ url }}"><span class="glyphicon glyphicon-stats"></span> Service Ratings</a></li>
             <!-- <li><a href="#"><span class="glyphicon glyphicon-folder-open"></span> Resources</a></li> -->
             <li><a href="https://app.besnappy.com" target="_new"><span class="glyphicon glyphicon-send"></span> Helpdesk</a></li>
             <li><a href="/admin/"><span class="glyphicon glyphicon-wrench"></span> Admin</a></li>
@@ -56,6 +60,6 @@
         </div>
       </div>
     </div>
-    
+
   </body>
 </html>
