@@ -1,7 +1,7 @@
 import math
 import csv
 
-from django.shortcuts import render, render_to_response
+from django.shortcuts import render, render_to_response, redirect
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse
 from django.template import RequestContext
@@ -25,31 +25,67 @@ from subscription.forms import (MessageFindForm,
                                 )
 
 
+def get_user_dashboards(request):
+    if (request.user.has_perm('controlinterface.view_dashboard_private') or
+            request.user.has_perm('controlinterface.view_dashboard_summary')):
+        user_dashboards = UserDashboard.objects.get(user=request.user)
+        dashboards = {}
+        for dash in user_dashboards.dashboards.all():
+            dashboards[dash.id] = dash.name
+        return {"dashboards": dashboards}
+    else:
+        return {"dashboards": {}}
+
+
 @login_required(login_url='/controlinterface/login/')
 def index(request):
     if (request.user.has_perm('controlinterface.view_dashboard_private') or
             request.user.has_perm('controlinterface.view_dashboard_summary')):
 
         user_dashboards = UserDashboard.objects.get(user=request.user)
-        dashboard = Dashboard.objects.get(
-            id=user_dashboards.default_dashboard.id)
-        dashboard_widgets = dashboard.widgets.all()
-
-        widgets = {}
-        for widget in dashboard_widgets:
-            widgets[widget.id] = {
-                "config": widget,
-                "data": widget.data.all()
-            }
-
-        context = {
-            "widgets": widgets,
-            "dashboard_api_key": settings.DASHBOARD_API_KEY
-        }
-
+        return redirect('dashboard',
+                        dashboard_id=user_dashboards.default_dashboard.id)
+    else:
         return render(request,
-                      'controlinterface/index.html',
-                      context)
+                      'controlinterface/index_nodash.html')
+
+
+@login_required(login_url='/controlinterface/login/')
+def dashboard(request, dashboard_id):
+    context = get_user_dashboards(request)
+    if (request.user.has_perm('controlinterface.view_dashboard_private') or
+            request.user.has_perm('controlinterface.view_dashboard_summary')):
+
+        try:
+            access = Dashboard.objects.get(
+                id=dashboard_id).dashboards.filter(
+                user=request.user).count()
+            if access == 1:
+                dashboard = Dashboard.objects.get(id=dashboard_id)
+                dashboard_widgets = dashboard.widgets.all()
+
+                widgets = {}
+                for widget in dashboard_widgets:
+                    widgets[widget.id] = {
+                        "config": widget,
+                        "data": widget.data.all()
+                    }
+
+                context.update({
+                    "widgets": widgets,
+                    "dashboard_api_key": settings.DASHBOARD_API_KEY
+                })
+
+                return render(request,
+                              'controlinterface/index.html',
+                              context)
+            else:
+                return render(request,
+                              'controlinterface/index_notdashallowed.html')
+        except ObjectDoesNotExist:
+            # User tried to access a dashboard they're not allowed to
+            return render(request,
+                          'controlinterface/index_notdashallowed.html')
     else:
         return render(request,
                       'controlinterface/index_nodash.html')
@@ -57,6 +93,7 @@ def index(request):
 
 @login_required(login_url='/controlinterface/login/')
 def message_edit(request):
+    context = get_user_dashboards(request)
     if request.method == "POST" and request.POST["messageaction"] == "find":
         # Locate the record
         form = MessageFindForm(request.POST)
@@ -69,10 +106,10 @@ def message_edit(request):
                 updateform = MessageUpdateForm()
                 updateform.fields["message_id"].initial = message.id
                 updateform.fields["content"].initial = message.content
-                context = {
+                context.update({
                     "updateform": updateform,
                     "contentlength": len(message.content)
-                }
+                })
                 context.update(csrf(request))
 
             except ObjectDoesNotExist:
@@ -91,12 +128,12 @@ def message_edit(request):
                 "message_id"].initial = updateform.cleaned_data['message_id']
             confirmform.fields[
                 "content"].initial = updateform.cleaned_data['content']
-            context = {"confirmform": confirmform,
-                       "content": updateform.cleaned_data['content']}
+            context.update({"confirmform": confirmform,
+                            "content": updateform.cleaned_data['content']})
             context.update(csrf(request))
         else:
             # Errors are handled by bootstrap form
-            context = {"updateform": updateform}
+            context.update({"updateform": updateform})
         context.update(csrf(request))
     elif request.method == "POST" and \
             request.POST["messageaction"] == "confirm":
@@ -113,22 +150,22 @@ def message_edit(request):
                                  extra_tags="success")
                 # Load the blank find form again
                 form = MessageFindForm()
-                context = {"form": form}
+                context.update({"form": form})
                 context.update(csrf(request))
             except ObjectDoesNotExist:
                 messages.error(request,
                                "Message could not be found",
                                extra_tags="danger")
-                context = {"confirmform": confirmform}
+                context.update({"confirmform": confirmform})
                 context.update(csrf(request))
 
         else:
             # Errors are handled by bootstrap form
-            context = {"confirmform": confirmform}
+            context.update({"confirmform": confirmform})
         context.update(csrf(request))
     else:
         form = MessageFindForm()
-        context = {"form": form}
+        context.update({"form": form})
         context.update(csrf(request))
 
     return render_to_response("controlinterface/messages.html",
@@ -138,6 +175,7 @@ def message_edit(request):
 
 @login_required(login_url='/controlinterface/login/')
 def subscription_edit(request):
+    context = get_user_dashboards(request)
     if request.method == "POST" and request.POST["subaction"] == "find":
         # Locate the record
         form = SubscriptionFindForm(request.POST)
@@ -148,7 +186,7 @@ def subscription_edit(request):
                 messages.error(request,
                                "Subscriber could not be found",
                                extra_tags="danger")
-                context = {"form": form}
+                context.update({"form": form})
                 context.update(csrf(request))
             else:
                 cancelform = SubscriptionCancelForm()
@@ -157,11 +195,11 @@ def subscription_edit(request):
                 babyform = SubscriptionBabyForm()
                 babyform.fields["msisdn"].initial = form.cleaned_data['msisdn']
                 babyform.fields["existing_id"].initial = subscriptions[0].id
-                context = {
+                context.update({
                     "subscriptions": subscriptions,
                     "cancelform": cancelform,
                     "babyform": babyform,
-                }
+                })
                 context.update(csrf(request))
     elif request.method == "POST" and \
             request.POST["subaction"] == "cancel":
@@ -178,7 +216,7 @@ def subscription_edit(request):
             form = SubscriptionFindForm()
             form.fields[
                 "msisdn"].initial = cancelform.cleaned_data['msisdn']
-            context = {"form": form}
+            context.update({"form": form})
             context.update(csrf(request))
 
     elif request.method == "POST" and \
@@ -214,11 +252,11 @@ def subscription_edit(request):
             form = SubscriptionFindForm()
             form.fields[
                 "msisdn"].initial = babyform.cleaned_data['msisdn']
-            context = {"form": form}
+            context.update({"form": form})
         context.update(csrf(request))
     else:
         form = SubscriptionFindForm()
-        context = {"form": form}
+        context.update({"form": form})
         context.update(csrf(request))
 
     return render_to_response("controlinterface/subscription.html",
@@ -264,6 +302,7 @@ def empty_response_map():
 
 @login_required(login_url='/controlinterface/login/')
 def servicerating(request):
+    context = get_user_dashboards(request)
     if (request.user.has_perm('controlinterface.view_dashboard_private') or
             request.user.has_perm('controlinterface.view_dashboard_summary')):
 
@@ -312,10 +351,10 @@ def servicerating(request):
                 (response_map[question]['very-unsatisfied'] * 1)
             ) / num_ratings, 1)
 
-        context = {
+        context.update({
             'averages': averages,
             'waiting_times': waiting_times
-        }
+        })
 
         return render(request, 'controlinterface/serviceratings.html', context)
 

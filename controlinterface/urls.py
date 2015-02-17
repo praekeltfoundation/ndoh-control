@@ -16,6 +16,8 @@ urlpatterns = patterns(
     url(r'^controlinterface/$', views.index, name='index'),
     url(r'^controlinterface/message/$', views.message_edit,
         name='message_edit'),
+    url(r'^controlinterface/dashboard/(?P<dashboard_id>\d+)/', views.dashboard,
+        name='dashboard'),
     url(r'^controlinterface/subscription/$', views.subscription_edit,
         name='subscription_edit'),
     url(r'^controlinterface/servicerating/download/',
