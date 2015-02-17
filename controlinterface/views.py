@@ -44,7 +44,7 @@ def index(request):
 
         user_dashboards = UserDashboard.objects.get(user=request.user)
         return redirect('dashboard',
-            dashboard_id=user_dashboards.default_dashboard.id)
+                        dashboard_id=user_dashboards.default_dashboard.id)
     else:
         return render(request,
                       'controlinterface/index_nodash.html')
@@ -81,15 +81,14 @@ def dashboard(request, dashboard_id):
                               context)
             else:
                 return render(request,
-                      'controlinterface/index_notdashallowed.html')
+                              'controlinterface/index_notdashallowed.html')
         except ObjectDoesNotExist:
             # User tried to access a dashboard they're not allowed to
             return render(request,
-                      'controlinterface/index_notdashallowed.html')
+                          'controlinterface/index_notdashallowed.html')
     else:
         return render(request,
                       'controlinterface/index_nodash.html')
-
 
 
 @login_required(login_url='/controlinterface/login/')
@@ -130,7 +129,7 @@ def message_edit(request):
             confirmform.fields[
                 "content"].initial = updateform.cleaned_data['content']
             context.update({"confirmform": confirmform,
-                       "content": updateform.cleaned_data['content']})
+                            "content": updateform.cleaned_data['content']})
             context.update(csrf(request))
         else:
             # Errors are handled by bootstrap form
