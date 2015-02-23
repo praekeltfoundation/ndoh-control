@@ -58,7 +58,19 @@ class MessageConfirmForm(forms.Form):
 
 class SubscriptionFindForm(forms.Form):
     subaction = forms.CharField(widget=forms.HiddenInput(), initial="find")
-    msisdn = forms.CharField()
+    msisdn = forms.CharField(label="Cellphone Number")
+
+
+class SubscriptionConfirmCancelForm(forms.Form):
+    subaction = forms.CharField(
+        widget=forms.HiddenInput(), initial="confirmcancel")
+    msisdn = forms.CharField(widget=forms.HiddenInput())
+
+class SubscriptionConfirmBabyForm(forms.Form):
+    subaction = forms.CharField(
+        widget=forms.HiddenInput(), initial="confirmbaby")
+    msisdn = forms.CharField(widget=forms.HiddenInput())
+    existing_id = forms.IntegerField(widget=forms.HiddenInput())
 
 
 class SubscriptionCancelForm(forms.Form):

@@ -8,6 +8,7 @@ from django.template import RequestContext
 from django.contrib import messages
 from django.core.context_processors import csrf
 from django.core.exceptions import ObjectDoesNotExist
+from django import forms
 
 import control.settings as settings
 
@@ -20,6 +21,8 @@ from subscription.forms import (MessageFindForm,
                                 MessageUpdateForm,
                                 MessageConfirmForm,
                                 SubscriptionFindForm,
+                                SubscriptionConfirmCancelForm,
+                                SubscriptionConfirmBabyForm,
                                 SubscriptionCancelForm,
                                 SubscriptionBabyForm,
                                 )
@@ -189,18 +192,58 @@ def subscription_edit(request):
                 context.update({"form": form})
                 context.update(csrf(request))
             else:
-                cancelform = SubscriptionCancelForm()
-                cancelform.fields[
+                confirmcancelform = SubscriptionConfirmCancelForm()
+                confirmcancelform.fields[
                     "msisdn"].initial = form.cleaned_data['msisdn']
-                babyform = SubscriptionBabyForm()
-                babyform.fields["msisdn"].initial = form.cleaned_data['msisdn']
-                babyform.fields["existing_id"].initial = subscriptions[0].id
+                confirmbabyform = SubscriptionConfirmBabyForm()
+                confirmbabyform.fields["msisdn"].initial = \
+                    form.cleaned_data['msisdn']
+                confirmbabyform.fields["existing_id"].initial = \
+                    subscriptions[0].id
                 context.update({
                     "subscriptions": subscriptions,
-                    "cancelform": cancelform,
-                    "babyform": babyform,
+                    "confirmcancelform": confirmcancelform,
+                    "confirmbabyform": confirmbabyform,
                 })
                 context.update(csrf(request))
+    elif request.method == "POST" and \
+            request.POST["subaction"] == "confirmcancel":
+        # Confirm before update the record
+
+        confirmcancelform = SubscriptionConfirmCancelForm(request.POST)
+        if confirmcancelform.is_valid():
+            cancelform = SubscriptionCancelForm()
+            cancelform.fields["msisdn"].initial = \
+                confirmcancelform.cleaned_data['msisdn']
+            form = SubscriptionFindForm()
+            form.fields["msisdn"].widget = forms.HiddenInput()
+            form.fields["msisdn"].initial = \
+                confirmcancelform.cleaned_data['msisdn']
+            context.update({
+                "cancelform": cancelform,
+                "form": form
+            })
+            context.update(csrf(request))
+    elif request.method == "POST" and \
+            request.POST["subaction"] == "confirmbaby":
+        # Confirm before update the record
+
+        confirmbabyform = SubscriptionConfirmBabyForm(request.POST)
+        if confirmbabyform.is_valid():
+            babyform = SubscriptionBabyForm()
+            babyform.fields["msisdn"].initial = \
+                confirmbabyform.cleaned_data['msisdn']
+            babyform.fields["existing_id"].initial = \
+                confirmbabyform.cleaned_data['existing_id']
+            form = SubscriptionFindForm()
+            form.fields["msisdn"].widget = forms.HiddenInput()
+            form.fields["msisdn"].initial = \
+                confirmbabyform.cleaned_data['msisdn']
+            context.update({
+                "babyform": babyform,
+                "form": form
+            })
+            context.update(csrf(request))
     elif request.method == "POST" and \
             request.POST["subaction"] == "cancel":
         # Update the record
@@ -218,7 +261,6 @@ def subscription_edit(request):
                 "msisdn"].initial = cancelform.cleaned_data['msisdn']
             context.update({"form": form})
             context.update(csrf(request))
-
     elif request.method == "POST" and \
             request.POST["subaction"] == "baby":
         # Update the record
