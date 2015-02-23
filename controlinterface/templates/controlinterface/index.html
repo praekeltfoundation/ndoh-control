@@ -23,11 +23,11 @@
   </div>
   <div class="row">
   {% for widget, values in widgets.iteritems %}
-  
+
     <div class="col-md-4">
       <div id="w{{widget}}"></div>
     </div>
- 
+
   {% endfor %}
    </div>
 </div>
@@ -55,8 +55,8 @@
             {
               title: '{{ metric.title}}',
               key: '{{ metric.key}}'
-            }, 
-              
+            },
+
             {% endfor %}
           ],
           {% endif %}
@@ -98,8 +98,12 @@
     var widgets = d3.values(data.widgets);
 
     function next() {
-      if (++i < widgets.length) updateWidget(widgets[i], next);
-      else draw();
+      if (++i < widgets.length){
+        updateWidget(widgets[i], next);
+        draw();
+      } else {
+        draw();
+      }
     }
 
     next();

@@ -1,4 +1,4 @@
-// sapphire 0.2.0-dev
+// sapphire 0.1.1
 
 
 (function(factory) {
@@ -96,6 +96,25 @@ utils.box = strain()
   .invoke(function() {
     return this.calc();
   });
+
+
+utils.formatValue = strain()
+  .prop('int')
+  .default(d3.format(','))
+
+  .prop('float')
+  .default(d3.format(',.3f'))
+
+  .invoke(function(v) {
+    return utils.isInteger(v)
+      ? this.int()(v)
+      : this.float()(v);
+  });
+
+
+utils.isInteger = function(v) {
+  return +v === parseInt(v);
+};
 
 
 utils.innerWidth = function(el) {
@@ -336,7 +355,7 @@ function drawBar(bar, dims, fx, fy, opts) {
       return Math.max(width, 1);
     })
     .attr('height', function(d) {
-      return dims.innerHeight - fy(d.y); 
+      return dims.innerHeight - fy(d.y);
     });
 
   bar.exit()
@@ -426,10 +445,14 @@ module.exports = _dereq_('./widget').extend()
   .default(function(d) { return d.y; })
 
   .prop('yFormat')
-  .default(d3.format(',2s'))
+  .default(utils.formatValue()
+    .int(d3.format(','))
+    .float(d3.format(',.3f')))
 
   .prop('diffFormat')
-  .default(d3.format('+,2s'))
+  .default(utils.formatValue()
+    .int(d3.format('+,'))
+    .float(d3.format('+,.3f')))
 
   .prop('xFormat')
   .default(d3.time.format('%-d %b %-H:%M'))
@@ -450,7 +473,7 @@ module.exports = _dereq_('./widget').extend()
     top: 4,
     left: 4,
     bottom: 4,
-    right: 4 
+    right: 4
   })
 
   .draw(function(el) {
@@ -732,7 +755,9 @@ module.exports = _dereq_('./widget').extend()
   .default(8)
 
   .prop('yFormat')
-  .default(d3.format(',2s'))
+  .default(utils.formatValue()
+    .int(d3.format(','))
+    .float(d3.format(',.3f')))
 
   .prop('yTicks')
   .default(5)
@@ -1096,7 +1121,9 @@ module.exports = _dereq_('./widget').extend()
   .default(0)
 
   .prop('valueFormat')
-  .default(d3.format(',2s'))
+  .default(utils.formatValue()
+    .int(d3.format(','))
+    .float(d3.format(',.3f')))
 
   .prop('percentFormat')
   .default(d3.format('.0%'))
