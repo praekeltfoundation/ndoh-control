@@ -17,25 +17,32 @@
     {% endfor %}
     {% endif %}
 
-    <form id="message-edit-form" method="post" method="POST" action="." class="form-horizontal" style="width: 500px">
-        {% csrf_token %}
-        {% if form %}
-          <h3>Find a message to edit</h3>
-          {{ form|bootstrap }} 
-          <input type="submit" class="btn btn-default" value="Find" />
-        {% elif updateform %}
+        {% if updateform %}
+          <form id="message-edit-form" method="post" method="POST" action="." class="form-horizontal" style="width: 500px">
+            {% csrf_token %}
           <h3>Edit message</h3>
-          {{ updateform|bootstrap }} 
+          {{ updateform|bootstrap }}
           <b>Length:</b> <span id="counter" class="valid">{{ contentlength }}</span><br>
           <input type="submit" class="btn btn-default" value="Update" />
-        {% elif confirmform %} 
-        <h3>Confirm updated message</h3>
-          {{ confirmform|bootstrap }} 
-          <p>{{ content }}</p>
-          <input type="submit" class="btn btn-success" value="Confirm" />
-          <a class="btn btn-warning" href="{% url 'controlinterface.views.message_edit' %}" role="button">Cancel</a>
+          </form>
+        {% elif confirmform %}
+          <form id="message-edit-form" method="post" method="POST" action="." class="form-horizontal" style="width: 500px">
+            {% csrf_token %}
+          <h3>Confirm updated message</h3>
+            {{ confirmform|bootstrap }}
+            <p>{{ content }}</p>
+            <input type="submit" class="btn btn-success" value="Confirm" />
+            <button onclick="window.history.back()" class="btn btn-success">Cancel</button>
+          </form>
+        {% elif form %}
+          <form id="message-edit-form" method="post" method="POST" action="." class="form-horizontal" style="width: 500px">
+          {% csrf_token %}
+          <h3>Find a message to edit</h3>
+          {{ form|bootstrap }}
+          <input type="submit" class="btn btn-default" value="Find" />
+          </form>
         {% endif %}
-    </form>
+
   </div>
 
 <script type="text/javascript">

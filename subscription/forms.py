@@ -21,24 +21,24 @@ class OptOutCSVUploader(forms.Form):
         ingest_opt_opts_csv.delay(csv_data)
 
 LANG_CHOICES = [
-    ('en', 'en'),
-    ('af', 'af'),
-    ('zu', 'zu'),
-    ('xh', 'xh'),
-    ('ve', 've'),
-    ('tn', 'tn'),
-    ('ts', 'ts'),
-    ('ss', 'ss'),
-    ('st', 'st'),
-    ('nso', 'nso'),
-    ('nr', 'nr')
+    ('en', 'English'),
+    ('af', 'Afrikaans'),
+    ('zu', 'Zulu'),
+    ('xh', 'Xhosa'),
+    ('ve', 'Venda'),
+    ('tn', 'Tswnana'),
+    ('ts', 'Tsonga'),
+    ('ss', 'Swazi'),
+    ('st', 'Sotho'),
+    ('nso', 'Northern Sotho'),
+    ('nr', 'Ndebele')
 ]
 
 
 class MessageFindForm(forms.Form):
     messageaction = forms.CharField(widget=forms.HiddenInput(), initial="find")
     message_set = forms.ModelChoiceField(queryset=MessageSet.objects.all())
-    sequence_number = forms.IntegerField()
+    sequence_number = forms.IntegerField(min_value=1)
     lang = forms.ChoiceField(choices=LANG_CHOICES)
 
 
