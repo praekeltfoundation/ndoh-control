@@ -12,6 +12,10 @@
   border-bottom: 1px solid #eee;
 }
 
+.special-blue {
+  background-color: #44c9f6;
+}
+
 /*
  * Sidebar
  */
@@ -23,7 +27,7 @@
 @media (min-width: 768px) {
   .sidebar {
     position: fixed;
-    top: 0px;
+    top: 0;
     bottom: 0;
     left: 0;
     z-index: 1000;
@@ -65,8 +69,8 @@
 
 
 
-/* 
-Blue: #44c9f6; 
+/*
+Blue: #44c9f6;
 Pink: #ee3d85;
 Yellow: #ffcb05;
 */
@@ -204,7 +208,7 @@ table {
   position: absolute;
   background-color:#44c9f6;
   left: 50%;
-  top: 50%; 
+  top: 50%;
   margin-left: -200px;
   margin-top: 100px;
 }
@@ -213,11 +217,22 @@ table {
   max-width: 330px;
   padding: 15px;
   margin: 0 auto;
+  color: white;
 }
-.form-signin .form-signin-heading,
+
+.form-signin h4 {
+  color: white;
+}
+
+/*.form-signin .form-signin-heading,
 .form-signin .checkbox {
   margin-bottom: 10px;
+}*/
+
+.form-signin-heading {
+  color: white;
 }
+
 .form-signin .checkbox {
   font-weight: normal;
 }
