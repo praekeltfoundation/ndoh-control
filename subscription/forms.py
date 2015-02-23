@@ -66,6 +66,7 @@ class SubscriptionConfirmCancelForm(forms.Form):
         widget=forms.HiddenInput(), initial="confirmcancel")
     msisdn = forms.CharField(widget=forms.HiddenInput())
 
+
 class SubscriptionConfirmBabyForm(forms.Form):
     subaction = forms.CharField(
         widget=forms.HiddenInput(), initial="confirmbaby")
