@@ -10,6 +10,7 @@
     </div>
   </div>
   <div class="row">
+    <div class="col-sm-6 col-md-6">
     {% if messages %}
 
     {% for message in messages %}
@@ -23,7 +24,7 @@
           <h3>Edit message</h3>
           {{ updateform|bootstrap }}
           <b>Length:</b> <span id="counter" class="valid">{{ contentlength }}</span><br>
-          <input type="submit" class="btn btn-default" value="Update" />
+          <input type="submit" class="btn btn-success" value="Update" />
           </form>
         {% elif confirmform %}
           <form id="message-edit-form" method="post" method="POST" action="." class="form-horizontal" style="width: 500px">
@@ -32,19 +33,19 @@
             {{ confirmform|bootstrap }}
             <p>{{ content }}</p>
             <input type="submit" class="btn btn-success" value="Confirm" />
-            <button onclick="window.history.back()" class="btn btn-success">Cancel</button>
+            <button onclick="window.history.back()" class="btn btn-danger">Cancel</button>
           </form>
         {% elif form %}
           <form id="message-edit-form" method="post" method="POST" action="." class="form-horizontal" style="width: 500px">
           {% csrf_token %}
           <h3>Find a message to edit</h3>
           {{ form|bootstrap }}
-          <input type="submit" class="btn btn-default" value="Find" />
+          <input type="submit" class="btn btn-primary" value="Find" />
           </form>
         {% endif %}
 
   </div>
-
+</div>
 <script type="text/javascript">
 var $textarea = $('#id_content');
 var $counter = $('#counter');
@@ -53,6 +54,11 @@ $textarea.on('change keyup', function () {
     var value = $textarea.val();
     var count = value.length;
     $counter.text(count);
+    if (count > 160){
+      $textarea[0].style.color = "#d70038";
+    } else {
+      $textarea[0].style.color = "black";
+    }
 }).change();
 
 </script>
