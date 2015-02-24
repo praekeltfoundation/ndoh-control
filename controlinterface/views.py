@@ -138,7 +138,8 @@ def message_edit(request):
             else:
                 confirmform = MessageConfirmForm()
                 confirmform.fields[
-                    "message_id"].initial = updateform.cleaned_data['message_id']
+                    "message_id"].initial = \
+                    updateform.cleaned_data['message_id']
                 confirmform.fields[
                     "content"].initial = updateform.cleaned_data['content']
                 context.update({"confirmform": confirmform,
