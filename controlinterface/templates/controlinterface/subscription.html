@@ -10,6 +10,7 @@
     </div>
   </div>
   <div class="row">
+
     {% if messages %}
 
     {% for message in messages %}
@@ -48,48 +49,55 @@
           <h4>Actions:</h4>
           <p><form id="subscription-edit-form" method="post" method="POST" action="." class="form-horizontal">
           {% csrf_token %}
-          {{ confirmcancelform|bootstrap }}<input type="submit" class="btn btn-default" value="Cancel All Subscriptions" />
+          {{ confirmcancelform|bootstrap }}<input type="submit" class="btn btn-primary" value="Cancel All Subscriptions" />
           </form></p>
           <p>
           <form id="subscription-edit-form" method="post" method="POST" action="." class="form-horizontal">
           {% csrf_token %}
-          {{ confirmbabyform|bootstrap }}<input type="submit" class="btn btn-default" value="Switch To Baby" />
+          {{ confirmbabyform|bootstrap }}<input type="submit" class="btn btn-primary" value="Switch To Baby" />
           </form></p>
 
     {% elif cancelform %}
+    <div class="col-sm-6 col-md-6">
           <h3>Confirm Subscription Cancel</h3>
           <p><form id="subscription-edit-form" method="post" method="POST" action="." class="form-horizontal">
-            Cancelling all subscriptions will mean that the user will no longer receive any messages from MomConnect. Please confirm that you want to cancel all subscriptions for this user:
+            Cancelling all subscriptions will mean that the user will no longer receive any messages from MomConnect. Please confirm that you want to cancel all subscriptions for this user:<br><br>
           {% csrf_token %}
           {{ cancelform|bootstrap }}
-          <input type="submit" class="btn btn-default" value="Cancel Subscriptions" />
+          <input type="submit" class="btn btn-success" value="Cancel Subscriptions" />
           </form></p>
           <p>
           <form id="subscription-edit-form" method="post" method="POST" action="." class="form-horizontal">
           {% csrf_token %}
-          {{ form|bootstrap }}<input type="submit" class="btn btn-default" value="No, don't cancel subscriptions" />
+          {{ form|bootstrap }}<input type="submit" class="btn btn-danger" value="No, don't cancel subscriptions" />
           </form></p>
+
+    </div>
     {% elif babyform %}
+    <div class="col-sm-6 col-md-6">
           <h3>Confirm Baby Switch</h3>
           <p><form id="subscription-edit-form" method="post" method="POST" action="." class="form-horizontal">
             Switching a user to baby messages will mean that they will not receive any pregnancy messages anymore and will now start receiving messages about their baby. Mothers should have given birth to change to baby messages. Please confirm your choice:
           {% csrf_token %}
           {{ babyform|bootstrap }}
-          <input type="submit" class="btn btn-default" value="Start baby messages" />
+          <input type="submit" class="btn btn-success" value="Start baby messages" />
           </form></p>
           <p>
           <form id="subscription-edit-form" method="post" method="POST" action="." class="form-horizontal">
           {% csrf_token %}
-          {{ form|bootstrap }}<input type="submit" class="btn btn-default" value="No, don't start baby messages" />
+          {{ form|bootstrap }}<input type="submit" class="btn btn-danger" value="No, don't start baby messages" />
           </form></p>
+    </div>
     {% else %}
+    <div class="col-sm-6 col-md-6">
         <form id="subscription-edit-form" method="post" method="POST" action="." class="form-horizontal">
           {% csrf_token %}
           <h3>Find a user to edit</h3>
           <p>Please Note: Cellphone number should be entered in the following format: <code>+27812345678</code></p>
           {{ form|bootstrap }}
-          <input type="submit" class="btn btn-default" value="Find" />
+          <input type="submit" class="btn btn-primary" value="Find" />
       </form>
+    </div>
     {% endif %}
   </div>
 

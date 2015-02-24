@@ -127,14 +127,24 @@ def message_edit(request):
         # Update the record
         updateform = MessageUpdateForm(request.POST)
         if updateform.is_valid():
-            confirmform = MessageConfirmForm()
-            confirmform.fields[
-                "message_id"].initial = updateform.cleaned_data['message_id']
-            confirmform.fields[
-                "content"].initial = updateform.cleaned_data['content']
-            context.update({"confirmform": confirmform,
-                            "content": updateform.cleaned_data['content']})
-            context.update(csrf(request))
+            if len(updateform.cleaned_data['content']) > 160:
+                messages.error(request,
+                               "SMS messages cannot be longer than 160 "
+                               "characters. Please edit this message to be "
+                               "under 160 characters in order to save your "
+                               "changes",
+                               extra_tags="danger")
+                context.update({"updateform": updateform})
+            else:
+                confirmform = MessageConfirmForm()
+                confirmform.fields[
+                    "message_id"].initial = \
+                    updateform.cleaned_data['message_id']
+                confirmform.fields[
+                    "content"].initial = updateform.cleaned_data['content']
+                context.update({"confirmform": confirmform,
+                                "content": updateform.cleaned_data['content']})
+                context.update(csrf(request))
         else:
             # Errors are handled by bootstrap form
             context.update({"updateform": updateform})

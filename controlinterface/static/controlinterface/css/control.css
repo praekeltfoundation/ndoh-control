@@ -149,14 +149,27 @@ Yellow: #ffcb05;
   background-image: none;
 }
 
+input[type="submit"] {
+  border-radius: 15px;
+  font-weight: 600;
+  padding-left: 30px;
+  padding-right: 30px;
+}
 
-.form-control {
+button {
+  border-radius: 15px;
+  font-weight: 600;
+  padding-left: 30px;
+  padding-right: 30px;
+}
+
+/*.form-control {
   border-bottom: 1px solid silver;
   border-top: none;
   border-left: none;
   border-right: none;
   box-shadow: none;
-}
+}*/
 
 .btn-search {
   border-bottom: 1px solid silver;
