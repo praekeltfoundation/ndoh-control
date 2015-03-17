@@ -38,7 +38,7 @@ class TestMessageQueueProcessor(TestCase):
         subscriptions = Subscription.objects.all()
         self.assertEqual(len(subscriptions), 6)
         schedules = PeriodicTask.objects.all()
-        self.assertEqual(len(schedules), 6)
+        self.assertEqual(len(schedules), 10)
 
     def test_multisend(self):
         schedule = 6
