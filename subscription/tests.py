@@ -9,7 +9,8 @@ from django.core.urlresolvers import reverse
 from django.test.utils import override_settings
 from subscription.models import MessageSet, Message, Subscription
 from subscription.tasks import (ingest_csv, ensure_one_subscription,
-                                vumi_fire_metric, ingest_opt_opts_csv)
+                                vumi_fire_metric, ingest_opt_opts_csv,
+                                fire_metrics_active_subscriptions)
 from StringIO import StringIO
 import json
 import logging
@@ -263,13 +264,14 @@ class TestUploadOptOutCSV(TestCase):
 
 
 class RecordingHandler(logging.Handler):
+
     """ Record logs. """
     logs = None
 
     def emit(self, record):
         if self.logs is None:
             self.logs = []
-        print record
+        # print record
         self.logs.append(record)
 
 
@@ -307,7 +309,43 @@ class TestEnsureCleanSubscriptions(TestCase):
         self.check_logs("Metric: 'subscription.duplicates' [last] -> 1")
 
 
+class TestFireSummaryMetrics(TestCase):
+
+    fixtures = ["test.json"]
+
+    @override_settings(CELERY_EAGER_PROPAGATES_EXCEPTIONS=True,
+                       CELERY_ALWAYS_EAGER=True,
+                       BROKER_BACKEND='memory',)
+    def setUp(self):
+        self.sender = LoggingSender('go_http.test')
+        self.handler = RecordingHandler()
+        logger = logging.getLogger('go_http.test')
+        logger.setLevel(logging.INFO)
+        logger.addHandler(self.handler)
+
+    def check_logs(self, msg, levelno=logging.INFO):
+        # print self.handler.logs
+        [log, log2] = self.handler.logs
+        self.assertEqual(log.msg, msg)
+        self.assertEqual(log.levelno, levelno)
+
+    def test_ensure_two_subscriptions(self):
+        results = ensure_one_subscription.delay()
+        self.assertEqual(results.get(), 2)
+
+    def test_active_subscriptions_metric(self):
+        results = fire_metrics_active_subscriptions.delay(sender=self.sender)
+        self.assertEqual(results.get(), 2)
+        self.assertEqual(
+            self.handler.logs[0].msg,
+            "Metric: u'dev.subscriptions.baby2.active' [last] -> 1")
+        self.assertEqual(
+            self.handler.logs[1].msg,
+            "Metric: u'dev.subscriptions.accelerated.active' [last] -> 1")
+
+
 class TestSetSeqCommand(TestCase):
+
     def setUp(self):
         pass
 
