@@ -261,6 +261,7 @@ VUMI_GO_BASE_URL = "http://go.vumi.org/api/v1/go/http_api_nostream"
 VUMI_GO_ACCOUNT_KEY = "replaceme"
 VUMI_GO_CONVERSATION_KEY = "replaceme"
 VUMI_GO_ACCOUNT_TOKEN = "replaceme"
+VUMI_GO_METRICS_PREFIX = "qa"
 
 SNAPPY_BASE_URL = "https://app.besnappy.com/api/v1"
 SNAPPY_API_KEY = "replaceme"
