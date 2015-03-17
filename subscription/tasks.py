@@ -73,7 +73,7 @@ def ensure_one_subscription():
 @task()
 def fire_metrics_active_subscriptions(sender=None):
     """
-    Gathers subscription metrics and fires to
+    Gathers subscription metrics and fires to metric store
     Runs hourly
     """
     cursor = connection.cursor()
@@ -101,6 +101,41 @@ def fire_metrics_active_subscriptions(sender=None):
     for sub in subscriptions:
         vumi_fire_metric.delay(
             metric="%s.subscriptions.%s.active" %
+            (settings.VUMI_GO_METRICS_PREFIX, sub[0]),
+            value=sub[1], agg="last", sender=sender)
+        total += sub[1]
+    return total
+
+
+@task()
+def fire_metrics_all_time_subscriptions(sender=None):
+    """
+    Gathers subscription metrics for all time and fires to metric store
+    Runs hourly
+    """
+    cursor = connection.cursor()
+    cursor.execute(
+        """SELECT
+            subscription_messageset.short_name,
+            count(ss.id) AS subscribers
+        FROM
+            (SELECT
+            MAX(id) as id, message_set_id
+        FROM
+            subscription_subscription
+        GROUP BY
+            to_addr, message_set_id
+        ) ss
+        INNER JOIN subscription_messageset ON
+            subscription_messageset.id = ss.message_set_id
+        GROUP BY subscription_messageset.short_name
+        ORDER BY subscribers""")
+
+    subscriptions = cursor.fetchall()
+    total = 0
+    for sub in subscriptions:
+        vumi_fire_metric.delay(
+            metric="%s.subscriptions.%s.alltime" %
             (settings.VUMI_GO_METRICS_PREFIX, sub[0]),
             value=sub[1], agg="last", sender=sender)
         total += sub[1]
