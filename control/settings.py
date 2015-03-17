@@ -227,6 +227,18 @@ CELERY_ROUTES = {
     },
     'snappybouncer.tasks.update_snappy_ticket_with_extras': {
         'queue': 'priority',
+    },
+    'subscription.tasks.fire_metrics_active_subscriptions': {
+        'queue': 'priority',
+    },
+    'subscription.tasks.fire_metrics_all_time_subscriptions': {
+        'queue': 'priority',
+    },
+    'subscription.tasks.fire_metrics_active_langs': {
+        'queue': 'priority',
+    },
+    'subscription.tasks.fire_metrics_all_time_langs': {
+        'queue': 'priority',
     }
 }
 
