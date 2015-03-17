@@ -121,7 +121,7 @@ class SubscriptionResourceTest(ResourceTestCase):
             "lang": "en",
             "next_sequence_number": 1,
             "resource_uri": "/api/v1/subscription/1/",
-            "schedule": "/api/v1/periodic_task/10/",  # Non existent task
+            "schedule": "/api/v1/periodic_task/99/",  # Non existent task
             "to_addr": "+271234",
             "user_account": "80493284823"
         }
@@ -133,7 +133,7 @@ class SubscriptionResourceTest(ResourceTestCase):
         self.assertHttpBadRequest(response)
         self.assertEqual(
             ("Could not find the provided object via resource URI "
-             "'/api/v1/periodic_task/10/'."), json_item["error"])
+             "'/api/v1/periodic_task/99/'."), json_item["error"])
 
     def test_post_subscription_good(self):
         data = {
@@ -341,40 +341,40 @@ class TestFireSummaryMetrics(TestCase):
         self.assertEqual(results.get(), 2)
         self.assertEqual(
             self.handler.logs[0].msg,
-            "Metric: u'dev.subscriptions.baby2.active' [last] -> 1")
+            "Metric: u'qa.subscriptions.baby2.active' [last] -> 1")
         self.assertEqual(
             self.handler.logs[1].msg,
-            "Metric: u'dev.subscriptions.accelerated.active' [last] -> 1")
+            "Metric: u'qa.subscriptions.accelerated.active' [last] -> 1")
 
     def test_all_time_subscriptions_metric(self):
         results = fire_metrics_all_time_subscriptions.delay(sender=self.sender)
         self.assertEqual(results.get(), 2)
         self.assertEqual(
             self.handler.logs[0].msg,
-            "Metric: u'dev.subscriptions.baby2.alltime' [last] -> 1")
+            "Metric: u'qa.subscriptions.baby2.alltime' [last] -> 1")
         self.assertEqual(
             self.handler.logs[1].msg,
-            "Metric: u'dev.subscriptions.accelerated.alltime' [last] -> 1")
+            "Metric: u'qa.subscriptions.accelerated.alltime' [last] -> 1")
 
     def test_active_langs_metric(self):
         results = fire_metrics_active_langs.delay(sender=self.sender)
         self.assertEqual(results.get(), 2)
         self.assertEqual(
             self.handler.logs[0].msg,
-            "Metric: u'dev.subscriptions.en.active' [last] -> 1")
+            "Metric: u'qa.subscriptions.en.active' [last] -> 1")
         self.assertEqual(
             self.handler.logs[1].msg,
-            "Metric: u'dev.subscriptions.af.active' [last] -> 1")
+            "Metric: u'qa.subscriptions.af.active' [last] -> 1")
 
     def test_all_time_langs_metric(self):
         results = fire_metrics_all_time_langs.delay(sender=self.sender)
         self.assertEqual(results.get(), 2)
         self.assertEqual(
             self.handler.logs[0].msg,
-            "Metric: u'dev.subscriptions.af.alltime' [last] -> 1")
+            "Metric: u'qa.subscriptions.af.alltime' [last] -> 1")
         self.assertEqual(
             self.handler.logs[1].msg,
-            "Metric: u'dev.subscriptions.en.alltime' [last] -> 1")
+            "Metric: u'qa.subscriptions.en.alltime' [last] -> 1")
 
 
 class TestSetSeqCommand(TestCase):
