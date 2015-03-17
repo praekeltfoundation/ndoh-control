@@ -142,6 +142,78 @@ def fire_metrics_all_time_subscriptions(sender=None):
     return total
 
 
+@task()
+def fire_metrics_active_langs(sender=None):
+    """
+    Gathers subscription lang metrics and fires to metric store
+    Runs hourly
+    """
+    cursor = connection.cursor()
+    cursor.execute(
+        """SELECT
+                ss.lang,
+                count(ss.id) AS subscribers
+            FROM
+                (SELECT
+                MAX(id) as id, lang
+            FROM
+                subscription_subscription
+            WHERE
+                lang <> ''
+            AND
+                active = true
+            GROUP BY
+                to_addr, lang
+            ) ss
+            GROUP BY ss.lang
+            ORDER BY subscribers""")
+
+    subscriptions = cursor.fetchall()
+    total = 0
+    for sub in subscriptions:
+        vumi_fire_metric.delay(
+            metric="%s.subscriptions.%s.active" %
+            (settings.VUMI_GO_METRICS_PREFIX, sub[0]),
+            value=sub[1], agg="last", sender=sender)
+        total += sub[1]
+    return total
+
+
+@task()
+def fire_metrics_all_time_langs(sender=None):
+    """
+    Gathers subscription lang metrics for all time and fires to metric store
+    Runs hourly
+    """
+    cursor = connection.cursor()
+    cursor.execute(
+        """SELECT
+                ss.lang,
+                count(ss.id) AS subscribers
+            FROM
+                (SELECT
+                MAX(id) as id, lang
+            FROM
+                subscription_subscription
+            WHERE
+                lang <> ''
+            GROUP BY
+                to_addr, lang
+            ) ss
+            GROUP BY ss.lang
+            ORDER BY subscribers""")
+
+    subscriptions = cursor.fetchall()
+    total = 0
+    for sub in subscriptions:
+        vumi_fire_metric.delay(
+            metric="%s.subscriptions.%s.alltime" %
+            (settings.VUMI_GO_METRICS_PREFIX, sub[0]),
+            value=sub[1], agg="last", sender=sender)
+        total += sub[1]
+    return total
+
+
 def clean_msisdn(msisdn):
     if msisdn.strip()[0] == "+":
         return msisdn.strip()

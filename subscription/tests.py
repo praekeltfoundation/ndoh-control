@@ -11,7 +11,9 @@ from subscription.models import MessageSet, Message, Subscription
 from subscription.tasks import (ingest_csv, ensure_one_subscription,
                                 vumi_fire_metric, ingest_opt_opts_csv,
                                 fire_metrics_active_subscriptions,
-                                fire_metrics_all_time_subscriptions)
+                                fire_metrics_all_time_subscriptions,
+                                fire_metrics_active_langs,
+                                fire_metrics_all_time_langs)
 from StringIO import StringIO
 import json
 import logging
@@ -353,6 +355,26 @@ class TestFireSummaryMetrics(TestCase):
         self.assertEqual(
             self.handler.logs[1].msg,
             "Metric: u'dev.subscriptions.accelerated.alltime' [last] -> 1")
+
+    def test_active_langs_metric(self):
+        results = fire_metrics_active_langs.delay(sender=self.sender)
+        self.assertEqual(results.get(), 2)
+        self.assertEqual(
+            self.handler.logs[0].msg,
+            "Metric: u'dev.subscriptions.en.active' [last] -> 1")
+        self.assertEqual(
+            self.handler.logs[1].msg,
+            "Metric: u'dev.subscriptions.af.active' [last] -> 1")
+
+    def test_all_time_langs_metric(self):
+        results = fire_metrics_all_time_langs.delay(sender=self.sender)
+        self.assertEqual(results.get(), 2)
+        self.assertEqual(
+            self.handler.logs[0].msg,
+            "Metric: u'dev.subscriptions.af.alltime' [last] -> 1")
+        self.assertEqual(
+            self.handler.logs[1].msg,
+            "Metric: u'dev.subscriptions.en.alltime' [last] -> 1")
 
 
 class TestSetSeqCommand(TestCase):
