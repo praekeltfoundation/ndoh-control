@@ -12,6 +12,24 @@ logger = get_task_logger(__name__)
 
 
 @task()
+def vumi_fire_metric(metric, value, agg, sender=None):
+    try:
+        if sender is None:
+            sender = HttpApiSender(
+                account_key=settings.VUMI_GO_ACCOUNT_KEY,
+                conversation_key=settings.VUMI_GO_CONVERSATION_KEY,
+                conversation_token=settings.VUMI_GO_ACCOUNT_TOKEN
+            )
+        sender.fire_metric(metric, value, agg=agg)
+        return sender
+    except SoftTimeLimitExceeded:
+        logger.error(
+            'Soft time limit exceed processing metric fire to Vumi HTTP API '
+            'via Celery',
+            exc_info=True)
+
+
+@task()
 def process_message_queue(schedule, sender=None):
     # Get all active and incomplete subscribers for schedule
     subscribers = Subscription.objects.filter(
@@ -61,7 +79,7 @@ def processes_message(subscriber, sender):
                 if message_set.next_set:
                     # clone existing minus PK as recommended in
                     # https://docs.djangoproject.com/en/1.6/topics/db/queries/
-                    #    #copying-model-instances
+                    # copying-model-instances
                     subscriber.pk = None
                     subscriber.process_status = 0  # Ready
                     subscriber.active = True
@@ -72,6 +90,15 @@ def processes_message(subscriber, sender):
                     subscription.schedule = (
                         subscription.message_set.default_schedule)
                     subscription.save()
+                    vumi_fire_metric.delay(
+                        metric="sum." +
+                        subscription.message_set.short_name +
+                        "_auto",
+                        value=1, agg="sum")
+                    vumi_fire_metric.delay(
+                        metric="sum.subscriptions." +
+                        subscription.message_set.short_name,
+                        value=1, agg="sum")
             else:
                 # More in this set so interate by one
                 subscriber.next_sequence_number = (

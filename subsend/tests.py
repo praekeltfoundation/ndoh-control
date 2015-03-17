@@ -8,7 +8,8 @@ from django.test.utils import override_settings
 from requests_testadapter import TestAdapter, TestSession
 
 from go_http.send import HttpApiSender, LoggingSender
-from subsend.tasks import process_message_queue, processes_message
+from subsend.tasks import (process_message_queue, processes_message,
+                           vumi_fire_metric)
 from subscription.models import Subscription, MessageSet
 from djcelery.models import PeriodicTask
 
@@ -25,6 +26,11 @@ class TestMessageQueueProcessor(TestCase):
         logger = logging.getLogger('go_http.test')
         logger.setLevel(logging.INFO)
         logger.addHandler(self.handler)
+
+    def check_logs(self, msg, levelno=logging.INFO):
+        [log] = self.handler.logs
+        self.assertEqual(log.msg, msg)
+        self.assertEqual(log.levelno, levelno)
 
     def test_data_loaded(self):
         messagesets = MessageSet.objects.all()
@@ -106,6 +112,12 @@ class TestMessageQueueProcessor(TestCase):
         self.assertEquals(new_subscription.to_addr, "+271112")
         self.assertEquals(new_subscription.schedule, once_a_week)
 
+    def test_new_subscription_created_metric_send(self):
+        vumi_fire_metric.delay(
+            metric="sum.baby1_auto", value=1,
+            agg="sum", sender=self.sender)
+        self.check_logs("Metric: 'sum.baby1_auto' [sum] -> 1")
+
     def test_no_new_subscription_created_post_send_en_baby_2(self):
         subscriber = Subscription.objects.get(pk=4)
         result = processes_message.delay(subscriber, self.sender)
@@ -120,6 +132,7 @@ class TestMessageQueueProcessor(TestCase):
 
 
 class RecordingAdapter(TestAdapter):
+
     """ Record the request that was handled by the adapter.
     """
     request = None
@@ -130,6 +143,7 @@ class RecordingAdapter(TestAdapter):
 
 
 class TestHttpApiSender(TestCase):
+
     def setUp(self):
         self.session = TestSession()
         self.sender = HttpApiSender(
@@ -210,6 +224,7 @@ class TestHttpApiSender(TestCase):
 
 
 class RecordingHandler(logging.Handler):
+
     """ Record logs. """
     logs = None
 
@@ -220,6 +235,7 @@ class RecordingHandler(logging.Handler):
 
 
 class TestLoggingSender(TestCase):
+
     def setUp(self):
         self.sender = LoggingSender('go_http.test')
         self.handler = RecordingHandler()
