@@ -239,6 +239,9 @@ CELERY_ROUTES = {
     },
     'subscription.tasks.fire_metrics_all_time_langs': {
         'queue': 'priority',
+    },
+    'subscription.tasks.vumi_fire_metric': {
+        'queue': 'priority',
     }
 }
 

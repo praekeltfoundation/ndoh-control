@@ -345,6 +345,9 @@ class TestFireSummaryMetrics(TestCase):
         self.assertEqual(
             self.handler.logs[1].msg,
             "Metric: u'qa.subscriptions.accelerated.active' [last] -> 1")
+        self.assertEqual(
+            self.handler.logs[2].msg,
+            "Metric: 'qa.subscriptions.active' [last] -> 2")
 
     def test_all_time_subscriptions_metric(self):
         results = fire_metrics_all_time_subscriptions.delay(sender=self.sender)
@@ -355,6 +358,9 @@ class TestFireSummaryMetrics(TestCase):
         self.assertEqual(
             self.handler.logs[1].msg,
             "Metric: u'qa.subscriptions.accelerated.alltime' [last] -> 1")
+        self.assertEqual(
+            self.handler.logs[2].msg,
+            "Metric: 'qa.subscriptions.alltime' [last] -> 2")
 
     def test_active_langs_metric(self):
         results = fire_metrics_active_langs.delay(sender=self.sender)

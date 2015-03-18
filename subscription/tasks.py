@@ -104,6 +104,11 @@ def fire_metrics_active_subscriptions(sender=None):
             (settings.VUMI_GO_METRICS_PREFIX, sub[0]),
             value=sub[1], agg="last", sender=sender)
         total += sub[1]
+    # Total fire
+    vumi_fire_metric.delay(
+        metric="%s.subscriptions.active" %
+        settings.VUMI_GO_METRICS_PREFIX,
+        value=total, agg="last", sender=sender)
     return total
 
 
@@ -139,6 +144,11 @@ def fire_metrics_all_time_subscriptions(sender=None):
             (settings.VUMI_GO_METRICS_PREFIX, sub[0]),
             value=sub[1], agg="last", sender=sender)
         total += sub[1]
+    # Total fire
+    vumi_fire_metric.delay(
+        metric="%s.subscriptions.alltime" %
+        settings.VUMI_GO_METRICS_PREFIX,
+        value=total, agg="last", sender=sender)
     return total
 
 
