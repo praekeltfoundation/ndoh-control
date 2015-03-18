@@ -9,6 +9,7 @@ from django.conf import settings
 
 # We need a generic object to shove data in/get data from.
 class MetricObject(object):
+
     def __init__(self, initial=None):
         self.__dict__['_data'] = {}
 
@@ -66,7 +67,7 @@ class MetricResource(Resource):
             if metric in response:
                 new_obj.values = response[metric]
             else:
-                 new_obj.values = []
+                new_obj.values = []
             results.append(new_obj)
 
         return results
