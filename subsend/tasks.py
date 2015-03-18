@@ -91,10 +91,10 @@ def processes_message(subscriber, sender):
                         subscription.message_set.default_schedule)
                     subscription.save()
                     vumi_fire_metric.delay(
-                        metric="sum." +
-                        subscription.message_set.short_name +
-                        "_auto",
-                        value=1, agg="sum")
+                        metric="%s.sum.%s_auto" %
+                        (settings.VUMI_GO_METRICS_PREFIX,
+                         subscription.message_set.short_name),
+                        value=1, agg="sum", sender=sender)
             else:
                 # More in this set so interate by one
                 subscriber.next_sequence_number = (
