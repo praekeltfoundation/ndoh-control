@@ -49,7 +49,12 @@ def process_message_queue(schedule, sender=None):
         subscriber.process_status = 1  # In Proceses
         subscriber.save()
         processes_message.delay(subscriber, sender)
-    return subscribers.count()
+    total_sent = subscribers.count()
+    vumi_fire_metric.delay(
+        metric="%s.sum.sms.subscription.outbound" %
+        settings.VUMI_GO_METRICS_PREFIX,
+        value=total_sent, agg="sum", sender=sender)
+    return total_sent
 
 
 @task()

@@ -44,7 +44,9 @@ class TestMessageQueueProcessor(TestCase):
         schedule = 6
         result = process_message_queue.delay(schedule, self.sender)
         self.assertEquals(result.get(), 2)
-        # self.assertEquals(1, 2)
+        self.assertEqual(
+            self.handler.logs[2].msg,
+            "Metric: 'qa.sum.sms.subscription.outbound' [sum] -> 2")
 
     def test_multisend_none(self):
         schedule = 2
