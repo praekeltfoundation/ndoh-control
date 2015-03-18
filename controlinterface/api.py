@@ -63,7 +63,10 @@ class MetricResource(Resource):
                                          filters['nulls'])
             new_obj = MetricObject()
             new_obj.key = metric
-            new_obj.values = response[metric]
+            if metric in response:
+                new_obj.values = response[metric]
+            else:
+                 new_obj.values = []
             results.append(new_obj)
 
         return results
