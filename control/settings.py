@@ -227,6 +227,18 @@ CELERY_ROUTES = {
     },
     'snappybouncer.tasks.update_snappy_ticket_with_extras': {
         'queue': 'priority',
+    },
+    'subscription.tasks.fire_metrics_active_subscriptions': {
+        'queue': 'priority',
+    },
+    'subscription.tasks.fire_metrics_all_time_subscriptions': {
+        'queue': 'priority',
+    },
+    'subscription.tasks.fire_metrics_active_langs': {
+        'queue': 'priority',
+    },
+    'subscription.tasks.fire_metrics_all_time_langs': {
+        'queue': 'priority',
     }
 }
 
@@ -261,6 +273,7 @@ VUMI_GO_BASE_URL = "http://go.vumi.org/api/v1/go/http_api_nostream"
 VUMI_GO_ACCOUNT_KEY = "replaceme"
 VUMI_GO_CONVERSATION_KEY = "replaceme"
 VUMI_GO_ACCOUNT_TOKEN = "replaceme"
+VUMI_GO_METRICS_PREFIX = "qa"
 
 SNAPPY_BASE_URL = "https://app.besnappy.com/api/v1"
 SNAPPY_API_KEY = "replaceme"

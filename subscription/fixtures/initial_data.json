@@ -328,5 +328,97 @@
         "schedule": 3,
         "process_status": -1
     }
+},
+{
+    "pk": 1,
+    "model": "djcelery.intervalschedule",
+    "fields": {
+        "every": 1,
+        "period": "hours"
+    }
+},
+{
+    "pk": 10,
+    "model": "djcelery.periodictask",
+    "fields": {
+        "task": "subscription.tasks.fire_metrics_all_time_langs",
+        "name": "Fire All Time Langs Metric",
+        "exchange": null,
+        "last_run_at": null,
+        "args": "[]",
+        "enabled": true,
+        "routing_key": null,
+        "crontab": null,
+        "interval": 1,
+        "queue": null,
+        "total_run_count": 0,
+        "expires": null,
+        "kwargs": "{}",
+        "date_changed": "2015-03-17T15:15:12.271Z",
+        "description": ""
+    }
+},
+{
+    "pk": 11,
+    "model": "djcelery.periodictask",
+    "fields": {
+        "task": "subscription.tasks.fire_metrics_active_langs",
+        "name": "Fire Active Langs Metric",
+        "exchange": null,
+        "last_run_at": null,
+        "args": "[]",
+        "enabled": true,
+        "routing_key": null,
+        "crontab": null,
+        "interval": 1,
+        "queue": null,
+        "total_run_count": 0,
+        "expires": null,
+        "kwargs": "{}",
+        "date_changed": "2015-03-17T15:15:12.271Z",
+        "description": ""
+    }
+},
+{
+    "pk": 12,
+    "model": "djcelery.periodictask",
+    "fields": {
+        "task": "subscription.tasks.fire_metrics_all_time_subscriptions",
+        "name": "Fire All Time Subscriptions Metric",
+        "exchange": null,
+        "last_run_at": null,
+        "args": "[]",
+        "enabled": true,
+        "routing_key": null,
+        "crontab": null,
+        "interval": 1,
+        "queue": null,
+        "total_run_count": 0,
+        "expires": null,
+        "kwargs": "{}",
+        "date_changed": "2015-03-17T15:15:12.271Z",
+        "description": ""
+    }
+},
+{
+    "pk": 13,
+    "model": "djcelery.periodictask",
+    "fields": {
+        "task": "subscription.tasks.fire_metrics_active_subscriptions",
+        "name": "Fire Active Subscriptions Metric",
+        "exchange": null,
+        "last_run_at": null,
+        "args": "[]",
+        "enabled": true,
+        "routing_key": null,
+        "crontab": null,
+        "interval": 1,
+        "queue": null,
+        "total_run_count": 0,
+        "expires": null,
+        "kwargs": "{}",
+        "date_changed": "2015-03-17T15:15:12.271Z",
+        "description": ""
+    }
 }
 ]

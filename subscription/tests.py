@@ -9,7 +9,11 @@ from django.core.urlresolvers import reverse
 from django.test.utils import override_settings
 from subscription.models import MessageSet, Message, Subscription
 from subscription.tasks import (ingest_csv, ensure_one_subscription,
-                                vumi_fire_metric, ingest_opt_opts_csv)
+                                vumi_fire_metric, ingest_opt_opts_csv,
+                                fire_metrics_active_subscriptions,
+                                fire_metrics_all_time_subscriptions,
+                                fire_metrics_active_langs,
+                                fire_metrics_all_time_langs)
 from StringIO import StringIO
 import json
 import logging
@@ -117,7 +121,7 @@ class SubscriptionResourceTest(ResourceTestCase):
             "lang": "en",
             "next_sequence_number": 1,
             "resource_uri": "/api/v1/subscription/1/",
-            "schedule": "/api/v1/periodic_task/10/",  # Non existent task
+            "schedule": "/api/v1/periodic_task/99/",  # Non existent task
             "to_addr": "+271234",
             "user_account": "80493284823"
         }
@@ -129,7 +133,7 @@ class SubscriptionResourceTest(ResourceTestCase):
         self.assertHttpBadRequest(response)
         self.assertEqual(
             ("Could not find the provided object via resource URI "
-             "'/api/v1/periodic_task/10/'."), json_item["error"])
+             "'/api/v1/periodic_task/99/'."), json_item["error"])
 
     def test_post_subscription_good(self):
         data = {
@@ -263,13 +267,14 @@ class TestUploadOptOutCSV(TestCase):
 
 
 class RecordingHandler(logging.Handler):
+
     """ Record logs. """
     logs = None
 
     def emit(self, record):
         if self.logs is None:
             self.logs = []
-        print record
+        # print record
         self.logs.append(record)
 
 
@@ -307,7 +312,73 @@ class TestEnsureCleanSubscriptions(TestCase):
         self.check_logs("Metric: 'subscription.duplicates' [last] -> 1")
 
 
+class TestFireSummaryMetrics(TestCase):
+
+    fixtures = ["test.json"]
+
+    @override_settings(CELERY_EAGER_PROPAGATES_EXCEPTIONS=True,
+                       CELERY_ALWAYS_EAGER=True,
+                       BROKER_BACKEND='memory',)
+    def setUp(self):
+        self.sender = LoggingSender('go_http.test')
+        self.handler = RecordingHandler()
+        logger = logging.getLogger('go_http.test')
+        logger.setLevel(logging.INFO)
+        logger.addHandler(self.handler)
+
+    def check_logs(self, msg, levelno=logging.INFO):
+        # print self.handler.logs
+        [log, log2] = self.handler.logs
+        self.assertEqual(log.msg, msg)
+        self.assertEqual(log.levelno, levelno)
+
+    def test_ensure_two_subscriptions(self):
+        results = ensure_one_subscription.delay()
+        self.assertEqual(results.get(), 2)
+
+    def test_active_subscriptions_metric(self):
+        results = fire_metrics_active_subscriptions.delay(sender=self.sender)
+        self.assertEqual(results.get(), 2)
+        self.assertEqual(
+            self.handler.logs[0].msg,
+            "Metric: u'qa.subscriptions.baby2.active' [last] -> 1")
+        self.assertEqual(
+            self.handler.logs[1].msg,
+            "Metric: u'qa.subscriptions.accelerated.active' [last] -> 1")
+
+    def test_all_time_subscriptions_metric(self):
+        results = fire_metrics_all_time_subscriptions.delay(sender=self.sender)
+        self.assertEqual(results.get(), 2)
+        self.assertEqual(
+            self.handler.logs[0].msg,
+            "Metric: u'qa.subscriptions.baby2.alltime' [last] -> 1")
+        self.assertEqual(
+            self.handler.logs[1].msg,
+            "Metric: u'qa.subscriptions.accelerated.alltime' [last] -> 1")
+
+    def test_active_langs_metric(self):
+        results = fire_metrics_active_langs.delay(sender=self.sender)
+        self.assertEqual(results.get(), 2)
+        self.assertEqual(
+            self.handler.logs[0].msg,
+            "Metric: u'qa.subscriptions.en.active' [last] -> 1")
+        self.assertEqual(
+            self.handler.logs[1].msg,
+            "Metric: u'qa.subscriptions.af.active' [last] -> 1")
+
+    def test_all_time_langs_metric(self):
+        results = fire_metrics_all_time_langs.delay(sender=self.sender)
+        self.assertEqual(results.get(), 2)
+        self.assertEqual(
+            self.handler.logs[0].msg,
+            "Metric: u'qa.subscriptions.af.alltime' [last] -> 1")
+        self.assertEqual(
+            self.handler.logs[1].msg,
+            "Metric: u'qa.subscriptions.en.alltime' [last] -> 1")
+
+
 class TestSetSeqCommand(TestCase):
+
     def setUp(self):
         pass
 

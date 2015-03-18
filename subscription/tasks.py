@@ -10,6 +10,24 @@ logger = logging.getLogger(__name__)
 
 
 @task()
+def vumi_fire_metric(metric, value, agg, sender=None):
+    try:
+        if sender is None:
+            sender = HttpApiSender(
+                account_key=settings.VUMI_GO_ACCOUNT_KEY,
+                conversation_key=settings.VUMI_GO_CONVERSATION_KEY,
+                conversation_token=settings.VUMI_GO_ACCOUNT_TOKEN
+            )
+        sender.fire_metric(metric, value, agg=agg)
+        return sender
+    except SoftTimeLimitExceeded:
+        logger.error(
+            'Soft time limit exceed processing metric fire to Vumi HTTP API '
+            'via Celery',
+            exc_info=True)
+
+
+@task()
 def ingest_csv(csv_data, message_set):
     """ Expecting data in the following format:
     message_id,en,safe,af,safe,zu,safe,xh,safe,ve,safe,tn,safe,ts,safe,
@@ -53,21 +71,147 @@ def ensure_one_subscription():
 
 
 @task()
-def vumi_fire_metric(metric, value, agg, sender=None):
-    try:
-        if sender is None:
-            sender = HttpApiSender(
-                account_key=settings.VUMI_GO_ACCOUNT_KEY,
-                conversation_key=settings.VUMI_GO_CONVERSATION_KEY,
-                conversation_token=settings.VUMI_GO_ACCOUNT_TOKEN
-            )
-        sender.fire_metric(metric, value, agg=agg)
-        return sender
-    except SoftTimeLimitExceeded:
-        logger.error(
-            'Soft time limit exceed processing metric fire to Vumi HTTP API '
-            'via Celery',
-            exc_info=True)
+def fire_metrics_active_subscriptions(sender=None):
+    """
+    Gathers subscription metrics and fires to metric store
+    Runs hourly
+    """
+    cursor = connection.cursor()
+    cursor.execute(
+        """SELECT
+            subscription_messageset.short_name,
+            count(ss.id) AS subscribers
+        FROM
+            (SELECT
+            MAX(id) as id, message_set_id
+        FROM
+            subscription_subscription
+        WHERE
+            active = true
+        GROUP BY
+            to_addr, message_set_id
+        ) ss
+        INNER JOIN subscription_messageset ON
+            subscription_messageset.id = ss.message_set_id
+        GROUP BY subscription_messageset.short_name
+        ORDER BY subscribers""")
+
+    subscriptions = cursor.fetchall()
+    total = 0
+    for sub in subscriptions:
+        vumi_fire_metric.delay(
+            metric="%s.subscriptions.%s.active" %
+            (settings.VUMI_GO_METRICS_PREFIX, sub[0]),
+            value=sub[1], agg="last", sender=sender)
+        total += sub[1]
+    return total
+
+
+@task()
+def fire_metrics_all_time_subscriptions(sender=None):
+    """
+    Gathers subscription metrics for all time and fires to metric store
+    Runs hourly
+    """
+    cursor = connection.cursor()
+    cursor.execute(
+        """SELECT
+            subscription_messageset.short_name,
+            count(ss.id) AS subscribers
+        FROM
+            (SELECT
+            MAX(id) as id, message_set_id
+        FROM
+            subscription_subscription
+        GROUP BY
+            to_addr, message_set_id
+        ) ss
+        INNER JOIN subscription_messageset ON
+            subscription_messageset.id = ss.message_set_id
+        GROUP BY subscription_messageset.short_name
+        ORDER BY subscribers""")
+
+    subscriptions = cursor.fetchall()
+    total = 0
+    for sub in subscriptions:
+        vumi_fire_metric.delay(
+            metric="%s.subscriptions.%s.alltime" %
+            (settings.VUMI_GO_METRICS_PREFIX, sub[0]),
+            value=sub[1], agg="last", sender=sender)
+        total += sub[1]
+    return total
+
+
+@task()
+def fire_metrics_active_langs(sender=None):
+    """
+    Gathers subscription lang metrics and fires to metric store
+    Runs hourly
+    """
+    cursor = connection.cursor()
+    cursor.execute(
+        """SELECT
+                ss.lang,
+                count(ss.id) AS subscribers
+            FROM
+                (SELECT
+                MAX(id) as id, lang
+            FROM
+                subscription_subscription
+            WHERE
+                lang <> ''
+            AND
+                active = true
+            GROUP BY
+                to_addr, lang
+            ) ss
+            GROUP BY ss.lang
+            ORDER BY subscribers""")
+
+    subscriptions = cursor.fetchall()
+    total = 0
+    for sub in subscriptions:
+        vumi_fire_metric.delay(
+            metric="%s.subscriptions.%s.active" %
+            (settings.VUMI_GO_METRICS_PREFIX, sub[0]),
+            value=sub[1], agg="last", sender=sender)
+        total += sub[1]
+    return total
+
+
+@task()
+def fire_metrics_all_time_langs(sender=None):
+    """
+    Gathers subscription lang metrics for all time and fires to metric store
+    Runs hourly
+    """
+    cursor = connection.cursor()
+    cursor.execute(
+        """SELECT
+                ss.lang,
+                count(ss.id) AS subscribers
+            FROM
+                (SELECT
+                MAX(id) as id, lang
+            FROM
+                subscription_subscription
+            WHERE
+                lang <> ''
+            GROUP BY
+                to_addr, lang
+            ) ss
+            GROUP BY ss.lang
+            ORDER BY subscribers""")
+
+    subscriptions = cursor.fetchall()
+    total = 0
+    for sub in subscriptions:
+        vumi_fire_metric.delay(
+            metric="%s.subscriptions.%s.alltime" %
+            (settings.VUMI_GO_METRICS_PREFIX, sub[0]),
+            value=sub[1], agg="last", sender=sender)
+        total += sub[1]
+    return total
 
 
 def clean_msisdn(msisdn):
