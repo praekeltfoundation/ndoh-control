@@ -46,7 +46,7 @@ class TestMessageQueueProcessor(TestCase):
         self.assertEquals(result.get(), 2)
         self.assertEqual(
             self.handler.logs[2].msg,
-            "Metric: 'qa.sum.sms.subscription.outbound' [sum] -> 2")
+            "Metric: 'prd.sum.sms.subscription.outbound' [sum] -> 2")
 
     def test_multisend_none(self):
         schedule = 2
@@ -99,7 +99,7 @@ class TestMessageQueueProcessor(TestCase):
         self.assertEquals(new_subscription.schedule, twice_a_week)
         self.assertEqual(
             self.handler.logs[1].msg,
-            "Metric: u'qa.sum.baby1_auto' [sum] -> 1")
+            "Metric: u'prd.sum.baby1_auto' [sum] -> 1")
 
     def test_new_subscription_created_post_send_en_baby1(self):
         once_a_week = PeriodicTask.objects.get(pk=2)
@@ -119,9 +119,9 @@ class TestMessageQueueProcessor(TestCase):
 
     def test_new_subscription_created_metric_send(self):
         vumi_fire_metric.delay(
-            metric="qa.sum.baby1_auto", value=1,
+            metric="prd.sum.baby1_auto", value=1,
             agg="sum", sender=self.sender)
-        self.check_logs("Metric: 'qa.sum.baby1_auto' [sum] -> 1")
+        self.check_logs("Metric: 'prd.sum.baby1_auto' [sum] -> 1")
 
     def test_no_new_subscription_created_post_send_en_baby_2(self):
         subscriber = Subscription.objects.get(pk=4)

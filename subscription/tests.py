@@ -341,46 +341,46 @@ class TestFireSummaryMetrics(TestCase):
         self.assertEqual(results.get(), 2)
         self.assertEqual(
             self.handler.logs[0].msg,
-            "Metric: u'qa.subscriptions.baby2.active' [last] -> 1")
+            "Metric: u'prd.subscriptions.baby2.active' [last] -> 1")
         self.assertEqual(
             self.handler.logs[1].msg,
-            "Metric: u'qa.subscriptions.accelerated.active' [last] -> 1")
+            "Metric: u'prd.subscriptions.accelerated.active' [last] -> 1")
         self.assertEqual(
             self.handler.logs[2].msg,
-            "Metric: 'qa.subscriptions.active' [last] -> 2")
+            "Metric: 'prd.subscriptions.active' [last] -> 2")
 
     def test_all_time_subscriptions_metric(self):
         results = fire_metrics_all_time_subscriptions.delay(sender=self.sender)
         self.assertEqual(results.get(), 2)
         self.assertEqual(
             self.handler.logs[0].msg,
-            "Metric: u'qa.subscriptions.baby2.alltime' [last] -> 1")
+            "Metric: u'prd.subscriptions.baby2.alltime' [last] -> 1")
         self.assertEqual(
             self.handler.logs[1].msg,
-            "Metric: u'qa.subscriptions.accelerated.alltime' [last] -> 1")
+            "Metric: u'prd.subscriptions.accelerated.alltime' [last] -> 1")
         self.assertEqual(
             self.handler.logs[2].msg,
-            "Metric: 'qa.subscriptions.alltime' [last] -> 2")
+            "Metric: 'prd.subscriptions.alltime' [last] -> 2")
 
     def test_active_langs_metric(self):
         results = fire_metrics_active_langs.delay(sender=self.sender)
         self.assertEqual(results.get(), 2)
         self.assertEqual(
             self.handler.logs[0].msg,
-            "Metric: u'qa.subscriptions.en.active' [last] -> 1")
+            "Metric: u'prd.subscriptions.en.active' [last] -> 1")
         self.assertEqual(
             self.handler.logs[1].msg,
-            "Metric: u'qa.subscriptions.af.active' [last] -> 1")
+            "Metric: u'prd.subscriptions.af.active' [last] -> 1")
 
     def test_all_time_langs_metric(self):
         results = fire_metrics_all_time_langs.delay(sender=self.sender)
         self.assertEqual(results.get(), 2)
         self.assertEqual(
             self.handler.logs[0].msg,
-            "Metric: u'qa.subscriptions.af.alltime' [last] -> 1")
+            "Metric: u'prd.subscriptions.af.alltime' [last] -> 1")
         self.assertEqual(
             self.handler.logs[1].msg,
-            "Metric: u'qa.subscriptions.en.alltime' [last] -> 1")
+            "Metric: u'prd.subscriptions.en.alltime' [last] -> 1")
 
 
 class TestSetSeqCommand(TestCase):
