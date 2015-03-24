@@ -1,0 +1,12 @@
+{% extends "admin/change_list.html" %}
+{% load i18n admin_urls %}
+
+{% block object-tools-items %}
+{{ block.super }}
+  <li>
+    <a href="/admin/subscription/optouts/">
+      Upload CSV of optouts
+    </a>
+  </li>
+{% endblock %}
+        

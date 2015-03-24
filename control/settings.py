@@ -105,6 +105,18 @@ TEMPLATE_LOADERS = (
 #     'django.template.loaders.eggs.Loader',
 )
 
+TEMPLATE_CONTEXT_PROCESSORS = (
+    "django.contrib.auth.context_processors.auth",
+    "django.core.context_processors.debug",
+    "django.core.context_processors.i18n",
+    "django.core.context_processors.media",
+    "django.core.context_processors.static",
+    "django.core.context_processors.tz",
+    "django.contrib.messages.context_processors.messages",
+    "django.core.context_processors.request"
+
+)
+
 MIDDLEWARE_CLASSES = (
     'django.middleware.common.CommonMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -145,11 +157,14 @@ INSTALLED_APPS = (
     'djcelery',
     'djcelery_email',
     'tastypie',
+    'bootstrapform',
     # Custom apps
+    'control',
     'subscription',
     'subsend',
     'servicerating',
-    'snappybouncer'
+    'snappybouncer',
+    'controlinterface'
 )
 
 # A sample logging configuration. The only tangible logging
@@ -190,7 +205,46 @@ CELERYBEAT_SCHEDULER = 'djcelery.schedulers.DatabaseScheduler'
 CELERY_ALWAYS_EAGER = DEBUG
 
 # Tell Celery where to find the tasks
-CELERY_IMPORTS = ('subsend.tasks','subscription.tasks',)
+CELERY_IMPORTS = (
+    'subsend.tasks',
+    'subscription.tasks',
+    'snappybouncer.tasks',
+)
+
+# Enabling priority routing for snappy bouncer tasks to allow those to
+# go through as normal regardless of the size of the default queue
+# http://docs.celeryproject.org
+#    /en/latest/userguide/routing.html#routing-automatic
+# This alleviates the problem of these being backlogged if a large outbound
+# send is happening.
+CELERY_CREATE_MISSING_QUEUES = True
+CELERY_ROUTES = {
+    'snappybouncer.tasks.send_helpdesk_response': {
+        'queue': 'priority',
+    },
+    'snappybouncer.tasks.create_snappy_ticket': {
+        'queue': 'priority',
+    },
+    'snappybouncer.tasks.update_snappy_ticket_with_extras': {
+        'queue': 'priority',
+    },
+    'subscription.tasks.fire_metrics_active_subscriptions': {
+        'queue': 'priority',
+    },
+    'subscription.tasks.fire_metrics_all_time_subscriptions': {
+        'queue': 'priority',
+    },
+    'subscription.tasks.fire_metrics_active_langs': {
+        'queue': 'priority',
+    },
+    'subscription.tasks.fire_metrics_all_time_langs': {
+        'queue': 'priority',
+    },
+    'subscription.tasks.vumi_fire_metric': {
+        'queue': 'priority',
+    }
+}
+
 
 # Defer email sending to Celery, except if we're in debug mode,
 # then just print the emails to stdout for debugging.
@@ -222,6 +276,7 @@ VUMI_GO_BASE_URL = "http://go.vumi.org/api/v1/go/http_api_nostream"
 VUMI_GO_ACCOUNT_KEY = "replaceme"
 VUMI_GO_CONVERSATION_KEY = "replaceme"
 VUMI_GO_ACCOUNT_TOKEN = "replaceme"
+VUMI_GO_METRICS_PREFIX = "prd"
 
 SNAPPY_BASE_URL = "https://app.besnappy.com/api/v1"
 SNAPPY_API_KEY = "replaceme"
@@ -230,10 +285,9 @@ SNAPPY_EMAIL = "replaceme@example.org"
 
 BROKER_URL = 'redis://localhost:6379/0'
 
+DASHBOARD_API_KEY = "replaceme"
+
 try:
     from local_settings import *
 except ImportError:
     pass
-
-if DEBUG:
-    INSTALLED_APPS += ('debug_toolbar',)

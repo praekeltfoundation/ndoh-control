@@ -1,0 +1,191 @@
+{% extends "controlinterface/base.html" %}
+{% load staticfiles %}
+
+
+{% block content %}
+<link rel="stylesheet" href="{% static "controlinterface/css/sapphire.css" %}">
+<div class="sapphire">
+  <div class="row">
+    <div class="col-sm-3 col-md-4">
+      <h1 class="page-header">Dashboard</h1>
+    </div>
+    <div class="col-sm-3 col-md-5">
+      <!-- <button type="button" class="btn btn-default btn-md btn-header"><span class="glyphicon glyphicon-plus"></span> Add New Widget</button> -->
+    </div>
+    <div class="col-sm-3 col-md-3">
+      <div class="input-group">
+        <input type="text" class="form-control" placeholder="">
+        <span class="input-group-btn">
+          <button class="btn btn-default btn-search" type="button"><span class="glyphicon glyphicon-search"></span></button>
+        </span>
+      </div><!-- /input-group -->
+    </div>
+  </div>
+  <div class="row">
+  {% for widget, values in widgets.iteritems %}
+
+    <div class="col-md-4">
+      <div id="w{{widget}}"></div>
+    </div>
+
+  {% endfor %}
+   </div>
+</div>
+
+
+    <script src="{% static "controlinterface/js/d3.v3.min.js" %}"></script>
+    <script src="{% static "controlinterface/js/strain.js" %}"></script>
+    <script src="{% static "controlinterface/js/sapphire.js" %}"></script>
+
+    <script src="{% static "controlinterface/js/superagent.js" %}"></script>
+    <script type="text/javascript">
+    var data = {
+      url: '/api/v1/controlinterface/metric/',
+      token: 'dashboards:{{ dashboard_api_key }}',
+      step: 100000,
+      widgets: {
+        {% for widget, values in widgets.iteritems %}
+        w{{ widget }}: {
+          title: '{{ values.config.title }}',
+          {% if values.data.count == 1 %}
+          key: '{{ values.data.first.key }}',
+          {% else %}
+          metrics: [
+            {% for metric in values.data %}
+            {
+              title: '{{ metric.title}}',
+              key: '{{ metric.key}}'
+            },
+
+            {% endfor %}
+          ],
+          {% endif %}
+          start: '{{ values.config.data_from }}',
+          interval: '{{ values.config.interval }}',
+          nulls: '{{ values.config.nulls }}',
+          type: '{{ values.config.type_of}}'
+        },
+      {% endfor %}
+      }
+    };
+
+
+  // Create the widget components. Widget configuration would be done here.
+  var last = sapphire.widgets.last();
+  var lines = sapphire.widgets.lines();
+  var pie = sapphire.widgets.pie();
+  var bars = sapphire.widgets.bars();
+
+
+  // Update the dashboard on page load, then every `data.step` milliseconds.
+  update();
+  setInterval(update, data.step);
+
+
+  // Select each widget element by id, then draw it using the sapphire components
+  // we created above
+  function draw() {
+    {% for widget, values in widgets.iteritems %}
+      d3.select('#w{{ widget }}')
+      .datum(data.widgets.w{{ widget }})
+      .call({{ values.config.type_of }});
+    {% endfor %}
+  }
+
+  // Updates each widget's metrics one by one, then draws the dashboard.
+  function update() {
+    var i = -1;
+    var widgets = d3.values(data.widgets);
+
+    function next() {
+      if (++i < widgets.length){
+        updateWidget(widgets[i], next);
+        draw();
+      } else {
+        draw();
+      }
+    }
+
+    next();
+  }
+
+
+  // Update a single widget's values by making an ajax request, then invokes a
+  // callback when done.
+  //
+  // 1. Create the request object as a json request to the configured url, with
+  // the from and interval parameters relevant to the widget and the auth token
+  // associated with the vumi-go account.
+  //
+  // 2. Add each of the widget's metrics to the query
+  //
+  // 3. Make the request
+  //
+  // 4. Update the widget's metrics with the response
+  //
+  // 5. Invoke the `done` callback so the next metric request or draw can happen
+  function updateWidget(widget, done) {
+    var req = superagent
+      .get(data.url)
+      .set('Authorization', ['ApiKey', data.token].join(' '))
+      .type('json')
+      .query({
+        start: widget.start,
+        interval: widget.interval,
+        nulls: widget.nulls
+      });
+
+    metrics(widget)
+      .forEach(function(d) { req.query({m: d.key}); });
+
+    req
+      .end(function(res) {
+        if (!res.ok) {
+          console.error(res.text);
+          return;
+        }
+        // We need to stick the response into the expected format
+        results = {};
+        res.body.objects
+          .forEach(function(met) {
+            results[met.key] = met.values;
+          });
+        updateMetrics(widget, results);
+        done();
+      });
+  }
+
+
+  // Updates a widget's metric values using the given api response data.
+  function updateMetrics(widget, data) {
+    metrics(widget)
+      .forEach(function(d) {
+        if (widget['type'] == 'pie'){
+          d.value = data[d.key][data[d.key].length-1].y;
+        } else {
+          d.values = data[d.key];
+        }
+      });
+  }
+
+
+  // Accesses a widget's metric data.
+  //
+  // `last` widgets only have a single metric. This function simplifies things
+  // by allowing us to treat all widgets as having multiple widgets.
+  //
+  // Note that the `last` widget could have also been configured to handle this
+  // distinction. Using this approach instead just means less widget
+  // configuration is needed.
+  function metrics(widget) {
+    return widget.metrics
+      ? widget.metrics
+      : [widget];
+  }
+
+
+    </script>
+    <!--  <script src="{% static "controlinterface/js/index.js" %}"></script>-->
+
+{% endblock %}
+

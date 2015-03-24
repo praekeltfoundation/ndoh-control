@@ -1,0 +1,376 @@
+/*
+ * Base structure
+ */
+
+
+/*
+ * Global add-ons
+ */
+
+.sub-header {
+  padding-bottom: 10px;
+  border-bottom: 1px solid #eee;
+}
+
+.special-blue {
+  background-color: #44c9f6;
+}
+
+/*
+ * Sidebar
+ */
+
+/* Hide for mobile, show later */
+.sidebar {
+  display: none;
+}
+@media (min-width: 768px) {
+  .sidebar {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 1000;
+    display: block;
+    padding: 20px 20px 20px 0;
+    overflow-x: hidden;
+    overflow-y: auto; /* Scrollable contents if viewport is shorter than content. */
+    background-color: #44c9f6;
+    /*border-right: 1px solid #eee;*/
+  }
+}
+
+/* Sidebar navigation */
+.nav-sidebar {
+  margin-right: -20px; /* 20px padding + 1px border */
+  margin-bottom: 20px;
+  padding-left: 0;
+}
+.nav-sidebar > li > a {
+  padding-right: 0;
+  padding-left: 20px;
+  color: #c1efff;
+  font-weight: bold;
+}
+.nav-sidebar > .active > a,
+.nav-sidebar > .active > a:hover,
+.nav-sidebar > .active > a:focus {
+  color: white;
+  background-color: #14abf4;
+}
+
+.nav-sidebar > li > a > .glyphicon {
+  padding-right: 20px;
+}
+
+.nav-sidebar > li > a:hover {
+   background-color: #14abf4;
+}
+
+
+
+/*
+Blue: #44c9f6;
+Pink: #ee3d85;
+Yellow: #ffcb05;
+*/
+
+
+/*
+ * Main content
+ */
+
+.main {
+  margin-top: 20px;
+  padding: 20px;
+}
+@media (min-width: 768px) {
+  .main {
+    padding-right: 40px;
+    padding-left: 40px;
+  }
+}
+.main .page-header {
+  margin-top: 0;
+  border-bottom: none;
+}
+
+
+/*
+ * Placeholder dashboard ideas
+ */
+
+.placeholders {
+  margin-bottom: 30px;
+  text-align: center;
+}
+.placeholders h4 {
+  margin-bottom: 0;
+}
+.placeholder {
+  margin-bottom: 20px;
+}
+.placeholder img {
+  display: inline-block;
+  border-radius: 50%;
+}
+
+.btn-header {
+  background-color: #44c9fc;
+  color: white;
+  border: none;
+  border-radius: 17px;
+  background-image: none;
+  text-shadow: none;
+}
+
+.btn-header:hover {
+  background-color: #14abf4;
+  color: white;
+  border: none;
+  border-radius: 17px;
+  background-image: none;
+}
+
+.btn-contrast {
+  background-color: #ee3d85;
+  color: white;
+  border: none;
+  border-radius: 17px;
+  background-image: none;
+  text-shadow: none;
+}
+
+.btn-contrast:hover {
+  background-color: #ee3d85;
+  color: white;
+  border: none;
+  border-radius: 17px;
+  background-image: none;
+}
+
+input[type="submit"] {
+  border-radius: 15px;
+  font-weight: 600;
+  padding-left: 30px;
+  padding-right: 30px;
+}
+
+button {
+  border-radius: 15px;
+  font-weight: 600;
+  padding-left: 30px;
+  padding-right: 30px;
+}
+
+/*.form-control {
+  border-bottom: 1px solid silver;
+  border-top: none;
+  border-left: none;
+  border-right: none;
+  box-shadow: none;
+}*/
+
+.btn-search {
+  border-bottom: 1px solid silver;
+  border-top: none;
+  border-left: none;
+  border-right: none;
+  box-shadow: none;
+  background-image: none;
+  background-color: white;
+}
+
+th {
+  text-transform: uppercase;
+  color: #8d8d8d;
+}
+
+thead {
+  border-bottom: 0.5px solid #8d8d8d;
+}
+
+table {
+  border-bottom: purple;
+}
+
+.table-padded > tbody > tr > td {
+  border-bottom: 1px solid #8d8d8d;
+  padding-bottom: 20px;
+  padding-top: 20px;
+}
+
+
+.pagination > .active > a,
+.pagination > .active > a:hover,
+.pagination > .active > a:focus {
+  color: white;
+  background-color: #44c9fc;
+}
+
+.pagination > li > a:hover {
+  color: white;
+  background-color: #14abf4;
+}
+
+/* Signin */
+
+.div-signin-container {
+  width: 400px;
+  height: 400px;
+  position: absolute;
+  background-color:#44c9f6;
+  left: 50%;
+  top: 50%;
+  margin-left: -200px;
+  margin-top: 100px;
+}
+
+.form-signin {
+  max-width: 330px;
+  padding: 15px;
+  margin: 0 auto;
+  color: white;
+}
+
+.form-signin h4 {
+  color: white;
+}
+
+/*.form-signin .form-signin-heading,
+.form-signin .checkbox {
+  margin-bottom: 10px;
+}*/
+
+.form-signin-heading {
+  color: white;
+}
+
+.form-signin .checkbox {
+  font-weight: normal;
+}
+.form-signin .form-control {
+  position: relative;
+  height: auto;
+  -webkit-box-sizing: border-box;
+     -moz-box-sizing: border-box;
+          box-sizing: border-box;
+  padding: 10px;
+  font-size: 16px;
+}
+.form-signin .form-control:focus {
+  z-index: 2;
+}
+.form-signin input[type="text"] {
+  margin-bottom: -1px;
+  border-bottom-right-radius: 0;
+  border-bottom-left-radius: 0;
+}
+.form-signin input[type="password"] {
+  margin-bottom: 10px;
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+}
+
+/* Images */
+
+.img-logo {
+  margin: 20 20 20 20;
+  border-color: red;
+}
+
+/* Sapphire Theme Styles */
+.sph-title {
+  color: #f2f2f2;
+  background: #3a3a3a;
+}
+.sph-axis {
+  /* .tick is a class set by d3 */
+}
+.sph-axis line,
+.sph-axis path {
+  stroke: #636363;
+}
+.sph-axis .tick text {
+  fill: #636363;
+}
+.sph-table {
+  border-spacing: 2px 0;
+  border-collapse: separate;
+}
+.sph-table td {
+  background: rgba(58, 58, 58, 0.07);
+}
+.sph-table tr:nth-child(2n) td {
+  background: rgba(58, 58, 58, 0.025);
+}
+.sph-table tr.sph-row-tfoot td {
+  border-top: 2px solid rgba(58, 58, 58, 0.16);
+}
+.sph-table tr td.sph-col-swatch {
+  padding: 0;
+  width: 12px;
+}
+.sph-table tr td.sph-col-none {
+  border-top: none;
+  background: transparent;
+}
+.sph-widget {
+  color: #3a3a3a;
+}
+.sph-chart-bars {
+  min-height: 180px;
+}
+.sph-axis-bars-y line {
+  stroke-width: 1px;
+  stroke: rgba(242, 242, 242, 0.5);
+}
+.sph-axis-bars-y path {
+  stroke: none;
+}
+.sph-sparkline-path {
+  stroke: #3a3a3a;
+  stroke-width: 4px;
+}
+.sph-sparkline-path-diff {
+  stroke-width: 4.5px;
+}
+.sph-last.sph-is-status-good .sph-summary-diff {
+  color: #2ca02c;
+}
+.sph-last.sph-is-status-good .sph-sparkline-path-diff {
+  stroke: #2ca02c;
+}
+.sph-last.sph-is-status-good .sph-sparkline-dot {
+  fill: #2ca02c;
+}
+.sph-last.sph-is-status-bad .sph-summary-diff {
+  color: #d62728;
+}
+.sph-last.sph-is-status-bad .sph-sparkline-path-diff {
+  stroke: #d62728;
+}
+.sph-last.sph-is-status-bad .sph-sparkline-dot {
+  fill: #d62728;
+}
+.sph-last.sph-is-status-neutral .sph-summary-diff {
+  color: #3a3a3a;
+}
+.sph-last.sph-is-status-neutral .sph-sparkline-path-diff {
+  stroke: #3a3a3a;
+}
+.sph-last.sph-is-status-neutral .sph-sparkline-dot {
+  fill: #3a3a3a;
+}
+.sph-lines-metric {
+  stroke-width: 2px;
+}
+.sph-axis-lines line {
+  stroke-width: 1px;
+  stroke: rgba(58, 58, 58, 0.07);
+}
+.sph-axis-lines path {
+  stroke: none;
+}
+
+/* End Sapphire Theme Style */

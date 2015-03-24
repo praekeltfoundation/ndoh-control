@@ -20,8 +20,9 @@ def send_helpdesk_response(ticket):
     )
     # Send message
     response = sender.send_text(ticket.msisdn, ticket.response)
-    ## TODO: Log outbound send metric
+    # TODO: Log outbound send metric
     return response
+
 
 @task()
 def create_snappy_ticket(ticket):
@@ -32,19 +33,20 @@ def create_snappy_ticket(ticket):
     )
     # Send message
     subject = "Support for %s" % (ticket.msisdn)
-    snappy_ticket = snappy_api.note(
-        mailbox_id=settings.SNAPPY_MAILBOX_ID, 
-        subject=subject, 
-        message=ticket.message, 
-        to_addr=None, 
+    snappy_ticket = snappy_api.create_note(
+        mailbox_id=settings.SNAPPY_MAILBOX_ID,
+        subject=subject,
+        message=ticket.message,
+        to_addr=None,
         from_addr=[{"name": ticket.msisdn, "address": settings.SNAPPY_EMAIL}]
     )
     ticket.support_nonce = snappy_ticket
     ticket.save()
     update_snappy_ticket_with_extras.delay(snappy_api, ticket.support_nonce,
                                            ticket.contact_key, subject)
-    ## TODO: Log ticket created metric
+    # TODO: Log ticket created metric
     return True
+
 
 @task()
 def update_snappy_ticket_with_extras(snappy_api, nonce, contact_key, subject):
@@ -53,17 +55,19 @@ def update_snappy_ticket_with_extras(snappy_api, nonce, contact_key, subject):
     contact = contacts_api.get_contact(contact_key)
     extra_info = ""
     for extra in settings.SNAPPY_EXTRAS:
-        extra_info += extra + ": " + contact["extra"][extra] + "\n"
+        if extra in contact["extra"]:
+            extra_info += extra + ": " + contact["extra"][extra] + "\n"
     if extra_info != "":
-    # Send private note
-        snappy_ticket = snappy_api.note(
-            mailbox_id=settings.SNAPPY_MAILBOX_ID, 
-            subject=subject, 
-            message=extra_info, 
-            to_addr=[{"name": "Internal Information", "address": settings.SNAPPY_EMAIL}],
-            id=nonce,
+        # Send private note
+        snappy_api.create_note(
+            mailbox_id=settings.SNAPPY_MAILBOX_ID,
+            subject=subject,
+            message=extra_info,
+            to_addr=[{
+                "name": "Internal Information",
+                "address": settings.SNAPPY_EMAIL}],
+            ticket_id=nonce,
             scope="private",
             staff_id=settings.SNAPPY_STAFF_ID
         )
     return True
-

@@ -8,16 +8,18 @@ from django.test.utils import override_settings
 from requests_testadapter import TestAdapter, TestSession
 
 from go_http.send import HttpApiSender, LoggingSender
-from subsend.tasks import process_message_queue, processes_message
+from subsend.tasks import (process_message_queue, processes_message,
+                           vumi_fire_metric)
 from subscription.models import Subscription, MessageSet
+from djcelery.models import PeriodicTask
 
 
 class TestMessageQueueProcessor(TestCase):
     fixtures = ["test_subsend.json"]
 
-    @override_settings(CELERY_EAGER_PROPAGATES_EXCEPTIONS = True,
-                       CELERY_ALWAYS_EAGER = True,
-                       BROKER_BACKEND = 'memory',)
+    @override_settings(CELERY_EAGER_PROPAGATES_EXCEPTIONS=True,
+                       CELERY_ALWAYS_EAGER=True,
+                       BROKER_BACKEND='memory',)
     def setUp(self):
         self.sender = LoggingSender('go_http.test')
         self.handler = RecordingHandler()
@@ -25,17 +27,26 @@ class TestMessageQueueProcessor(TestCase):
         logger.setLevel(logging.INFO)
         logger.addHandler(self.handler)
 
+    def check_logs(self, msg, levelno=logging.INFO):
+        [log] = self.handler.logs
+        self.assertEqual(log.msg, msg)
+        self.assertEqual(log.levelno, levelno)
+
     def test_data_loaded(self):
         messagesets = MessageSet.objects.all()
         self.assertEqual(len(messagesets), 10)
         subscriptions = Subscription.objects.all()
-        self.assertEqual(len(subscriptions), 5)
+        self.assertEqual(len(subscriptions), 6)
+        schedules = PeriodicTask.objects.all()
+        self.assertEqual(len(schedules), 10)
 
     def test_multisend(self):
         schedule = 6
         result = process_message_queue.delay(schedule, self.sender)
         self.assertEquals(result.get(), 2)
-        # self.assertEquals(1, 2)
+        self.assertEqual(
+            self.handler.logs[2].msg,
+            "Metric: 'prd.sum.sms.subscription.outbound' [sum] -> 2")
 
     def test_multisend_none(self):
         schedule = 2
@@ -72,6 +83,7 @@ class TestMessageQueueProcessor(TestCase):
         self.assertEquals(subscriber_updated.active, False)
 
     def test_new_subscription_created_post_send_en_accelerated_2(self):
+        twice_a_week = PeriodicTask.objects.get(pk=3)
         subscriber = Subscription.objects.get(pk=1)
         subscriber.next_sequence_number = 2
         subscriber.save()
@@ -79,28 +91,53 @@ class TestMessageQueueProcessor(TestCase):
         self.assertTrue(result.successful())
         # Check another added and old still there
         all_subscription = Subscription.objects.all()
-        self.assertEquals(len(all_subscription),6)
+        self.assertEquals(len(all_subscription), 7)
         # Check new subscription is for baby1
-        new_subscription = Subscription.objects.get(pk=6)
+        new_subscription = Subscription.objects.get(pk=101)
         self.assertEquals(new_subscription.message_set.pk, 4)
         self.assertEquals(new_subscription.to_addr, "+271234")
+        self.assertEquals(new_subscription.schedule, twice_a_week)
+        self.assertEqual(
+            self.handler.logs[1].msg,
+            "Metric: u'prd.sum.baby1_auto' [sum] -> 1")
 
-    def test_no_new_subscription_created_post_send_en_accelerated_2(self):
+    def test_new_subscription_created_post_send_en_baby1(self):
+        once_a_week = PeriodicTask.objects.get(pk=2)
+        subscriber = Subscription.objects.get(pk=3)
+        subscriber.next_sequence_number = 2
+        subscriber.save()
+        result = processes_message.delay(subscriber, self.sender)
+        self.assertTrue(result.successful())
+        # Check another added and old still there
+        all_subscription = Subscription.objects.all()
+        self.assertEquals(len(all_subscription), 7)
+        # Check new subscription is for baby2
+        new_subscription = Subscription.objects.get(pk=101)
+        self.assertEquals(new_subscription.message_set.pk, 5)
+        self.assertEquals(new_subscription.to_addr, "+271112")
+        self.assertEquals(new_subscription.schedule, once_a_week)
+
+    def test_new_subscription_created_metric_send(self):
+        vumi_fire_metric.delay(
+            metric="prd.sum.baby1_auto", value=1,
+            agg="sum", sender=self.sender)
+        self.check_logs("Metric: 'prd.sum.baby1_auto' [sum] -> 1")
+
+    def test_no_new_subscription_created_post_send_en_baby_2(self):
         subscriber = Subscription.objects.get(pk=4)
         result = processes_message.delay(subscriber, self.sender)
         self.assertTrue(result.successful())
         # Check no new subscription added
         all_subscription = Subscription.objects.all()
-        self.assertEquals(len(all_subscription),5)
+        self.assertEquals(len(all_subscription), 6)
         # Check old one now inactive and complete
         subscriber_updated = Subscription.objects.get(pk=4)
         self.assertEquals(subscriber_updated.completed, True)
         self.assertEquals(subscriber_updated.active, False)
 
 
-        
-
 class RecordingAdapter(TestAdapter):
+
     """ Record the request that was handled by the adapter.
     """
     request = None
@@ -111,6 +148,7 @@ class RecordingAdapter(TestAdapter):
 
 
 class TestHttpApiSender(TestCase):
+
     def setUp(self):
         self.session = TestSession()
         self.sender = HttpApiSender(
@@ -191,6 +229,7 @@ class TestHttpApiSender(TestCase):
 
 
 class RecordingHandler(logging.Handler):
+
     """ Record logs. """
     logs = None
 
@@ -201,6 +240,7 @@ class RecordingHandler(logging.Handler):
 
 
 class TestLoggingSender(TestCase):
+
     def setUp(self):
         self.sender = LoggingSender('go_http.test')
         self.handler = RecordingHandler()

@@ -1,5 +1,5 @@
 from django.conf.urls import patterns, url, include
-from servicerating import api, views
+from servicerating import api
 from tastypie.api import Api
 
 
@@ -16,10 +16,13 @@ api_resources.register(api.ServiceRatingResource())
 api_resources.prepend_urls()
 
 
-urlpatterns = patterns('',
+urlpatterns = patterns(
+    '',
     # Setting the urlpatterns to hook into the api urls
     url(r'^api/', include(api_resources.urls)),
     # Admin servicerating dashboard hookup
-    url(r'^admin/servicerating/dashboard/', 'servicerating.views.dashboard'),
-    url(r'^admin/servicerating/report/', 'servicerating.views.report_responses')
+    url(r'^admin/servicerating/dashboard/',
+        'servicerating.views.dashboard'),
+    url(r'^admin/servicerating/report/',
+        'servicerating.views.report_responses')
 )
