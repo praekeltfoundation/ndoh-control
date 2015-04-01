@@ -151,7 +151,6 @@ class RecordingHandler(logging.Handler):
     def emit(self, record):
         if self.logs is None:
             self.logs = []
-        # print record
         self.logs.append(record)
 
 
@@ -350,7 +349,6 @@ class TestContactsApiClient(TestCase):
                     u"service_rating_reminders": "0",
                 }
             }))
-        # print self.contacts_data
         self.make_existing_contact({
             u"msisdn": u"+1234567",
             u"name": u"Nancy",
