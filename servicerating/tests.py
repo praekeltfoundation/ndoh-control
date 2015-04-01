@@ -2,25 +2,28 @@
 Tests for Service Rating Application
 """
 from tastypie.test import ResourceTestCase
-from unittest import TestCase
 from django.contrib.auth.models import User
 from servicerating.models import (
     Contact, Conversation, Response, UserAccount, Extra)
 from django.test import TestCase
 from django.test.utils import override_settings
-from requests import HTTPError
 from requests.adapters import HTTPAdapter
-from requests_testadapter import TestSession, Resp, TestAdapter
+from requests_testadapter import TestSession, Resp
 from servicerating.tasks import (ensure_one_servicerating,
                                  vumi_fire_metric,
                                  vumi_update_smart_group_query,
                                  vumi_get_smart_group_contacts,
-                                 send_reminders)
+                                 send_reminders,
+                                 vumi_update_contact_extras,
+                                 vumi_send_message,
+                                 get_date_filter,
+                                 get_future_date)
 import logging
 from go_http.send import LoggingSender
 from go_http.contacts import ContactsApiClient
 from fake_go_contacts import Request, FakeContactsApi
 import json
+from datetime import date, timedelta
 
 
 class ServiceRatingResourceTest(ResourceTestCase):
@@ -231,6 +234,11 @@ class TestContactsApiClient(TestCase):
         self.session = TestSession()
         adapter = FakeContactsApiAdapter(self.contacts_backend)
         self.session.mount(self.API_URL, adapter)
+        self.sender = LoggingSender('go_http.test')
+        self.handler = RecordingHandler()
+        logger = logging.getLogger('go_http.test')
+        logger.setLevel(logging.INFO)
+        logger.addHandler(self.handler)
 
     def make_client(self, auth_token=AUTH_TOKEN):
         return ContactsApiClient(
@@ -246,53 +254,82 @@ class TestContactsApiClient(TestCase):
         self.groups_data[existing_group[u'key']] = existing_group
         return existing_group
 
-    # def test_update_smart_group_task(self):
-    #     client = self.make_client()
-    #     existing_group = self.make_existing_group({
-    #         u'name': u'Service Rating Remind',
-    #         u'query': u'test-query',
-    #     })
+    def check_logs(self, msg):
+        if type(self.handler.logs) != list:
+            [logs] = self.handler.logs
+        else:
+            logs = self.handler.logs
+        for log in logs:
+            if log.msg == msg:
+                return True
+        return False
 
-    #     expected_group = existing_group.copy()
-    #     expected_group[u'query'] = u'updated-query'
+    def test_get_date_filter_fixed(self):
+        fixed_day = date(2015, 1, 31)
+        self.assertEqual(get_date_filter(date_filter=fixed_day), "2015-01-31")
 
-    #     results = vumi_update_smart_group_query.delay(existing_group["key"],
-    #                                                   'updated-query',
-    #                                                   client=client)
-    #     returned_key = results.get()
-    #     updated_group = self.groups_data[returned_key]
-    #     self.assertEqual(updated_group, expected_group)
+    def test_get_date_filter_auto(self):
+        today = date.today()
+        stoday = today.strftime("%Y-%m-%d")
+        self.assertEqual(get_date_filter(), stoday)
 
-    # def test_group_contacts_multiple_pages(self):
-    #     expected_contacts = []
-    #     self.make_existing_group({
-    #         u'key': 'frank',
-    #         u'name': 'key',
-    #     })
-    #     self.make_existing_group({
-    #         u'key': 'bob',
-    #         u'name': 'diffkey',
-    #     })
-    #     for i in range(self.MAX_CONTACTS_PER_PAGE + 1):
-    #         expected_contacts.append(self.make_existing_contact({
-    #             u"msisdn": u"+155564%d" % (i,),
-    #             u"name": u"Arthur",
-    #             u"surname": u"of Camelot",
-    #             u"groups": ["frank"],
-    #         }))
-    #     self.make_existing_contact({
-    #         u"msisdn": u"+1234567",
-    #         u"name": u"Nancy",
-    #         u"surname": u"of Camelot",
-    #         u"groups": ["bob"],
-    #     })
-    #     client = self.make_client()
-    #     contacts = list(client.group_contacts("frank"))
+    def test_get_future_date_fixed(self):
+        fixed_day = date(2015, 1, 1)
+        self.assertEqual(get_future_date(7, date_current=fixed_day),
+                         "2015-01-08")
 
-    #     contacts.sort(key=lambda d: d['msisdn'])
-    #     expected_contacts.sort(key=lambda d: d['msisdn'])
+    def test_get_future_date_auto(self):
+        future = date.today() + timedelta(days=7)
+        sfuture = future.strftime("%Y-%m-%d")
+        self.assertEqual(get_future_date(7), sfuture)
 
-    #     self.assertEqual(contacts, expected_contacts)
+    def test_update_smart_group_task(self):
+        client = self.make_client()
+        existing_group = self.make_existing_group({
+            u'name': u'Service Rating Remind',
+            u'query': u'test-query',
+        })
+
+        expected_group = existing_group.copy()
+        expected_group[u'query'] = u'updated-query'
+
+        results = vumi_update_smart_group_query.delay(existing_group["key"],
+                                                      'updated-query',
+                                                      client=client)
+        returned_key = results.get()
+        updated_group = self.groups_data[returned_key]
+        self.assertEqual(updated_group, expected_group)
+
+    def test_group_contacts_multiple_pages(self):
+        expected_contacts = []
+        self.make_existing_group({
+            u'key': 'frank',
+            u'name': 'key',
+        })
+        self.make_existing_group({
+            u'key': 'bob',
+            u'name': 'diffkey',
+        })
+        for i in range(self.MAX_CONTACTS_PER_PAGE + 1):
+            expected_contacts.append(self.make_existing_contact({
+                u"msisdn": u"+155564%d" % (i,),
+                u"name": u"Arthur",
+                u"surname": u"of Camelot",
+                u"groups": ["frank"],
+            }))
+        self.make_existing_contact({
+            u"msisdn": u"+1234567",
+            u"name": u"Nancy",
+            u"surname": u"of Camelot",
+            u"groups": ["bob"],
+        })
+        client = self.make_client()
+        contacts = list(client.group_contacts("frank"))
+
+        contacts.sort(key=lambda d: d['msisdn'])
+        expected_contacts.sort(key=lambda d: d['msisdn'])
+
+        self.assertEqual(contacts, expected_contacts)
 
     def test_get_smart_group_contacts_task(self):
         client = self.make_client()
@@ -300,15 +337,15 @@ class TestContactsApiClient(TestCase):
         self.make_existing_group({
             u'key': u'srremind',
             u'name': u'Service Rating Remind',
-            u'query': u'extras-last_service_rating:never',
+            u'query': u'name:Arthur',
         })
-        for i in range(self.MAX_CONTACTS_PER_PAGE +1):
+        for i in range(self.MAX_CONTACTS_PER_PAGE + 1):
             expected_contacts.append(self.make_existing_contact({
                 u"msisdn": u"+155564%d" % (i,),
                 u"name": u"Arthur",
                 u"surname": u"of Camelot",
                 u"extra": {
-                    u"last_service_rating":u"never",
+                    u"last_service_rating": u"never",
                     u"service_rating_reminder": "2015-02-01",
                     u"service_rating_reminders": "0",
                 }
@@ -320,7 +357,7 @@ class TestContactsApiClient(TestCase):
             u"surname": u"of Camelot",
             u"groups": [u"srnoremind"],
             u"extra": {
-                u"last_service_rating":u"never",
+                u"last_service_rating": u"never",
                 u"service_rating_reminder": "",
                 u"service_rating_reminders": "2",
             }
@@ -334,66 +371,106 @@ class TestContactsApiClient(TestCase):
 
         self.assertEqual(contacts, expected_contacts)
 
+    def test_update_contact_extras_task(self):
+        client = self.make_client()
+        existing_contact = self.make_existing_contact({
+            u"key": u"knownuuid",
+            u"msisdn": u"+155564",
+            u"name": u"Arthur",
+            u"surname": u"of Camelot",
+            u"extra": {
+                u"last_service_rating": u"never",
+                u"service_rating_reminder": "2015-02-01",
+                u"service_rating_reminders": "0",
+            }
+        })
+        # the extras to refresh
+        update = {
+            u"last_service_rating": u"2015-03-01",
+            u"service_rating_reminder": "2015-03-08",
+            u"service_rating_reminders": "1",
+        }
 
+        expected_contact = existing_contact.copy()
+        expected_contact["extra"] = update
 
-    # def test_reminders_chain_task(self):
-    #     client = self.make_client()
-    #     expected_contacts = []
-    #     self.make_existing_group({
-    #         u'name': 'key',
-    #     })
-    #     self.make_existing_group({
-    #         u'name': 'diffkey',
-    #     })
-    #     for i in range(self.MAX_CONTACTS_PER_PAGE + 1):
-    #         expected_contacts.append(self.make_existing_contact({
-    #             u"msisdn": u"+155564%d" % (i,),
-    #             u"name": u"Arthur",
-    #             u"surname": u"of Camelot",
-    #             u"extras": {
-    #                 u"last_service_rating":u"never",
-    #                 u"service_rating_reminder": "2015-02-01",
-    #                 u"service_rating_reminders": "0",
-    #             },
-    #             u"groups": [u"key"]
-    #         }))
-    #     self.make_existing_contact({
-    #         u"msisdn": u"+1234567",
-    #         u"name": u"Nancy",
-    #         u"surname": u"of Camelot",
-    #         u"extras": {
-    #             u"last_service_rating":u"never",
-    #             u"service_rating_reminder": "",
-    #             u"service_rating_reminders": "2",
-    #         },
-    #         u"groups": [u"diffkey"]
-    #     })
-    #     results = send_reminders.delay(existing_group["key"],
-    #                                                   'Rate service please',
-    #                                                   client=client)
-    #     results = vumi_get_smart_group_contacts.delay("key",
-    #                                                   client=client)
-    #     contacts = list(results.get())
+        results = vumi_update_contact_extras.delay(u"knownuuid",
+                                                   update,
+                                                   client=client)
 
-    #     contacts.sort(key=lambda d: d['msisdn'])
-    #     expected_contacts.sort(key=lambda d: d['msisdn'])
+        self.assertEqual(self.contacts_data[results.get()], expected_contact)
 
-    #     self.assertEqual(contacts, expected_contacts)
-    #     client = self.make_client()
-    #     existing_group = self.make_existing_group({
-    #         u'name': u'Service Rating Remind',
-    #         u'query': u'test-query',
-    #     })
+    def test_send_message_task(self):
+        client = self.make_client()
+        self.make_existing_contact({
+            u"key": u"knownuuid",
+            u"msisdn": u"+155564",
+            u"name": u"Arthur",
+            u"surname": u"of Camelot"
+        })
 
-    #     expected_group = existing_group.copy()
-    #     expected_group[u'query'] = u'updated-query'
+        send_message = vumi_send_message.delay(u"knownuuid",
+                                               "Hello!",
+                                               client=client,
+                                               sender=self.sender)
+        result = send_message.get()
+        self.assertEqual(result, u"knownuuid")
+        self.assertEqual(True,
+                         self.check_logs(
+                             "Message: 'Hello!' sent to u'+155564'"))
 
-        # results = send_reminders.delay(existing_group["key"],
-        #                                               'Rate service please',
-        #                                               client=client)
+    def test_reminders_chain_task(self):
+        client = self.make_client()
+        self.make_existing_group({
+            u'key': u'srremind',
+            u'name': u'Service Rating Remind',
+            u'query': u'name:Arthur',
+        })
+        # not sent to
+        for i in range(self.MAX_CONTACTS_PER_PAGE + 1):
+            self.make_existing_contact({
+                u"msisdn": u"+155564%d" % (i,),
+                u"name": u"Arthur",
+                u"surname": u"of Camelot",
+                u"extra": {
+                    u"last_service_rating": u"never",
+                    u"service_rating_reminder": "2015-02-01",
+                    u"service_rating_reminders": "0",
+                }
+            })
+        # send to
+        for i in range(2):
+            self.make_existing_contact({
+                u"msisdn": u"+1234567%d" % (i,),
+                u"name": u"Nancy",
+                u"surname": u"of Camelot",
+                u"extra": {
+                    u"last_service_rating": u"never",
+                    u"service_rating_reminder": "2015-02-01",
+                    u"service_rating_reminders": "0",
+                }
+            })
+        results = send_reminders.delay(u"srremind", client=client,
+                                       sender=self.sender)
+        contacts_affected = results.get()
 
-    #     returned_key = results.get()
-    #     updated_group = self.groups_data[returned_key]
-    #     self.assertEqual(updated_group, expected_group)
-
-
+        self.assertEqual(contacts_affected, "Reminders sent: 2")
+        self.assertEqual(True, self.check_logs(
+            "Message: 'Thank you for "
+            "registering. We can only "
+            "improve if we get your feedback. Please dial "
+            "*134*550*4# to rate the service you received at the "
+            "clinic you registered at' sent to u'+12345670'"))
+        self.assertEqual(True, self.check_logs(
+            "Message: 'Thank you for "
+            "registering. We can only "
+            "improve if we get your feedback. Please dial "
+            "*134*550*4# to rate the service you received at the "
+            "clinic you registered at' sent to u'+12345671'"))
+        # Should not send to Arthur contacts
+        self.assertEqual(False, self.check_logs(
+            "Message: 'Thank you for "
+            "registering. We can only "
+            "improve if we get your feedback. Please dial "
+            "*134*550*4# to rate the service you received at the "
+            "clinic you registered at' sent to u'+1555641'"))
