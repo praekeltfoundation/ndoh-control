@@ -165,7 +165,7 @@ def send_reminders(group_key, client=None, sender=None):
                     contact["extra"]["service_rating_reminders"]) + 1
             else:
                 reminders = 1
-            update["service_rating_reminders"] = reminders
+            update["service_rating_reminders"] = unicode(reminders)
             if reminders < 2:  # set a future reminder date
                 update["service_rating_reminder"] = get_future_date(7)
 

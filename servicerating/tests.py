@@ -418,6 +418,7 @@ class TestContactsApiClient(TestCase):
                              "Message: 'Hello!' sent to u'+155564'"))
 
     def test_reminders_chain_task(self):
+        # This is a more detailed set of grouped asserts because of the chain
         client = self.make_client()
         self.make_existing_group({
             u'key': u'srremind',
@@ -427,6 +428,7 @@ class TestContactsApiClient(TestCase):
         # not sent to
         for i in range(self.MAX_CONTACTS_PER_PAGE + 1):
             self.make_existing_contact({
+                u"key": u"not%s" % i,
                 u"msisdn": u"+155564%d" % (i,),
                 u"name": u"Arthur",
                 u"surname": u"of Camelot",
@@ -439,6 +441,7 @@ class TestContactsApiClient(TestCase):
         # send to
         for i in range(2):
             self.make_existing_contact({
+                u"key": u"key%s" % i,
                 u"msisdn": u"+1234567%d" % (i,),
                 u"name": u"Nancy",
                 u"surname": u"of Camelot",
@@ -472,3 +475,9 @@ class TestContactsApiClient(TestCase):
             "improve if we get your feedback. Please dial "
             "*134*550*4# to rate the service you received at the "
             "clinic you registered at' sent to u'+1555641'"))
+        self.assertEqual(
+            self.contacts_data["key1"]["extra"]["service_rating_reminders"],
+            "1")
+        self.assertEqual(
+            self.contacts_data["not1"]["extra"]["service_rating_reminders"],
+            "0")
