@@ -326,11 +326,15 @@ class TestFireSummaryMetrics(TestCase):
         logger.setLevel(logging.INFO)
         logger.addHandler(self.handler)
 
-    def check_logs(self, msg, levelno=logging.INFO):
-        # print self.handler.logs
-        [log, log2] = self.handler.logs
-        self.assertEqual(log.msg, msg)
-        self.assertEqual(log.levelno, levelno)
+    def check_logs(self, msg):
+        if type(self.handler.logs) != list:
+            [logs] = self.handler.logs
+        else:
+            logs = self.handler.logs
+        for log in logs:
+            if log.msg == msg:
+                return True
+        return False
 
     def test_ensure_two_subscriptions(self):
         results = ensure_one_subscription.delay()
@@ -339,48 +343,38 @@ class TestFireSummaryMetrics(TestCase):
     def test_active_subscriptions_metric(self):
         results = fire_metrics_active_subscriptions.delay(sender=self.sender)
         self.assertEqual(results.get(), 2)
-        self.assertEqual(
-            self.handler.logs[0].msg,
-            "Metric: u'prd.subscriptions.baby2.active' [last] -> 1")
-        self.assertEqual(
-            self.handler.logs[1].msg,
-            "Metric: u'prd.subscriptions.accelerated.active' [last] -> 1")
-        self.assertEqual(
-            self.handler.logs[2].msg,
-            "Metric: 'prd.subscriptions.active' [last] -> 2")
+        self.assertEqual(True, self.check_logs(
+            "Metric: u'prd.subscriptions.baby2.active' [last] -> 1"))
+        self.assertEqual(True, self.check_logs(
+            "Metric: u'prd.subscriptions.accelerated.active' [last] -> 1"))
+        self.assertEqual(True, self.check_logs(
+            "Metric: 'prd.subscriptions.active' [last] -> 2"))
 
     def test_all_time_subscriptions_metric(self):
         results = fire_metrics_all_time_subscriptions.delay(sender=self.sender)
         self.assertEqual(results.get(), 2)
-        self.assertEqual(
-            self.handler.logs[0].msg,
-            "Metric: u'prd.subscriptions.baby2.alltime' [last] -> 1")
-        self.assertEqual(
-            self.handler.logs[1].msg,
-            "Metric: u'prd.subscriptions.accelerated.alltime' [last] -> 1")
-        self.assertEqual(
-            self.handler.logs[2].msg,
-            "Metric: 'prd.subscriptions.alltime' [last] -> 2")
+        self.assertEqual(True, self.check_logs(
+            "Metric: u'prd.subscriptions.baby2.alltime' [last] -> 1"))
+        self.assertEqual(True, self.check_logs(
+            "Metric: u'prd.subscriptions.accelerated.alltime' [last] -> 1"))
+        self.assertEqual(True, self.check_logs(
+            "Metric: 'prd.subscriptions.alltime' [last] -> 2"))
 
     def test_active_langs_metric(self):
         results = fire_metrics_active_langs.delay(sender=self.sender)
         self.assertEqual(results.get(), 2)
-        self.assertEqual(
-            self.handler.logs[0].msg,
-            "Metric: u'prd.subscriptions.en.active' [last] -> 1")
-        self.assertEqual(
-            self.handler.logs[1].msg,
-            "Metric: u'prd.subscriptions.af.active' [last] -> 1")
+        self.assertEqual(True, self.check_logs(
+            "Metric: u'prd.subscriptions.en.active' [last] -> 1"))
+        self.assertEqual(True, self.check_logs(
+            "Metric: u'prd.subscriptions.af.active' [last] -> 1"))
 
     def test_all_time_langs_metric(self):
         results = fire_metrics_all_time_langs.delay(sender=self.sender)
         self.assertEqual(results.get(), 2)
-        self.assertEqual(
-            self.handler.logs[0].msg,
-            "Metric: u'prd.subscriptions.af.alltime' [last] -> 1")
-        self.assertEqual(
-            self.handler.logs[1].msg,
-            "Metric: u'prd.subscriptions.en.alltime' [last] -> 1")
+        self.assertEqual(True, self.check_logs(
+            "Metric: u'prd.subscriptions.af.alltime' [last] -> 1"))
+        self.assertEqual(True, self.check_logs(
+            "Metric: u'prd.subscriptions.en.alltime' [last] -> 1"))
 
 
 class TestSetSeqCommand(TestCase):
