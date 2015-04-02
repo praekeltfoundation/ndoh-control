@@ -75,6 +75,7 @@ def vumi_send_message(contact_key, message, client=None, sender=None):
                 logger.error('Contact not found')
             else:
                 logger.error('Contacts API error: %s' % err.response.content)
+            return False
         # Send message
         try:
             sender.send_text(contact["msisdn"], message)

@@ -7,6 +7,7 @@ from servicerating.models import (
     Contact, Conversation, Response, UserAccount, Extra)
 from django.test import TestCase
 from django.test.utils import override_settings
+from requests import HTTPError
 from requests.adapters import HTTPAdapter
 from requests_testadapter import TestSession, Resp
 from servicerating.tasks import (ensure_one_servicerating,
@@ -263,6 +264,15 @@ class TestContactsApiClient(TestCase):
                 return True
         return False
 
+    def assert_http_error(self, expected_status, func, *args, **kw):
+        try:
+            func(*args, **kw)
+        except HTTPError as err:
+            self.assertEqual(err.response.status_code, expected_status)
+        else:
+            self.fail(
+                "Expected HTTPError with status %s." % (expected_status,))
+
     def test_get_date_filter_fixed(self):
         fixed_day = date(2015, 1, 31)
         self.assertEqual(get_date_filter(date_filter=fixed_day), "2015-01-31")
@@ -416,6 +426,22 @@ class TestContactsApiClient(TestCase):
         self.assertEqual(True,
                          self.check_logs(
                              "Message: 'Hello!' sent to u'+155564'"))
+
+    def test_send_message_task_failed(self):
+        client = self.make_client()
+        self.make_existing_contact({
+            u"key": u"knownuuid",
+            u"msisdn": u"+155564",
+            u"name": u"Arthur",
+            u"surname": u"of Camelot"
+        })
+
+        send_message = vumi_send_message.delay(u"unknownuuid",
+                                               "Hello!",
+                                               client=client,
+                                               sender=self.sender)
+
+        self.assertEqual(False,  send_message.get())
 
     def test_reminders_chain_task(self):
         # This is a more detailed set of grouped asserts because of the chain
