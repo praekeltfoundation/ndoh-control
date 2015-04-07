@@ -118,6 +118,8 @@ def vumi_update_smart_group_query(group_key, query, client=None):
         group = client.get_group(group_key)
         group[u"query"] = query
         group.pop(u"key")  # remove key from existing dict before submission
+        group.pop(u"created_at")
+        group.pop(u"$VERSION")
         update = client.update_group(group_key, group)
         return update["key"]
     except SoftTimeLimitExceeded:
