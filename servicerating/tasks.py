@@ -145,14 +145,14 @@ def send_reminders(group_key, client=None, sender=None):
         reminder = "Thank you for registering. We can only improve if we get " \
                    "your feedback. Please dial *134*550*4# to rate the " \
                    "service you received at the clinic you registered at"
-        if client is None:
-            client = ContactsApiClient(auth_token=settings.VUMI_GO_API_TOKEN)
         today = get_date_filter()
         if client is not None:  # test mode because Fake doesn't support extra
             query = "name:Nancy"
         else:
             query = ("extras-service_rating_reminder:%s AND "
                      "extras-last_service_rating:never" % today)
+        if client is None:
+            client = ContactsApiClient(auth_token=settings.VUMI_GO_API_TOKEN)
         contacts = chain(
             vumi_update_smart_group_query.s(group_key, query, client),
             vumi_get_smart_group_contacts.s(client))().get()
