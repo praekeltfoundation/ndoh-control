@@ -134,7 +134,7 @@ def vumi_get_smart_group_contacts(group_key, client=None):
         if client is None:
             client = ContactsApiClient(auth_token=settings.VUMI_GO_API_TOKEN)
         contacts = client.group_contacts(group_key)
-        return contacts
+        return list(contacts)
     except SoftTimeLimitExceeded:
         logger.error((
             'Soft time limit exceed getting smart group contacts from Vumi '
@@ -159,7 +159,7 @@ def send_reminders(group_key, client=None, sender=None):
             vumi_update_smart_group_query.s(group_key, query, client),
             vumi_get_smart_group_contacts.s(client))().get()
         affected = 0
-        for contact in list(contacts):
+        for contact in contacts:
             affected += 1
             # prepare the contact update if the send message works
             update = {}

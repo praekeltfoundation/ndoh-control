@@ -372,7 +372,7 @@ class TestContactsApiClient(TestCase):
         })
         results = vumi_get_smart_group_contacts.delay(u"srremind",
                                                       client=client)
-        contacts = list(results.get())
+        contacts = results.get()
 
         contacts.sort(key=lambda d: d['msisdn'])
         expected_contacts.sort(key=lambda d: d['msisdn'])
