@@ -102,6 +102,7 @@ def vumi_update_contact_extras(contact_key, updates, client=None):
         for k, v in updates.iteritems():
             contact["extra"][k] = v
         contact.pop(u"key")  # remove key from existing dict before submission
+        contact.pop(u"$VERSION")
         update = client.update_contact(contact_key, contact)
         return update["key"]
     except SoftTimeLimitExceeded:
