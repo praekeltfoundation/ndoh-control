@@ -5,5 +5,6 @@ pytest
 pytest-xdist
 pytest-cov
 requests_testadapter
+fake-go-contacts>=0.1.9
 pytest-django
 flake8
