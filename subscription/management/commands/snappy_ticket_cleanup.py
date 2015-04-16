@@ -11,14 +11,13 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         tickets = Ticket.objects.filter(support_nonce=None)
-        counter = 0
+        counter = tickets.count()
 
-        self.stdout.write('Deleting tickets without support nonces...\n')
-        self.stdout.write('Nonceless tickets found: %s\n' % tickets.count())
+        self.stdout.write('Finding tickets without support nonces...\n')
+        self.stdout.write('Nonceless tickets found: %s\n' % counter)
 
-        for ticket in tickets:
-            if not options["dry_run"]:
-                ticket.delete()
-                counter += 1
-
-        self.stdout.write('Deleted %s tickets' % counter)
+        if not options["dry_run"]:
+            tickets.delete()
+            self.stdout.write('Deleted %s tickets' % counter)
+        else:
+            self.stdout.write('%s tickets would be deleted' % counter)
