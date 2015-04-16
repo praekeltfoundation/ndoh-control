@@ -66,7 +66,7 @@ class TestSnappyTicketCleanupCommand(TestCase):
         command.handle(None, **options)
 
         self.assertEqual('\n'.join([
-            'Deleting tickets without support nonces...',
+            'Finding tickets without support nonces...',
             'Nonceless tickets found: 2',
             'Deleted 2 tickets'
         ]), command.stdout.getvalue().strip())
