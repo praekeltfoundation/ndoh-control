@@ -60,7 +60,7 @@ class SnappyBouncerResourceTest(ResourceTestCase):
         self.assertEqual(conversations.count(), 1)
 
         tickets = Ticket.objects.all()
-        self.assertEqual(tickets.count(), 3)
+        self.assertEqual(tickets.count(), 5)
 
     def test_get_list_unauthorzied(self):
         self.assertHttpUnauthorized(
@@ -123,7 +123,7 @@ class SnappyBouncerResourceTest(ResourceTestCase):
             "/api/v1/snappybouncer/conversation/1/", json_item["conversation"])
         self.assertEqual("+271234", json_item["msisdn"])
         self.assertEqual(
-            "/api/v1/snappybouncer/ticket/4/", json_item["resource_uri"])
+            "/api/v1/snappybouncer/ticket/6/", json_item["resource_uri"])
 
     def test_post_ticket_bad_conversation(self):
         data = {
