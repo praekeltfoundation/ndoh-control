@@ -5,7 +5,7 @@ from subscription.models import Subscription
 
 
 class Command(BaseCommand):
-    help = "Sets MSISDN of subscription to have a plus if missing"
+    help = "Sets MSISDN of all subscriptions to have a plus if missing"
     option_list = BaseCommand.option_list + (
         make_option('--dry_run', action='store_true', default=False),
     )
