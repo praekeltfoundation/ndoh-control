@@ -10,13 +10,21 @@ from datetime import date, timedelta
 from requests import HTTPError
 
 
-def get_date_filter(date_filter=date.today()):
+def get_today():
+    return date.today()
+
+
+def get_date_filter(date_filter=None):
     # for getting the provided date in expected string format for extras lookup
+    if date_filter is None:
+        date_filter = get_today()
     return date_filter.strftime("%Y-%m-%d")
 
 
-def get_future_date(days, date_current=date.today()):
+def get_future_date(days, date_current=None):
     # for setting up when next reminder sent
+    if date_current is None:
+        date_current = get_today()
     future_date = date_current + timedelta(days=days)
     return future_date.strftime("%Y-%m-%d")
 
