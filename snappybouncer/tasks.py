@@ -24,6 +24,44 @@ def send_helpdesk_response(ticket):
     return response
 
 
+def jembi_format_date(date):
+    return date.strftime("%Y%m%d%H%M%S")
+
+
+def extract_class_from_tags(tags):
+    # ["@person", "#coffee", "#payment"] -> "coffee"
+    for tag in tags:
+        if tag[0] == "#":
+            return tag[1::]
+
+
+def build_jembi_helpdesk_json(ticket, tags, operator_num):
+    json_template = {
+        "encdate": jembi_format_date(ticket.created_at),
+        "repdate": jembi_format_date(ticket.updated_at),
+        "mha": 1,
+        "swt": 2,  # 1 ussd, 2 sms
+        "cmsisdn": ticket.msisdn,
+        "dmsisdn": ticket.msisdn,
+        "faccode": None,  # TODO look this up in vumi when available
+        "data": {
+            "question": ticket.response,
+            "answer": ticket.message
+        },
+        "class": extract_class_from_tags(tags),
+        "type": 7,  # 7 helpdesk
+        "op": str(operator_num)
+    }
+    return json_template
+
+
+@task()
+def send_helpdesk_response_jembi(ticket, tags, operator_num):
+    # data = build_jembi_helpdesk_json(ticket, tags, operator_num)
+    # TODO post data to jembi
+    pass
+
+
 @task()
 def create_snappy_ticket(ticket):
     # Make a session to Snappy
