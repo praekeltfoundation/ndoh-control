@@ -188,7 +188,8 @@ class WebhookResource(Resource):
                     send_helpdesk_response.delay(ticket)
                     # Post the ticket info to Jembi
                     helpdesk_tags = bundle.obj.data["note"]["ticket"]["tags"]
-                    helpdesk_op = bundle.obj.data["note"]["created_by_staff_id"]
+                    helpdesk_op = bundle.obj.data[
+                        "note"]["created_by_staff_id"]
                     send_helpdesk_response_jembi.delay(ticket, helpdesk_tags,
                                                        helpdesk_op)
                 except ObjectDoesNotExist:
