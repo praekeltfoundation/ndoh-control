@@ -1,5 +1,7 @@
 from celery import task
 from celery.utils.log import get_task_logger
+import requests
+import json
 
 from go_http.send import HttpApiSender
 from go_http.contacts import ContactsApiClient
@@ -57,9 +59,15 @@ def build_jembi_helpdesk_json(ticket, tags, operator_num):
 
 @task()
 def send_helpdesk_response_jembi(ticket, tags, operator_num):
-    # data = build_jembi_helpdesk_json(ticket, tags, operator_num)
-    # TODO post data to jembi
-    pass
+    data = build_jembi_helpdesk_json(ticket, tags, operator_num)
+    api_url = ("%s/helpdesk" % settings.JEMBI_BASE_URL)
+    headers = {
+        'Content-Type': 'application/json'
+    }
+    result = requests.post(api_url, headers=headers, data=json.dumps(data),
+                           auth=(settings.JEMBI_USERNAME,
+                                 settings.JEMBI_PASSWORD))
+    return result.text
 
 
 @task()
