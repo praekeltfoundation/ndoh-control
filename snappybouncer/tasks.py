@@ -45,8 +45,8 @@ def build_jembi_helpdesk_json(ticket, tags, operator_num):
         "dmsisdn": ticket.msisdn,
         "faccode": None,  # TODO look this up in vumi when available
         "data": {
-            "question": ticket.response,
-            "answer": ticket.message
+            "question": ticket.message,
+            "answer": ticket.response
         },
         "class": extract_class_from_tags(tags),
         "type": 7,  # 7 helpdesk
