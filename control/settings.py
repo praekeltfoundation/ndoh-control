@@ -287,6 +287,10 @@ BROKER_URL = 'redis://localhost:6379/0'
 
 DASHBOARD_API_KEY = "replaceme"
 
+JEMBI_BASE_URL = "http://npr-staging.jembi.org:5001/ws/rest/v1"
+JEMBI_USERNAME = "test"
+JEMBI_PASSWORD = "test"
+
 try:
     from local_settings import *
 except ImportError:
