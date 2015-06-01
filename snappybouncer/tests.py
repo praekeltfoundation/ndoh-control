@@ -12,6 +12,7 @@ from snappybouncer.models import (
 from snappybouncer.tasks import (send_helpdesk_response_jembi,
                                  build_jembi_helpdesk_json)
 import json
+import responses
 
 
 class SnappyBouncerResourceTest(ResourceTestCase):
@@ -190,19 +191,24 @@ class JembiSubmissionTest(TestCase):
         convo.save()
         return convo
 
+    def mk_ticket(self, support_nonce, support_id, message, response):
+        ticket = Ticket()
+        ticket.conversation = self.conversation
+        ticket.support_nonce = support_nonce
+        ticket.support_id = support_id
+        ticket.message = message
+        ticket.response = response
+        ticket.contact_key = "fakekey"
+        ticket.msisdn = "+27123"
+        ticket.save()
+        return ticket
+
     def tearDown(self):
         self._restore_post_save_hooks()
 
     def test_generate_jembi_json(self):
-        ticket = Ticket()
-        ticket.conversation = self.conversation
-        ticket.support_nonce = "supportnonce"
-        ticket.support_id = 100
-        ticket.message = "Inbound Message"
-        ticket.response = "Outbound Response"
-        ticket.contact_key = "fakekey"
-        ticket.msisdn = "+27123"
-        ticket.save()
+        ticket = self.mk_ticket("supportnonce", 100,
+                                "Inbound Message", "Outbound Response")
         tags = ["@tester", "#compliment"]
         jembi_post = build_jembi_helpdesk_json(ticket, tags, 2)
         self.assertEqual(jembi_post["dmsisdn"], "+27123")
@@ -211,3 +217,24 @@ class JembiSubmissionTest(TestCase):
         self.assertEqual(jembi_post["data"]["answer"], "Outbound Response")
         self.assertEqual(jembi_post["class"], "compliment")
         self.assertEqual(jembi_post["op"], "2")
+
+    @responses.activate
+    def test_generate_jembi_post(self):
+        ticket = self.mk_ticket("supportnonce1", 101,
+                                "In Message Send", "Out Response Send")
+        tags = ["@tester", "#compliment"]
+        responses.add(responses.POST,
+                      "http://npr-staging.jembi.org:5001/ws/rest/v1/helpdesk",
+                      body='Request added to queue', status=202,
+                      content_type='application/json')
+
+        resp = send_helpdesk_response_jembi.delay(ticket, tags, 2)
+
+        self.assertEqual(resp.get(), "Request added to queue")
+
+        self.assertEqual(len(responses.calls), 1)
+        self.assertEqual(responses.calls[
+            0].request.url,
+            'http://npr-staging.jembi.org:5001/ws/rest/v1/helpdesk')
+        self.assertEqual(responses.calls[0].response.text,
+                         'Request added to queue')
