@@ -1,5 +1,7 @@
 from celery import task
 from celery.utils.log import get_task_logger
+import requests
+import json
 
 from go_http.send import HttpApiSender
 from go_http.contacts import ContactsApiClient
@@ -22,6 +24,60 @@ def send_helpdesk_response(ticket):
     response = sender.send_text(ticket.msisdn, ticket.response)
     # TODO: Log outbound send metric
     return response
+
+
+def jembi_format_date(date):
+    return date.strftime("%Y%m%d%H%M%S")
+
+
+def extract_class_from_tags(tags):
+    # ["@person", "#coffee", "#payment"] -> "coffee"
+    for tag in tags:
+        if tag[0] == "#":
+            return tag[1::]
+    return None
+
+
+def get_ticket_faccode(contact_key):
+    # Gets contact's clinic code if they have one
+    contacts_api = ContactsApiClient(auth_token=settings.VUMI_GO_API_TOKEN)
+    contact = contacts_api.get_contact(contact_key)
+    if "clinic_code" in contact["extra"]:
+        return contact["extra"]["clinic_code"]
+    return None
+
+
+def build_jembi_helpdesk_json(ticket, tags, operator_num):
+    json_template = {
+        "encdate": jembi_format_date(ticket.created_at),
+        "repdate": jembi_format_date(ticket.updated_at),
+        "mha": 1,
+        "swt": 2,  # 1 ussd, 2 sms
+        "cmsisdn": ticket.msisdn,
+        "dmsisdn": ticket.msisdn,
+        "faccode": get_ticket_faccode(ticket.contact_key),
+        "data": {
+            "question": ticket.message,
+            "answer": ticket.response
+        },
+        "class": extract_class_from_tags(tags),
+        "type": 7,  # 7 helpdesk
+        "op": str(operator_num)
+    }
+    return json_template
+
+
+@task()
+def send_helpdesk_response_jembi(ticket, tags, operator_num):
+    data = build_jembi_helpdesk_json(ticket, tags, operator_num)
+    api_url = ("%s/helpdesk" % settings.JEMBI_BASE_URL)
+    headers = {
+        'Content-Type': 'application/json'
+    }
+    result = requests.post(api_url, headers=headers, data=json.dumps(data),
+                           auth=(settings.JEMBI_USERNAME,
+                                 settings.JEMBI_PASSWORD))
+    return result.text
 
 
 @task()

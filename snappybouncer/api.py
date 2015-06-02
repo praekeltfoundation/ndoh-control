@@ -4,7 +4,8 @@ from tastypie.authentication import ApiKeyAuthentication
 from tastypie.authorization import Authorization
 from tastypie.serializers import Serializer
 from snappybouncer.models import Conversation, UserAccount, Ticket
-from snappybouncer.tasks import send_helpdesk_response
+from snappybouncer.tasks import (send_helpdesk_response,
+                                 send_helpdesk_response_jembi)
 import logging
 import json
 import re
@@ -185,6 +186,12 @@ class WebhookResource(Resource):
                     ticket.save()
                     # Send the message out to user via Vumi via Celery
                     send_helpdesk_response.delay(ticket)
+                    # Post the ticket info to Jembi
+                    helpdesk_tags = bundle.obj.data["note"]["ticket"]["tags"]
+                    helpdesk_op = bundle.obj.data[
+                        "note"]["created_by_staff_id"]
+                    send_helpdesk_response_jembi.delay(ticket, helpdesk_tags,
+                                                       helpdesk_op)
                 except ObjectDoesNotExist:
                     logger.error(
                         'Webhook received for unrecognised support ticket',
