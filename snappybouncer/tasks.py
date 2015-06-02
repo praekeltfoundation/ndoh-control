@@ -35,6 +35,16 @@ def extract_class_from_tags(tags):
     for tag in tags:
         if tag[0] == "#":
             return tag[1::]
+    return None
+
+
+def get_ticket_faccode(contact_key):
+    # Gets contact's clinic code if they have one
+    contacts_api = ContactsApiClient(auth_token=settings.VUMI_GO_API_TOKEN)
+    contact = contacts_api.get_contact(contact_key)
+    if "clinic_code" in contact["extra"]:
+        return contact["extra"]["clinic_code"]
+    return None
 
 
 def build_jembi_helpdesk_json(ticket, tags, operator_num):
@@ -45,7 +55,7 @@ def build_jembi_helpdesk_json(ticket, tags, operator_num):
         "swt": 2,  # 1 ussd, 2 sms
         "cmsisdn": ticket.msisdn,
         "dmsisdn": ticket.msisdn,
-        "faccode": None,  # TODO look this up in vumi when available
+        "faccode": get_ticket_faccode(ticket.contact_key),
         "data": {
             "question": ticket.message,
             "answer": ticket.response
