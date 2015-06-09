@@ -9,7 +9,7 @@ from requests_testadapter import TestAdapter, TestSession
 
 from go_http.send import HttpApiSender, LoggingSender
 from subsend.tasks import (process_message_queue, processes_message,
-                           vumi_fire_metric)
+                           vumi_fire_metric, send_message)
 from subscription.models import Subscription, MessageSet
 from djcelery.models import PeriodicTask
 
@@ -55,22 +55,20 @@ class TestMessageQueueProcessor(TestCase):
 
     def test_send_message_1_en_accelerated(self):
         subscriber = Subscription.objects.get(pk=1)
-        result = processes_message.delay(subscriber, self.sender)
+        result = send_message.delay(subscriber, self.sender)
         self.assertEqual(result.get(), {
             "message_id": result.get()["message_id"],
             "to_addr": "+271234",
             "content": "Message 1 on accelerated",
         })
-        subscriber_updated = Subscription.objects.get(pk=1)
-        self.assertEquals(subscriber_updated.next_sequence_number, 2)
-        self.assertEquals(subscriber_updated.process_status, 0)
 
-    def test_next_message_2_post_send_en_accelerated(self):
+    def test_processes_message_1_en_accelerated(self):
         subscriber = Subscription.objects.get(pk=1)
         result = processes_message.delay(subscriber, self.sender)
         self.assertTrue(result.successful())
         subscriber_updated = Subscription.objects.get(pk=1)
         self.assertEquals(subscriber_updated.next_sequence_number, 2)
+        self.assertEquals(subscriber_updated.process_status, 0)
 
     def test_set_completed_post_send_en_accelerated_2(self):
         subscriber = Subscription.objects.get(pk=1)
@@ -98,7 +96,7 @@ class TestMessageQueueProcessor(TestCase):
         self.assertEquals(new_subscription.to_addr, "+271234")
         self.assertEquals(new_subscription.schedule, twice_a_week)
         self.assertEqual(
-            self.handler.logs[1].msg,
+            self.handler.logs[0].msg,
             "Metric: u'prd.sum.baby1_auto' [sum] -> 1")
 
     def test_new_subscription_created_post_send_en_baby1(self):
@@ -134,6 +132,17 @@ class TestMessageQueueProcessor(TestCase):
         subscriber_updated = Subscription.objects.get(pk=4)
         self.assertEquals(subscriber_updated.completed, True)
         self.assertEquals(subscriber_updated.active, False)
+
+    def test_send_non_existent_message(self):
+        subscriber = Subscription.objects.get(pk=1)
+        subscriber.lang = 'fr'
+        subscriber.save()
+        result = send_message.delay(subscriber, self.sender)
+        self.assertTrue(result.successful())
+        subscriber_updated = Subscription.objects.get(pk=1)
+        self.assertEquals(subscriber_updated.completed, False)
+        self.assertEquals(subscriber_updated.active, True)
+        self.assertEquals(subscriber_updated.process_status, -1)
 
 
 class RecordingAdapter(TestAdapter):

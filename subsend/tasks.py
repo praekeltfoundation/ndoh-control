@@ -48,6 +48,7 @@ def process_message_queue(schedule, sender=None):
     for subscriber in subscribers:
         subscriber.process_status = 1  # In Proceses
         subscriber.save()
+        send_message.delay(subscriber, sender)
         processes_message.delay(subscriber, sender)
     total_sent = subscribers.count()
     vumi_fire_metric.delay(
@@ -57,17 +58,44 @@ def process_message_queue(schedule, sender=None):
     return total_sent
 
 
-@task()
-def processes_message(subscriber, sender):
+@task(bind=True, time_limit=10)
+def send_message(self, subscriber, sender):
     try:
-        # Get next message
+        # send message to subscriber
         try:
+            # get message to send
             message = Message.objects.get(
                 message_set=subscriber.message_set, lang=subscriber.lang,
                 sequence_number=subscriber.next_sequence_number)
-            # Send message
-            response = sender.send_text(subscriber.to_addr, message.content)
-            # Post process moving to next message, next set or finished
+            # send message
+            try:
+                response = sender.send_text(subscriber.to_addr, message.content)
+            except Exception as e:
+                if e.message == '409 Client Error: Conflict':  # e.http_error_msg?
+                    # deactivate subscription
+                    subscriber.active = False
+                    subscriber.save()
+                    response = 'Subscription deactivated for %s' % subscriber.to_addr
+                elif e.message == 'No JSON object could be decoded':
+                    # retry message sending - default 3 times
+                    raise self.retry(e=e)
+                    # response = 'Message sending abandoned after 3 retries'
+            return response
+        except ObjectDoesNotExist:
+            subscriber.process_status = -1  # Errored
+            subscriber.save()
+            logger.error('Missing subscription message', exc_info=True)
+    except SoftTimeLimitExceeded:
+        logger.error(
+            ('Soft time limit exceed sending message to Vumi'
+             ' HTTP API via Celery'), exc_info=True)
+
+
+@task()
+def processes_message(subscriber, sender):
+    try:
+        # Process moving to next message, next set or finished
+        try:
             # Get set max
             set_max = Message.objects.filter(
                 message_set=subscriber.message_set
@@ -106,12 +134,12 @@ def processes_message(subscriber, sender):
                     subscriber.next_sequence_number + 1)
                 subscriber.process_status = 0  # Ready
                 subscriber.save()
-            return response
+            # return response
+            return "Subscription for %s updated" % subscriber.to_addr
         except ObjectDoesNotExist:
             subscriber.process_status = -1  # Errored
             subscriber.save()
-            logger.error('Missing subscription message', exc_info=True)
+            logger.error('Unexpected error', exc_info=True)
     except SoftTimeLimitExceeded:
         logger.error(
-            ('Soft time limit exceed processing message to Vumi'
-             ' HTTP API via Celery'), exc_info=True)
+            'Soft time limit exceed updating subscription', exc_info=True)
