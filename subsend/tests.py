@@ -2,10 +2,14 @@
 
 import json
 import logging
+import responses
+import control.settings as settings
 from django.test import TestCase
 from django.test.utils import override_settings
 
 from requests_testadapter import TestAdapter, TestSession
+from requests.exceptions import HTTPError
+from go_http.exceptions import UserOptedOutException
 
 from go_http.send import HttpApiSender, LoggingSender
 from subsend.tasks import (process_message_queue, processes_message,
@@ -143,6 +147,83 @@ class TestMessageQueueProcessor(TestCase):
         self.assertEquals(subscriber_updated.completed, False)
         self.assertEquals(subscriber_updated.active, True)
         self.assertEquals(subscriber_updated.process_status, -1)
+
+
+class TestMessageFailure(TestCase):
+    fixtures = ["test_subsend.json"]
+
+    @override_settings(CELERY_EAGER_PROPAGATES_EXCEPTIONS=True,
+                       CELERY_ALWAYS_EAGER=True,
+                       BROKER_BACKEND='memory',)
+    def setUp(self):
+        self.sender = HttpApiSender(
+            account_key=settings.VUMI_GO_ACCOUNT_KEY,
+            conversation_key=settings.VUMI_GO_CONVERSATION_KEY,
+            conversation_token=settings.VUMI_GO_ACCOUNT_TOKEN
+        )
+        self.handler = RecordingHandler()
+        logger = logging.getLogger('go_http.test')
+        logger.setLevel(logging.INFO)
+        logger.addHandler(self.handler)
+
+    def check_logs(self, msg, levelno=logging.INFO):
+        [log] = self.handler.logs
+        self.assertEqual(log.msg, msg)
+        self.assertEqual(log.levelno, levelno)
+
+    def test_data_loaded(self):
+        messagesets = MessageSet.objects.all()
+        self.assertEqual(len(messagesets), 10)
+        subscriptions = Subscription.objects.all()
+        self.assertEqual(len(subscriptions), 6)
+        schedules = PeriodicTask.objects.all()
+        self.assertEqual(len(schedules), 10)
+
+    @responses.activate
+    def test_subscriber_opted_out_error(self):
+        subscriber = Subscription.objects.get(pk=1)
+        exception = UserOptedOutException(subscriber.to_addr,
+                                          "Message 1 on accelerated",
+                                          "response reason")
+        responses.add(responses.PUT,
+                      "http://go.vumi.org/api/v1/go/http_api_nostream/"
+                      "conv-key/messages.json",
+                      content_type='application/json;charset=utf-8',
+                      body=exception)
+        result = send_message.delay(subscriber, self.sender)
+        self.assertEquals(len(responses.calls), 1)
+        self.assertEquals(result.get(),
+                          u'Subscription deactivated for +271234')
+
+    @responses.activate
+    def test_subscriber_three_retries_400s(self):
+        subscriber = Subscription.objects.get(pk=1)
+        responses.add(responses.PUT,
+                      "http://go.vumi.org/api/v1/go/http_api_nostream/"
+                      "conv-key/messages.json",
+                      content_type='application/json;charset=utf-8',
+                      status=477, body='{"error": "problems"}')
+        result = send_message.delay(subscriber, self.sender)
+        self.assertEqual(len(responses.calls), 4)
+
+        with self.assertRaises(HTTPError) as cm:
+            result.get()
+        self.assertEqual(cm.exception.response.status_code, 477)
+
+    @responses.activate
+    def test_subscriber_other_httperror_code(self):
+        subscriber = Subscription.objects.get(pk=1)
+        responses.add(responses.PUT,
+                      "http://go.vumi.org/api/v1/go/http_api_nostream/"
+                      "conv-key/messages.json",
+                      content_type='application/json;charset=utf-8',
+                      status=505, body='{"error": "problems"}')
+        result = send_message.delay(subscriber, self.sender)
+        self.assertEqual(len(responses.calls), 1)
+
+        with self.assertRaises(HTTPError) as cm:
+            result.get()
+        self.assertEqual(cm.exception.response.status_code, 505)
 
 
 class RecordingAdapter(TestAdapter):

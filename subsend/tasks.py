@@ -5,6 +5,8 @@ from django.db.models import Max
 from django.core.exceptions import ObjectDoesNotExist
 
 from go_http.send import HttpApiSender
+from requests.exceptions import HTTPError
+from go_http.exceptions import UserOptedOutException
 import control.settings as settings
 from subscription.models import Subscription, Message
 
@@ -69,17 +71,20 @@ def send_message(self, subscriber, sender):
                 sequence_number=subscriber.next_sequence_number)
             # send message
             try:
-                response = sender.send_text(subscriber.to_addr, message.content)
-            except Exception as e:
-                if e.message == '409 Client Error: Conflict':  # e.http_error_msg?
-                    # deactivate subscription
-                    subscriber.active = False
-                    subscriber.save()
-                    response = 'Subscription deactivated for %s' % subscriber.to_addr
-                elif e.message == 'No JSON object could be decoded':
-                    # retry message sending - default 3 times
-                    raise self.retry(e=e)
-                    # response = 'Message sending abandoned after 3 retries'
+                response = sender.send_text(subscriber.to_addr,
+                                            message.content)
+            except UserOptedOutException:
+                # user has opted out so deactivate subscription
+                subscriber.active = False
+                subscriber.save()
+                response = ('Subscription deactivated for %s' %
+                            subscriber.to_addr)
+            except HTTPError as e:
+                # retry message sending if in 400 range (3 default retries)
+                if 400 < e.response.status_code < 499:
+                    raise self.retry(exc=e)
+                else:
+                    raise e
             return response
         except ObjectDoesNotExist:
             subscriber.process_status = -1  # Errored
