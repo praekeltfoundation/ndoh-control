@@ -187,7 +187,7 @@ class TestMessageFailure(TestCase):
                                           "response reason")
         responses.add(responses.PUT,
                       "http://go.vumi.org/api/v1/go/http_api_nostream/"
-                      "conv-key/messages.json",
+                      "replaceme/messages.json",
                       content_type='application/json;charset=utf-8',
                       body=exception)
         result = send_message.delay(subscriber, self.sender)
@@ -200,7 +200,7 @@ class TestMessageFailure(TestCase):
         subscriber = Subscription.objects.get(pk=1)
         responses.add(responses.PUT,
                       "http://go.vumi.org/api/v1/go/http_api_nostream/"
-                      "conv-key/messages.json",
+                      "replaceme/messages.json",
                       content_type='application/json;charset=utf-8',
                       status=477, body='{"error": "problems"}')
         result = send_message.delay(subscriber, self.sender)
@@ -215,7 +215,7 @@ class TestMessageFailure(TestCase):
         subscriber = Subscription.objects.get(pk=1)
         responses.add(responses.PUT,
                       "http://go.vumi.org/api/v1/go/http_api_nostream/"
-                      "conv-key/messages.json",
+                      "replaceme/messages.json",
                       content_type='application/json;charset=utf-8',
                       status=505, body='{"error": "problems"}')
         result = send_message.delay(subscriber, self.sender)
