@@ -5,6 +5,8 @@ from django.db.models import Max
 from django.core.exceptions import ObjectDoesNotExist
 
 from go_http.send import HttpApiSender
+from requests.exceptions import HTTPError
+from go_http.exceptions import UserOptedOutException
 import control.settings as settings
 from subscription.models import Subscription, Message
 
@@ -48,6 +50,7 @@ def process_message_queue(schedule, sender=None):
     for subscriber in subscribers:
         subscriber.process_status = 1  # In Proceses
         subscriber.save()
+        send_message.delay(subscriber, sender)
         processes_message.delay(subscriber, sender)
     total_sent = subscribers.count()
     vumi_fire_metric.delay(
@@ -57,17 +60,47 @@ def process_message_queue(schedule, sender=None):
     return total_sent
 
 
-@task()
-def processes_message(subscriber, sender):
+@task(bind=True, time_limit=10)
+def send_message(self, subscriber, sender):
     try:
-        # Get next message
+        # send message to subscriber
         try:
+            # get message to send
             message = Message.objects.get(
                 message_set=subscriber.message_set, lang=subscriber.lang,
                 sequence_number=subscriber.next_sequence_number)
-            # Send message
-            response = sender.send_text(subscriber.to_addr, message.content)
-            # Post process moving to next message, next set or finished
+            # send message
+            try:
+                response = sender.send_text(subscriber.to_addr,
+                                            message.content)
+            except UserOptedOutException:
+                # user has opted out so deactivate subscription
+                subscriber.active = False
+                subscriber.save()
+                response = ('Subscription deactivated for %s' %
+                            subscriber.to_addr)
+            except HTTPError as e:
+                # retry message sending if in 500 range (3 default retries)
+                if 500 < e.response.status_code < 599:
+                    raise self.retry(exc=e)
+                else:
+                    raise e
+            return response
+        except ObjectDoesNotExist:
+            subscriber.process_status = -1  # Errored
+            subscriber.save()
+            logger.error('Missing subscription message', exc_info=True)
+    except SoftTimeLimitExceeded:
+        logger.error(
+            ('Soft time limit exceed sending message to Vumi'
+             ' HTTP API via Celery'), exc_info=True)
+
+
+@task()
+def processes_message(subscriber, sender):
+    try:
+        # Process moving to next message, next set or finished
+        try:
             # Get set max
             set_max = Message.objects.filter(
                 message_set=subscriber.message_set
@@ -106,12 +139,12 @@ def processes_message(subscriber, sender):
                     subscriber.next_sequence_number + 1)
                 subscriber.process_status = 0  # Ready
                 subscriber.save()
-            return response
+            # return response
+            return "Subscription for %s updated" % subscriber.to_addr
         except ObjectDoesNotExist:
             subscriber.process_status = -1  # Errored
             subscriber.save()
-            logger.error('Missing subscription message', exc_info=True)
+            logger.error('Unexpected error', exc_info=True)
     except SoftTimeLimitExceeded:
         logger.error(
-            ('Soft time limit exceed processing message to Vumi'
-             ' HTTP API via Celery'), exc_info=True)
+            'Soft time limit exceed updating subscription', exc_info=True)

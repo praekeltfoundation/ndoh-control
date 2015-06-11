@@ -2,14 +2,18 @@
 
 import json
 import logging
+import responses
+import control.settings as settings
 from django.test import TestCase
 from django.test.utils import override_settings
 
 from requests_testadapter import TestAdapter, TestSession
+from requests.exceptions import HTTPError
+from go_http.exceptions import UserOptedOutException
 
 from go_http.send import HttpApiSender, LoggingSender
 from subsend.tasks import (process_message_queue, processes_message,
-                           vumi_fire_metric)
+                           vumi_fire_metric, send_message)
 from subscription.models import Subscription, MessageSet
 from djcelery.models import PeriodicTask
 
@@ -55,22 +59,20 @@ class TestMessageQueueProcessor(TestCase):
 
     def test_send_message_1_en_accelerated(self):
         subscriber = Subscription.objects.get(pk=1)
-        result = processes_message.delay(subscriber, self.sender)
+        result = send_message.delay(subscriber, self.sender)
         self.assertEqual(result.get(), {
             "message_id": result.get()["message_id"],
             "to_addr": "+271234",
             "content": "Message 1 on accelerated",
         })
-        subscriber_updated = Subscription.objects.get(pk=1)
-        self.assertEquals(subscriber_updated.next_sequence_number, 2)
-        self.assertEquals(subscriber_updated.process_status, 0)
 
-    def test_next_message_2_post_send_en_accelerated(self):
+    def test_processes_message_1_en_accelerated(self):
         subscriber = Subscription.objects.get(pk=1)
         result = processes_message.delay(subscriber, self.sender)
         self.assertTrue(result.successful())
         subscriber_updated = Subscription.objects.get(pk=1)
         self.assertEquals(subscriber_updated.next_sequence_number, 2)
+        self.assertEquals(subscriber_updated.process_status, 0)
 
     def test_set_completed_post_send_en_accelerated_2(self):
         subscriber = Subscription.objects.get(pk=1)
@@ -98,7 +100,7 @@ class TestMessageQueueProcessor(TestCase):
         self.assertEquals(new_subscription.to_addr, "+271234")
         self.assertEquals(new_subscription.schedule, twice_a_week)
         self.assertEqual(
-            self.handler.logs[1].msg,
+            self.handler.logs[0].msg,
             "Metric: u'prd.sum.baby1_auto' [sum] -> 1")
 
     def test_new_subscription_created_post_send_en_baby1(self):
@@ -134,6 +136,94 @@ class TestMessageQueueProcessor(TestCase):
         subscriber_updated = Subscription.objects.get(pk=4)
         self.assertEquals(subscriber_updated.completed, True)
         self.assertEquals(subscriber_updated.active, False)
+
+    def test_send_non_existent_message(self):
+        subscriber = Subscription.objects.get(pk=1)
+        subscriber.lang = 'fr'
+        subscriber.save()
+        result = send_message.delay(subscriber, self.sender)
+        self.assertTrue(result.successful())
+        subscriber_updated = Subscription.objects.get(pk=1)
+        self.assertEquals(subscriber_updated.completed, False)
+        self.assertEquals(subscriber_updated.active, True)
+        self.assertEquals(subscriber_updated.process_status, -1)
+
+
+class TestMessageFailure(TestCase):
+    fixtures = ["test_subsend.json"]
+
+    @override_settings(CELERY_EAGER_PROPAGATES_EXCEPTIONS=True,
+                       CELERY_ALWAYS_EAGER=True,
+                       BROKER_BACKEND='memory',)
+    def setUp(self):
+        self.sender = HttpApiSender(
+            account_key=settings.VUMI_GO_ACCOUNT_KEY,
+            conversation_key=settings.VUMI_GO_CONVERSATION_KEY,
+            conversation_token=settings.VUMI_GO_ACCOUNT_TOKEN
+        )
+        self.handler = RecordingHandler()
+        logger = logging.getLogger('go_http.test')
+        logger.setLevel(logging.INFO)
+        logger.addHandler(self.handler)
+
+    def check_logs(self, msg, levelno=logging.INFO):
+        [log] = self.handler.logs
+        self.assertEqual(log.msg, msg)
+        self.assertEqual(log.levelno, levelno)
+
+    def test_data_loaded(self):
+        messagesets = MessageSet.objects.all()
+        self.assertEqual(len(messagesets), 10)
+        subscriptions = Subscription.objects.all()
+        self.assertEqual(len(subscriptions), 6)
+        schedules = PeriodicTask.objects.all()
+        self.assertEqual(len(schedules), 10)
+
+    @responses.activate
+    def test_subscriber_opted_out_error(self):
+        subscriber = Subscription.objects.get(pk=1)
+        exception = UserOptedOutException(subscriber.to_addr,
+                                          "Message 1 on accelerated",
+                                          "response reason")
+        responses.add(responses.PUT,
+                      "http://go.vumi.org/api/v1/go/http_api_nostream/"
+                      "replaceme/messages.json",
+                      content_type='application/json;charset=utf-8',
+                      body=exception)
+        result = send_message.delay(subscriber, self.sender)
+        self.assertEquals(len(responses.calls), 1)
+        self.assertEquals(result.get(),
+                          u'Subscription deactivated for +271234')
+
+    @responses.activate
+    def test_subscriber_three_retries_on_500(self):
+        subscriber = Subscription.objects.get(pk=1)
+        responses.add(responses.PUT,
+                      "http://go.vumi.org/api/v1/go/http_api_nostream/"
+                      "replaceme/messages.json",
+                      content_type='application/json;charset=utf-8',
+                      status=577, body='{"error": "problems"}')
+        result = send_message.delay(subscriber, self.sender)
+        self.assertEqual(len(responses.calls), 4)
+
+        with self.assertRaises(HTTPError) as cm:
+            result.get()
+        self.assertEqual(cm.exception.response.status_code, 577)
+
+    @responses.activate
+    def test_subscriber_other_httperror_code(self):
+        subscriber = Subscription.objects.get(pk=1)
+        responses.add(responses.PUT,
+                      "http://go.vumi.org/api/v1/go/http_api_nostream/"
+                      "replaceme/messages.json",
+                      content_type='application/json;charset=utf-8',
+                      status=405, body='{"error": "problems"}')
+        result = send_message.delay(subscriber, self.sender)
+        self.assertEqual(len(responses.calls), 1)
+
+        with self.assertRaises(HTTPError) as cm:
+            result.get()
+        self.assertEqual(cm.exception.response.status_code, 405)
 
 
 class RecordingAdapter(TestAdapter):
