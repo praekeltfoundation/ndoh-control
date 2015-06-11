@@ -80,8 +80,8 @@ def send_message(self, subscriber, sender):
                 response = ('Subscription deactivated for %s' %
                             subscriber.to_addr)
             except HTTPError as e:
-                # retry message sending if in 400 range (3 default retries)
-                if 400 < e.response.status_code < 499:
+                # retry message sending if in 500 range (3 default retries)
+                if 500 < e.response.status_code < 599:
                     raise self.retry(exc=e)
                 else:
                     raise e

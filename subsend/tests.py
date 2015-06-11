@@ -196,19 +196,19 @@ class TestMessageFailure(TestCase):
                           u'Subscription deactivated for +271234')
 
     @responses.activate
-    def test_subscriber_three_retries_400s(self):
+    def test_subscriber_three_retries_on_500(self):
         subscriber = Subscription.objects.get(pk=1)
         responses.add(responses.PUT,
                       "http://go.vumi.org/api/v1/go/http_api_nostream/"
                       "replaceme/messages.json",
                       content_type='application/json;charset=utf-8',
-                      status=477, body='{"error": "problems"}')
+                      status=577, body='{"error": "problems"}')
         result = send_message.delay(subscriber, self.sender)
         self.assertEqual(len(responses.calls), 4)
 
         with self.assertRaises(HTTPError) as cm:
             result.get()
-        self.assertEqual(cm.exception.response.status_code, 477)
+        self.assertEqual(cm.exception.response.status_code, 577)
 
     @responses.activate
     def test_subscriber_other_httperror_code(self):
@@ -217,13 +217,13 @@ class TestMessageFailure(TestCase):
                       "http://go.vumi.org/api/v1/go/http_api_nostream/"
                       "replaceme/messages.json",
                       content_type='application/json;charset=utf-8',
-                      status=505, body='{"error": "problems"}')
+                      status=405, body='{"error": "problems"}')
         result = send_message.delay(subscriber, self.sender)
         self.assertEqual(len(responses.calls), 1)
 
         with self.assertRaises(HTTPError) as cm:
             result.get()
-        self.assertEqual(cm.exception.response.status_code, 505)
+        self.assertEqual(cm.exception.response.status_code, 405)
 
 
 class RecordingAdapter(TestAdapter):
