@@ -19,7 +19,7 @@
     {% endif %}
 
         {% if updateform %}
-          <form id="message-edit-form" method="post" method="POST" action="." class="form-horizontal" style="width: 500px">
+          <form id="message-edit-form" method="post" method="POST" action=".">
             {% csrf_token %}
           <h3>Edit message</h3>
           {{ updateform|bootstrap }}
@@ -27,7 +27,7 @@
           <input type="submit" class="btn btn-success" value="Update" />
           </form>
         {% elif confirmform %}
-          <form id="message-edit-form" method="post" method="POST" action="." class="form-horizontal" style="width: 500px">
+          <form id="message-edit-form" method="post" method="POST" action=".">
             {% csrf_token %}
           <h3>Confirm updated message</h3>
             {{ confirmform|bootstrap }}
@@ -36,7 +36,7 @@
             <button onclick="window.history.back()" class="btn btn-danger">Cancel</button>
           </form>
         {% elif form %}
-          <form id="message-edit-form" method="post" method="POST" action="." class="form-horizontal" style="width: 500px">
+          <form id="message-edit-form" method="post" method="POST" action=".">
           {% csrf_token %}
           <h3>Find a message to edit</h3>
           {{ form|bootstrap }}
