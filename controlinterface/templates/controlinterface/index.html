@@ -4,6 +4,7 @@
 
 {% block content %}
 <link rel="stylesheet" href="{% static "controlinterface/css/sapphire.css" %}">
+<link rel="stylesheet" href="{% static "controlinterface/css/sapphire-theme.css" %}">
 <div class="sapphire">
   <div class="row">
     <div class="col-sm-3 col-md-4">
@@ -49,12 +50,14 @@
           title: '{{ values.config.title }}',
           {% if values.data.count == 1 %}
           key: '{{ values.data.first.key }}',
+          values: [],
           {% else %}
           metrics: [
             {% for metric in values.data %}
             {
               title: '{{ metric.title}}',
-              key: '{{ metric.key}}'
+              key: '{{ metric.key}}',
+              values: []
             },
 
             {% endfor %}
