@@ -242,6 +242,36 @@ CELERY_ROUTES = {
     },
     'subscription.tasks.vumi_fire_metric': {
         'queue': 'priority',
+    },
+    'servicerating.tasks.send_reminders': {
+        'queue': 'mediumpriority',
+    },
+    'servicerating.tasks.vumi_update_smart_group_query': {
+        'queue': 'mediumpriority',
+    },
+    'servicerating.tasks.vumi_get_smart_group_contacts': {
+        'queue': 'mediumpriority',
+    },
+    'servicerating.tasks.vumi_update_contact_extras': {
+        'queue': 'mediumpriority',
+    },
+    'servicerating.tasks.vumi_send_message': {
+        'queue': 'mediumpriority',
+    },
+    'servicerating.tasks.vumi_fire_metric': {
+        'queue': 'mediumpriority',
+    },
+    'subsend.tasks.vumi_fire_metric': {
+        'queue': 'lowpriority',
+    },
+    'subsend.tasks.process_message_queue': {
+        'queue': 'lowpriority',
+    },
+    'subsend.tasks.send_message': {
+        'queue': 'lowpriority',
+    },
+    'subsend.tasks.processes_message': {
+        'queue': 'lowpriority',
     }
 }
 
