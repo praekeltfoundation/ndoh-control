@@ -222,6 +222,9 @@ CELERY_ROUTES = {
     'snappybouncer.tasks.send_helpdesk_response': {
         'queue': 'priority',
     },
+    'snappybouncer.tasks.send_helpdesk_response_jembi': {
+        'queue': 'priority',
+    },
     'snappybouncer.tasks.create_snappy_ticket': {
         'queue': 'priority',
     },
@@ -242,6 +245,48 @@ CELERY_ROUTES = {
     },
     'subscription.tasks.vumi_fire_metric': {
         'queue': 'priority',
+    },
+    'subscription.tasks.ingest_csv': {
+        'queue': 'priority',
+    },
+    'subscription.tasks.ingest_opt_opts_csv': {
+        'queue': 'priority',
+    },
+    'subscription.tasks.ensure_one_subscription': {
+        'queue': 'highmemory',
+    },
+    'servicerating.tasks.send_reminders': {
+        'queue': 'mediumpriority',
+    },
+    'servicerating.tasks.vumi_update_smart_group_query': {
+        'queue': 'mediumpriority',
+    },
+    'servicerating.tasks.vumi_get_smart_group_contacts': {
+        'queue': 'mediumpriority',
+    },
+    'servicerating.tasks.vumi_update_contact_extras': {
+        'queue': 'mediumpriority',
+    },
+    'servicerating.tasks.vumi_send_message': {
+        'queue': 'mediumpriority',
+    },
+    'servicerating.tasks.vumi_fire_metric': {
+        'queue': 'mediumpriority',
+    },
+    'servicerating.tasks.ensure_one_servicerating': {
+        'queue': 'highmemory',
+    },
+    'subsend.tasks.vumi_fire_metric': {
+        'queue': 'lowpriority',
+    },
+    'subsend.tasks.process_message_queue': {
+        'queue': 'highmemory',
+    },
+    'subsend.tasks.send_message': {
+        'queue': 'lowpriority',
+    },
+    'subsend.tasks.processes_message': {
+        'queue': 'lowpriority',
     }
 }
 
