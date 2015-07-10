@@ -76,7 +76,8 @@ def send_helpdesk_response_jembi(ticket, tags, operator_num):
     }
     result = requests.post(api_url, headers=headers, data=json.dumps(data),
                            auth=(settings.JEMBI_USERNAME,
-                                 settings.JEMBI_PASSWORD))
+                                 settings.JEMBI_PASSWORD),
+                           verify=False)
     return result.text
 
 
