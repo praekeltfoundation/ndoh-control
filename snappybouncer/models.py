@@ -1,5 +1,6 @@
 from django.db import models
 from django.utils import timezone
+from datetime import timedelta
 from django.db.models import DateTimeField
 from snappybouncer.tasks import create_snappy_ticket
 
@@ -7,6 +8,7 @@ from snappybouncer.tasks import create_snappy_ticket
 # Modelled on https://github.com/jamesmarlowe/django-AutoDateTimeFields
 # But with timezone support
 class AutoDateTimeField(DateTimeField):
+
     def pre_save(self, model_instance, add):
         now = timezone.now()
         setattr(model_instance, self.attname, now)
@@ -14,6 +16,7 @@ class AutoDateTimeField(DateTimeField):
 
 
 class AutoNewDateTimeField(DateTimeField):
+
     def pre_save(self, model_instance, add):
         if not add:
             return getattr(model_instance, self.attname)
@@ -23,6 +26,7 @@ class AutoNewDateTimeField(DateTimeField):
 
 
 class UserAccount(models.Model):
+
     """ Vumi User Accounts that can send data
     """
     key = models.CharField(max_length=43)
@@ -36,6 +40,7 @@ class UserAccount(models.Model):
 
 
 class Conversation(models.Model):
+
     """ A conversation that can deliver messages into system
     """
     user_account = models.ForeignKey(UserAccount,
@@ -52,6 +57,7 @@ class Conversation(models.Model):
 
 
 class Ticket(models.Model):
+
     """ Support tickets
     """
     conversation = models.ForeignKey(Conversation,
@@ -78,7 +84,10 @@ from django.dispatch import receiver
 
 @receiver(post_save, sender=Ticket)
 def fire_snappy_if_new(sender, instance, created, **kwargs):
-    if created:
+    last_30_secs = timezone.now() - timedelta(seconds=30)
+    recent = Ticket.objects.filter(contact_key=instance.contact_key,
+                                   created_at__gte=last_30_secs).count()
+    if created and recent == 1:
         create_snappy_ticket.delay(instance)
 
 from south.modelsinspector import add_introspection_rules

@@ -144,6 +144,46 @@ class SnappyBouncerResourceTest(ResourceTestCase):
             data=data)
         self.assertHttpBadRequest(response)
 
+    @responses.activate
+    def test_post_ticket_two_good(self):
+        # restore the post_save hook just for this test
+        post_save.connect(fire_snappy_if_new, sender=Ticket)
+
+        responses.add(responses.POST,
+                      "https://app.besnappy.com/api/v1/note",
+                      body="nonce", status=200,
+                      content_type='application/json')
+
+        data = {
+            "contact_key": "dummycontactkey2",
+            "conversation": "/api/v1/snappybouncer/conversation/1/",
+            "msisdn": "+271234",
+            "message": "New item to send to snappy"
+        }
+
+        response = self.api_client.post(
+            '/api/v1/snappybouncer/ticket/', format='json',
+            authentication=self.get_credentials(),
+            data=data)
+        json_item = json.loads(response.content)
+        self.assertEqual("dummycontactkey2", json_item["contact_key"])
+        last = Ticket.objects.last()
+        self.assertEqual(last.support_nonce, "nonce")
+        # Contacts API call is the other
+        self.assertEqual(len(responses.calls), 2)
+        # Send another, should not call snappy
+        response = self.api_client.post(
+            '/api/v1/snappybouncer/ticket/', format='json',
+            authentication=self.get_credentials(),
+            data=data)
+        json_item = json.loads(response.content)
+        self.assertEqual("dummycontactkey2", json_item["contact_key"])
+        last = Ticket.objects.last()
+        self.assertEqual(last.support_nonce, None)
+        self.assertEqual(len(responses.calls), 2)
+        # remove to stop tearDown errors
+        post_save.disconnect(fire_snappy_if_new, sender=Ticket)
+
 
 class JembiSubmissionTest(TestCase):
     # fixtures = ["test_snappybouncer.json"]
