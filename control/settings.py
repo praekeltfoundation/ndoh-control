@@ -122,6 +122,7 @@ MIDDLEWARE_CLASSES = (
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    # 'django.contrib.auth.middleware.SessionAuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     # Uncomment the next line for simple clickjacking protection:
     # 'django.middleware.clickjacking.XFrameOptionsMiddleware',
@@ -158,9 +159,12 @@ INSTALLED_APPS = (
     'djcelery_email',
     'tastypie',
     'bootstrapform',
+    'rest_framework',
+    'rest_framework.authtoken',
     # Custom apps
     'control',
     'subscription',
+    'registration',
     'subsend',
     'servicerating',
     'snappybouncer',
@@ -315,6 +319,20 @@ SOUTH_TESTS_MIGRATE = False  # Do not run the migrations for our tests.
 RAVEN_CONFIG = {
     # DevOps will supply you with this.
     # 'dsn': 'http://public:secret@example.com/1',
+}
+
+# REST Framework conf defaults
+REST_FRAMEWORK = {
+    'DEFAULT_PERMISSION_CLASSES': ('rest_framework.permissions.IsAdminUser',),
+    'PAGINATE_BY': None,
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework.authentication.BasicAuthentication',
+        'rest_framework.authentication.TokenAuthentication',
+    ),
+    'DEFAULT_PERMISSION_CLASSES': (
+        'rest_framework.permissions.IsAuthenticated',
+    ),
+    'DEFAULT_FILTER_BACKENDS': ('rest_framework.filters.DjangoFilterBackend',)
 }
 
 VUMI_GO_BASE_URL = "http://go.vumi.org/api/v1/go/http_api_nostream"
