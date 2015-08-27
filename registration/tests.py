@@ -30,23 +30,6 @@ class AuthenticatedAPITestCase(APITestCase):
             HTTP_AUTHORIZATION='Token ' + self.admintoken)
 
 
-# class TestSourcesAPI(AuthenticatedAPITestCase):
-
-#     def test_create_source(self):
-#         post_data = {
-#             "name": "Test Source",
-#         }
-#         response = self.adminclient.post('/api/v1/sources/',
-#                                          json.dumps(post_data),
-#                                          content_type='application/json')
-
-#         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-
-#         d = Source.objects.last()
-#         self.assertEqual(d.name, 'Test Source')
-#         self.assertEqual(d.id, 1)
-
-
 class TestRegistrationsAPI(AuthenticatedAPITestCase):
 
     def make_source(self, name="Test Source"):
