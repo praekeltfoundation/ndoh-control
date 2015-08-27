@@ -8,6 +8,9 @@ class Source(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+    def __unicode__(self):
+        return u"%s" % self.name
+
 
 class Registration(models.Model):
     """ A registation submitted via Vumi or external sources.
