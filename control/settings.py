@@ -35,7 +35,7 @@ DATABASES = {
 
 # Hosts/domain names that are valid for this site; required if DEBUG is False
 # See https://docs.djangoproject.com/en/1.5/ref/settings/#allowed-hosts
-ALLOWED_HOSTS=['*']
+ALLOWED_HOSTS = ['*']
 
 # Local time zone for this installation. Choices can be found here:
 # http://en.wikipedia.org/wiki/List_of_tz_zones_by_name
@@ -91,7 +91,7 @@ STATICFILES_DIRS = (
 STATICFILES_FINDERS = (
     'django.contrib.staticfiles.finders.FileSystemFinder',
     'django.contrib.staticfiles.finders.AppDirectoriesFinder',
-#    'django.contrib.staticfiles.finders.DefaultStorageFinder',
+    # 'django.contrib.staticfiles.finders.DefaultStorageFinder',
 )
 
 # Make this unique, and don't share it with anybody.
@@ -102,7 +102,7 @@ SECRET_KEY = 'please-change-me'
 TEMPLATE_LOADERS = (
     'django.template.loaders.filesystem.Loader',
     'django.template.loaders.app_directories.Loader',
-#     'django.template.loaders.eggs.Loader',
+    # 'django.template.loaders.eggs.Loader',
 )
 
 TEMPLATE_CONTEXT_PROCESSORS = (
@@ -122,7 +122,6 @@ MIDDLEWARE_CLASSES = (
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
-    # 'django.contrib.auth.middleware.SessionAuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     # Uncomment the next line for simple clickjacking protection:
     # 'django.middleware.clickjacking.XFrameOptionsMiddleware',
@@ -134,7 +133,8 @@ ROOT_URLCONF = 'control.urls'
 WSGI_APPLICATION = 'control.wsgi.application'
 
 TEMPLATE_DIRS = (
-    # Put strings here, like "/home/html/django_templates" or "C:/www/django/templates".
+    # Put strings here, like "/home/html/django_templates" or
+    # "C:/www/django/templates".
     # Always use forward slashes, even on Windows.
     # Don't forget to use absolute paths, not relative paths.
     abspath('templates'),
@@ -308,12 +308,11 @@ DEBUG_TOOLBAR_CONFIG = {
 
 # South configuration variables
 TEST_RUNNER = 'django_nose.NoseTestSuiteRunner'
-SKIP_SOUTH_TESTS = True     # Do not run the south tests as part of our
-                            # test suite.
-SOUTH_TESTS_MIGRATE = False  # Do not run the migrations for our tests.
-                             # We are assuming that our models.py are correct
-                             # for the tests and as such nothing needs to be
-                             # migrated.
+# Do not run the south tests as part of our test suite.
+SKIP_SOUTH_TESTS = True
+# Do not run the migrations for our tests. We are assuming that our models.py
+# are correct for the tests and as such nothing needs to be migrated.
+SOUTH_TESTS_MIGRATE = False
 
 # Sentry configuration
 RAVEN_CONFIG = {
@@ -357,6 +356,6 @@ JEMBI_USERNAME = "test"
 JEMBI_PASSWORD = "test"
 
 try:
-    from local_settings import *
+    from local_settings import *  # flake8: noqa
 except ImportError:
     pass
