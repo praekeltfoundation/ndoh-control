@@ -35,6 +35,7 @@ class AuthenticatedAPITestCase(APITestCase):
 
     def setUp(self):
         super(AuthenticatedAPITestCase, self).setUp()
+        # adminclient setup
         self.adminusername = 'testadminuser'
         self.adminpassword = 'testadminpass'
         self.adminuser = User.objects.create_superuser(
@@ -45,21 +46,34 @@ class AuthenticatedAPITestCase(APITestCase):
         self.admintoken = admintoken.key
         self.adminclient.credentials(
             HTTP_AUTHORIZATION='Token ' + self.admintoken)
+        # normalclient setup
+        self.normalusername = 'testnormaluser'
+        self.normalpassword = 'testnormalpass'
+        self.normaluser = User.objects.create_user(
+            self.normalusername,
+            'testnormaluser@example.com',
+            self.normalpassword)
+        normaltoken = Token.objects.create(user=self.normaluser)
+        self.normaltoken = normaltoken.key
+        self.normalclient.credentials(
+            HTTP_AUTHORIZATION='Token ' + self.normaltoken)
 
     def make_source(self, post_data=TEST_SOURCE_DATA):
-        response = self.adminclient.post('/api/v1/sources/',
+        user = User.objects.get(username='testadminuser')
+        post_data["user"] = "/api/v2/users/%s/" % user.id
+
+        response = self.adminclient.post('/api/v2/sources/',
                                          json.dumps(post_data),
                                          content_type='application/json')
         return response
 
     def make_registration(self, post_data=TEST_REG_DATA):
         source = self.make_source()
-        source_id = source.data["id"]
-        post_data["source"] = "/api/v1/sources/%s/" % source_id
+        post_data["source"] = "/api/v2/sources/%s/" % source.data["id"]
 
-        response = self.adminclient.post('/api/v1/registrations/',
-                                         json.dumps(post_data),
-                                         content_type='application/json')
+        response = self.normalclient.post('/api/v2/registrations/',
+                                          json.dumps(post_data),
+                                          content_type='application/json')
         return response
 
 
@@ -69,14 +83,22 @@ class TestRegistrationsAPI(AuthenticatedAPITestCase):
         response = self.make_source()
 
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-
         d = Source.objects.last()
         self.assertEqual(d.name, 'Test Source')
-        self.assertEqual(d.id, 2)
+
+    def test_create_source_deny_normaluser(self):
+        user = User.objects.get(username='testnormaluser')
+        post_data = TEST_SOURCE_DATA
+        post_data["user"] = "/api/v2/users/%s/" % user.id
+        response = self.normalclient.post('/api/v2/sources/',
+                                          json.dumps(post_data),
+                                          content_type='application/json')
+
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_create_registration(self):
         reg_response = self.make_registration()
         self.assertEqual(reg_response.status_code, status.HTTP_201_CREATED)
 
         d = Registration.objects.last()
-        self.assertEqual(d.id, 1)
+        self.assertEqual(d.mom_id_type, 'sa_id')

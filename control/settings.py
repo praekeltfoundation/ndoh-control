@@ -162,6 +162,7 @@ INSTALLED_APPS = (
     'rest_framework',
     'rest_framework.authtoken',
     # Custom apps
+    'django_filters',
     'control',
     'subscription',
     'registration',
@@ -323,7 +324,7 @@ RAVEN_CONFIG = {
 # REST Framework conf defaults
 REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': ('rest_framework.permissions.IsAdminUser',),
-    'PAGINATE_BY': None,
+    'PAGINATE_BY': 1000,
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework.authentication.BasicAuthentication',
         'rest_framework.authentication.TokenAuthentication',

@@ -27,9 +27,9 @@ urlpatterns = patterns(
     url(r'^', include('snappybouncer.urls')),
     url(r'^', include('controlinterface.urls')),
     url(r'^', include('registration.urls')),
-    # url(r'^api/auth/',
-    #     include('rest_framework.urls', namespace='rest_framework')),
-    # url(r'^api/token-auth/',
-    #     'rest_framework.authtoken.views.obtain_auth_token'),
+    url(r'^api/v2/auth/',
+        include('rest_framework.urls', namespace='rest_framework')),
+    url(r'^api/v2/token-auth/',
+        'rest_framework.authtoken.views.obtain_auth_token'),
 
 ) + staticfiles_urlpatterns()
