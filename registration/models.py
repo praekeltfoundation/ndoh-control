@@ -35,3 +35,15 @@ class Registration(models.Model):
 
     def __unicode__(self):
         return u"Registration for %s" % self.mom_msisdn
+
+
+from django.db.models.signals import post_save
+from django.dispatch import receiver
+from .tasks import jembi_post
+
+
+@receiver(post_save, sender=Registration)
+def fire_jembi_post(sender, instance, created, **kwargs):
+    """ Send the registration info to Jembi
+    """
+    jembi_post.apply_async(kwargs={"registration_id": instance.id})
