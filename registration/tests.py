@@ -109,5 +109,5 @@ class TestJembiPostTask(AuthenticatedAPITestCase):
 
     def test_jembi_post(self):
         registration = self.make_registration()
-        task = jembi_post(registration.id)
-        self.assertEqual(task, 5)
+        task = jembi_post(registration.data["id"])
+        self.assertEqual(task, 'debug_mode')
