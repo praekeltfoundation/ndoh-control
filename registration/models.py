@@ -4,6 +4,8 @@ from django.contrib.auth.models import User
 
 class Source(models.Model):
     """ The source from which a registation originates.
+        The user foreignkey is used to identify the source based on the
+        user's api token.
     """
     name = models.CharField(max_length=100, null=False, blank=False)
     user = models.ForeignKey(User, related_name='sources', null=False)
