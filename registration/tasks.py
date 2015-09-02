@@ -22,10 +22,7 @@ class Jembi_Post_Json(Task):
         """
 
     def get_timestamp(self):
-        if settings.TESTING_TIMESTAMP:
-            return settings.TESTING_TIMESTAMP
-        else:
-            return datetime.today().strftime("%Y%m%d%H%M%S")
+        return datetime.today().strftime("%Y%m%d%H%M%S")
 
     def get_dob(self, mom_dob):
         if type(mom_dob) == str:

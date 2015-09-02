@@ -8,6 +8,10 @@ from rest_framework.authtoken.models import Token
 from rest_framework import status
 from .models import Source, Registration, fire_jembi_post
 from .tasks import jembi_post_json
+from .tasks import Jembi_Post_Json
+
+
+Jembi_Post_Json.get_timestamp = lambda x: "20130819144811"
 
 
 TEST_REG_DATA = {
@@ -128,42 +132,36 @@ class TestRegistrationsAPI(AuthenticatedAPITestCase):
         self.assertEqual(d.mom_id_type, 'sa_id')
 
 
-class TestJembiPostTask(AuthenticatedAPITestCase):
+class TestJembiPostJsonTask(AuthenticatedAPITestCase):
+
+    def test_build_jembi_json(self):
+        registration = self.make_registration()
+        reg = Registration.objects.get(pk=registration.data["id"])
+        expected_json = {
+            'edd': '20150801',
+            'id': '8009151234001',
+            'lang': 'en',
+            'dob': None,
+            'dmsisdn': None,
+            'mha': 1,
+            'cmsisdn': '+27001',
+            'faccode': '12345',
+            'encdate': '20130819144811',
+            'type': 3,
+            'swt': 1
+        }
+        json = jembi_post_json.build_jembi_json(reg)
+        self.assertEqual(expected_json, json)
 
     @responses.activate
     def test_jembi_post_json(self):
         registration = self.make_registration()
 
-        # responses.add(responses.POST,
-        #               "http://test/v2/json/subscription",
-        #               body='Jembi JSON Posted', status=201,
-        #               content_type='application/json')
+        responses.add(responses.POST,
+                      "http://test/v2/json/subscription",
+                      body='jembi_post_json task', status=201,
+                      content_type='application/json')
 
-        def request_callback(request):
-            payload = json.loads(request.body)
-            headers = {}
-            return (201, headers, json.dumps(payload))
-
-        responses.add_callback(
-            responses.POST,
-            'http://test/v2/json/subscription',
-            callback=request_callback,
-            content_type='application/json'
-        )
-
-        expected_task_response = {
-            "mha": 1,
-            "swt": 1,
-            "dmsisdn": None,
-            "cmsisdn": "+27001",
-            "id": "8009151234001",
-            "type": 3,
-            "lang": "en",
-            "encdate": "20130819144811",
-            "faccode": "12345",
-            "dob": None,
-            "edd": "20150801"
-        }
-
-        task_response = jembi_post_json(registration.data["id"])
-        self.assertEqual(json.loads(task_response), expected_task_response)
+        task_response = jembi_post_json.apply_async(
+            kwargs={"registration_id": registration.data["id"]})
+        self.assertEqual(task_response.get(), 'jembi_post_json task')
