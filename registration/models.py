@@ -70,11 +70,15 @@ class Registration(models.Model):
 
 from django.db.models.signals import post_save
 from django.dispatch import receiver
-from .tasks import jembi_post
+from .tasks import jembi_post_json
 
 
 @receiver(post_save, sender=Registration)
 def fire_jembi_post(sender, instance, created, **kwargs):
-    """ Send the registration info to Jembi
+    """ Send the registration info to Jembi.
+        For the clinic and chw registrations, fires an additional task that
+        uploads an XML document.
     """
-    jembi_post.apply_async(kwargs={"registration_id": instance.id})
+    jembi_post_json.apply_async(kwargs={"registration_id": instance.id})
+    if instance.authority == 'clinic' or instance.authority == 'chw':
+        pass

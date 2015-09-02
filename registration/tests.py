@@ -1,11 +1,13 @@
 import json
+import responses
 from django.contrib.auth.models import User
 from django.test import TestCase
+from django.db.models.signals import post_save
 from rest_framework.test import APIClient
 from rest_framework.authtoken.models import Token
 from rest_framework import status
-from .models import Source, Registration
-from .tasks import jembi_post
+from .models import Source, Registration, fire_jembi_post
+from .tasks import jembi_post_json
 
 
 TEST_REG_DATA = {
@@ -34,8 +36,44 @@ class APITestCase(TestCase):
 
 class AuthenticatedAPITestCase(APITestCase):
 
+    def _replace_post_save_hooks(self):
+        has_listeners = lambda: post_save.has_listeners(Registration)
+        assert has_listeners(), (
+            "Registration model has no post_save listeners. Make sure"
+            " helpers cleaned up properly in earlier tests.")
+        post_save.disconnect(fire_jembi_post, sender=Registration)
+        assert not has_listeners(), (
+            "Registration model still has post_save listeners. Make sure"
+            " helpers cleaned up properly in earlier tests.")
+
+    def _restore_post_save_hooks(self):
+        has_listeners = lambda: post_save.has_listeners(Registration)
+        assert not has_listeners(), (
+            "Registration model still has post_save listeners. Make sure"
+            " helpers removed them properly in earlier tests.")
+        post_save.connect(fire_jembi_post, sender=Registration)
+
+    def make_source(self, post_data=TEST_SOURCE_DATA):
+        user = User.objects.get(username='testadminuser')
+        post_data["user"] = "/api/v2/users/%s/" % user.id
+
+        response = self.adminclient.post('/api/v2/sources/',
+                                         json.dumps(post_data),
+                                         content_type='application/json')
+        return response
+
+    def make_registration(self, post_data=TEST_REG_DATA):
+        source = self.make_source()
+        post_data["source"] = "/api/v2/sources/%s/" % source.data["id"]
+
+        response = self.normalclient.post('/api/v2/registrations/',
+                                          json.dumps(post_data),
+                                          content_type='application/json')
+        return response
+
     def setUp(self):
         super(AuthenticatedAPITestCase, self).setUp()
+        self._replace_post_save_hooks()
         # adminclient setup
         self.adminusername = 'testadminuser'
         self.adminpassword = 'testadminpass'
@@ -59,23 +97,8 @@ class AuthenticatedAPITestCase(APITestCase):
         self.normalclient.credentials(
             HTTP_AUTHORIZATION='Token ' + self.normaltoken)
 
-    def make_source(self, post_data=TEST_SOURCE_DATA):
-        user = User.objects.get(username='testadminuser')
-        post_data["user"] = "/api/v2/users/%s/" % user.id
-
-        response = self.adminclient.post('/api/v2/sources/',
-                                         json.dumps(post_data),
-                                         content_type='application/json')
-        return response
-
-    def make_registration(self, post_data=TEST_REG_DATA):
-        source = self.make_source()
-        post_data["source"] = "/api/v2/sources/%s/" % source.data["id"]
-
-        response = self.normalclient.post('/api/v2/registrations/',
-                                          json.dumps(post_data),
-                                          content_type='application/json')
-        return response
+    def tearDown(self):
+        self._restore_post_save_hooks()
 
 
 class TestRegistrationsAPI(AuthenticatedAPITestCase):
@@ -107,7 +130,40 @@ class TestRegistrationsAPI(AuthenticatedAPITestCase):
 
 class TestJembiPostTask(AuthenticatedAPITestCase):
 
-    def test_jembi_post(self):
+    @responses.activate
+    def test_jembi_post_json(self):
         registration = self.make_registration()
-        task = jembi_post(registration.data["id"])
-        self.assertEqual(task, 'debug_mode')
+
+        # responses.add(responses.POST,
+        #               "http://test/v2/json/subscription",
+        #               body='Jembi JSON Posted', status=201,
+        #               content_type='application/json')
+
+        def request_callback(request):
+            payload = json.loads(request.body)
+            headers = {}
+            return (201, headers, json.dumps(payload))
+
+        responses.add_callback(
+            responses.POST,
+            'http://test/v2/json/subscription',
+            callback=request_callback,
+            content_type='application/json'
+        )
+
+        expected_task_response = {
+            "mha": 1,
+            "swt": 1,
+            "dmsisdn": None,
+            "cmsisdn": "+27001",
+            "id": "8009151234001",
+            "type": 3,
+            "lang": "en",
+            "encdate": "20130819144811",
+            "faccode": "12345",
+            "dob": None,
+            "edd": "20150801"
+        }
+
+        task_response = jembi_post_json(registration.data["id"])
+        self.assertEqual(json.loads(task_response), expected_task_response)
