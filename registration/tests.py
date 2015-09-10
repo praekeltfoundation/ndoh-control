@@ -15,15 +15,61 @@ Jembi_Post_Json.get_timestamp = lambda x: "20130819144811"
 
 
 TEST_REG_DATA = {
-    "hcw_msisdn": None,
-    "mom_msisdn": "+27001",
-    "mom_id_type": "sa_id",
-    "mom_lang": "en",
-    "mom_edd": "2015-08-01",
-    "mom_id_no": "8009151234001",
-    "mom_dob": None,
-    "clinic_code": "12345",
-    "authority": "clinic"
+    "clinic_self": {
+        "hcw_msisdn": None,
+        "mom_msisdn": "+27001",
+        "mom_id_type": "sa_id",
+        "mom_lang": "en",
+        "mom_edd": "2015-08-01",
+        "mom_id_no": "8009151234001",
+        "mom_dob": "1980-09-15",
+        "clinic_code": "12345",
+        "authority": "clinic"
+    },
+    "clinic_hcw": {
+        "hcw_msisdn": "+27820010001",
+        "mom_msisdn": "+27001",
+        "mom_id_type": "passport",
+        "mom_lang": "af",
+        "mom_edd": "2015-09-01",
+        "mom_id_no": "5551111",
+        "mom_dob": None,
+        "clinic_code": "12345",
+        "authority": "clinic"
+    },
+    "chw_self": {
+        "hcw_msisdn": None,
+        "mom_msisdn": "+27002",
+        "mom_id_type": "none",
+        "mom_lang": "xh",
+        "mom_edd": None,
+        "mom_id_no": None,
+        "mom_dob": "1980-10-15",
+        "clinic_code": None,
+        "authority": "chw"
+    },
+    "chw_hcw": {
+        "hcw_msisdn": "+27820020002",
+        "mom_msisdn": "+27002",
+        "mom_id_type": "sa_id",
+        "mom_lang": "zu",
+        "mom_edd": None,
+        "mom_id_no": "8011151234001",
+        "mom_dob": "1980-11-15",
+        "clinic_code": None,
+        "authority": "chw"
+    },
+    "personal": {
+        "hcw_msisdn": None,
+        "mom_msisdn": "+27003",
+        "mom_id_type": "passport",
+        "mom_lang": "st",
+        "mom_edd": None,
+        "mom_id_no": "5552222",
+        "mom_dob": None,
+        "clinic_code": None,
+        "authority": "personal"
+    }
 }
 
 TEST_SOURCE_DATA = {
@@ -66,7 +112,7 @@ class AuthenticatedAPITestCase(APITestCase):
                                          content_type='application/json')
         return response
 
-    def make_registration(self, post_data=TEST_REG_DATA):
+    def make_registration(self, post_data):
         source = self.make_source()
         post_data["source"] = "/api/v2/sources/%s/" % source.data["id"]
 
@@ -125,7 +171,8 @@ class TestRegistrationsAPI(AuthenticatedAPITestCase):
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_create_registration(self):
-        reg_response = self.make_registration()
+        reg_response = self.make_registration(
+            post_data=TEST_REG_DATA["clinic_self"])
         self.assertEqual(reg_response.status_code, status.HTTP_201_CREATED)
 
         d = Registration.objects.last()
@@ -134,14 +181,15 @@ class TestRegistrationsAPI(AuthenticatedAPITestCase):
 
 class TestJembiPostJsonTask(AuthenticatedAPITestCase):
 
-    def test_build_jembi_json(self):
-        registration = self.make_registration()
-        reg = Registration.objects.get(pk=registration.data["id"])
-        expected_json = {
+    def test_build_jembi_json_clinic_self(self):
+        registration_clinic_self = self.make_registration(
+            post_data=TEST_REG_DATA["clinic_self"])
+        reg = Registration.objects.get(pk=registration_clinic_self.data["id"])
+        expected_json_clinic_self = {
             'edd': '20150801',
-            'id': '8009151234001',
+            'id': '8009151234001^^^ZAF^NI',
             'lang': 'en',
-            'dob': None,
+            'dob': "19800915",
             'dmsisdn': None,
             'mha': 1,
             'cmsisdn': '+27001',
@@ -151,11 +199,89 @@ class TestJembiPostJsonTask(AuthenticatedAPITestCase):
             'swt': 1
         }
         json = jembi_post_json.build_jembi_json(reg)
-        self.assertEqual(expected_json, json)
+        self.assertEqual(expected_json_clinic_self, json)
+
+    def test_build_jembi_json_clinic_hcw(self):
+        registration_clinic_hcw = self.make_registration(
+            post_data=TEST_REG_DATA["clinic_hcw"])
+        reg = Registration.objects.get(pk=registration_clinic_hcw.data["id"])
+        expected_json_clinic_hcw = {
+            'edd': '20150901',
+            'id': '5551111^^^OVERLOOKED_FIELD_PASSPORT_ORIGIN^PPN',
+            'lang': 'af',
+            'dob': None,
+            'dmsisdn': "+27820010001",
+            'mha': 1,
+            'cmsisdn': '+27001',
+            'faccode': '12345',
+            'encdate': '20130819144811',
+            'type': 3,
+            'swt': 1
+        }
+        json = jembi_post_json.build_jembi_json(reg)
+        self.assertEqual(expected_json_clinic_hcw, json)
+
+    def test_build_jembi_json_chw_self(self):
+        registration_chw_self = self.make_registration(
+            post_data=TEST_REG_DATA["chw_self"])
+        reg = Registration.objects.get(pk=registration_chw_self.data["id"])
+        expected_json_chw_self = {
+            'id': '27002^^^ZAF^TEL',
+            'lang': 'xh',
+            'dob': "19801015",
+            'dmsisdn': None,
+            'mha': 1,
+            'cmsisdn': '+27002',
+            'faccode': None,
+            'encdate': '20130819144811',
+            'type': 2,
+            'swt': 1
+        }
+        json = jembi_post_json.build_jembi_json(reg)
+        self.assertEqual(expected_json_chw_self, json)
+
+    def test_build_jembi_json_chw_hcw(self):
+        registration_chw_hcw = self.make_registration(
+            post_data=TEST_REG_DATA["chw_hcw"])
+        reg = Registration.objects.get(pk=registration_chw_hcw.data["id"])
+        expected_json_chw_hcw = {
+            'id': '8011151234001^^^ZAF^NI',
+            'lang': 'zu',
+            'dob': "19801115",
+            'dmsisdn': "+27820020002",
+            'mha': 1,
+            'cmsisdn': '+27002',
+            'faccode': None,
+            'encdate': '20130819144811',
+            'type': 2,
+            'swt': 1
+        }
+        json = jembi_post_json.build_jembi_json(reg)
+        self.assertEqual(expected_json_chw_hcw, json)
+
+    def test_build_jembi_json_personal(self):
+        registration_personal = self.make_registration(
+            post_data=TEST_REG_DATA["personal"])
+        reg = Registration.objects.get(pk=registration_personal.data["id"])
+        expected_json_personal = {
+            'id': '5552222^^^OVERLOOKED_FIELD_PASSPORT_ORIGIN^PPN',
+            'lang': 'st',
+            'dob': None,
+            'dmsisdn': None,
+            'mha': 1,
+            'cmsisdn': '+27003',
+            'faccode': None,
+            'encdate': '20130819144811',
+            'type': 1,
+            'swt': 1
+        }
+        json = jembi_post_json.build_jembi_json(reg)
+        self.assertEqual(expected_json_personal, json)
 
     @responses.activate
     def test_jembi_post_json(self):
-        registration = self.make_registration()
+        registration = self.make_registration(
+            post_data=TEST_REG_DATA["clinic_self"])
 
         responses.add(responses.POST,
                       "http://test/v2/json/subscription",

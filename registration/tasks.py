@@ -26,7 +26,7 @@ class Jembi_Post_Json(Task):
         return datetime.today().strftime("%Y%m%d%H%M%S")
 
     def get_dob(self, mom_dob):
-        if type(mom_dob) == str:
+        if mom_dob is not None:
             return mom_dob.strftime("%Y%m%d")
         else:
             return None
@@ -39,6 +39,14 @@ class Jembi_Post_Json(Task):
         }
         return authority_map[authority]
 
+    def get_patient_id(self, id_type, id_no, passport_origin, mom_msisdn):
+        if id_type == 'sa_id':
+            return id_no + "^^^ZAF^NI"
+        elif id_type == 'passport':
+            return id_no + '^^^' + passport_origin.upper() + '^PPN'
+        else:
+            return mom_msisdn.replace('+', '') + '^^^ZAF^TEL'
+
     def build_jembi_json(self, registration):
         """ Compile json to be sent to Jembi. """
 
@@ -47,7 +55,9 @@ class Jembi_Post_Json(Task):
             "swt": 1,
             "dmsisdn": registration.hcw_msisdn,
             "cmsisdn": registration.mom_msisdn,
-            "id": registration.mom_id_no,
+            "id": self.get_patient_id(
+                registration.mom_id_type, registration.mom_id_no,
+                'overlooked_field_passport_origin', registration.mom_msisdn),
             "type": self.get_subscription_type(registration.authority),
             "lang": registration.mom_lang,
             "encdate": self.get_timestamp(),
