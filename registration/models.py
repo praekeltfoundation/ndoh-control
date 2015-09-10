@@ -83,4 +83,6 @@ def fire_jembi_post(sender, instance, created, **kwargs):
     """
     jembi_post_json.apply_async(kwargs={"registration_id": instance.id})
     if instance.authority == 'clinic' or instance.authority == 'chw':
+        # TODO #94
+        # jembi_post_xml.apply_async(kwargs={"registration_id": instance.id})
         pass
