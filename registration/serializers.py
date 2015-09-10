@@ -29,5 +29,5 @@ class RegistrationSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = Registration
         fields = ('url', 'id', 'hcw_msisdn', 'mom_msisdn', 'mom_id_type',
-                  'mom_lang', 'mom_edd', 'mom_id_no', 'mom_dob', 'clinic_code',
-                  'authority', 'source', )
+                  'mom_passport_origin', 'mom_lang', 'mom_edd', 'mom_id_no',
+                  'mom_dob', 'clinic_code', 'authority', 'source', )
