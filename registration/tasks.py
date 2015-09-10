@@ -96,3 +96,25 @@ class Jembi_Post_Json(Task):
                 exc_info=True)
 
 jembi_post_json = Jembi_Post_Json()
+
+
+class Update_Create_Vumi_Contact(Task):
+    """ Task to update or create a Vumi contact when a registration
+        is created.
+    """
+    name = "registrations.tasks.update_create_vumi_contact"
+
+    class FailedEventRequest(Exception):
+        """ The attempted task failed because of a non-200 HTTP return code.
+        """
+
+    def run(self, registration_id, **kwargs):
+        # check if contact exists
+
+        # if the contact doesn't exist, create it
+
+        # if the contact exists, update it
+
+        return
+
+update_create_vumi_contact = Update_Create_Vumi_Contact()
