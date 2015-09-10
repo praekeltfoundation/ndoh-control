@@ -51,6 +51,8 @@ class Registration(models.Model):
     mom_msisdn = models.CharField(max_length=255, null=False, blank=False)
     mom_id_type = models.CharField(max_length=8, null=False, blank=False,
                                    choices=ID_TYPE_CHOICES)
+    mom_passport_origin = models.CharField(max_length=100, null=True,
+                                           blank=True)
     mom_lang = models.CharField(max_length=3, null=False, blank=False,
                                 choices=LANG_CHOICES)
     mom_edd = models.DateField(null=True, blank=True)
