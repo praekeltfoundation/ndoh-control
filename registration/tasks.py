@@ -49,7 +49,6 @@ class Jembi_Post_Json(Task):
 
     def build_jembi_json(self, registration):
         """ Compile json to be sent to Jembi. """
-
         json_template = {
             "mha": 1,
             "swt": 1,
@@ -57,7 +56,7 @@ class Jembi_Post_Json(Task):
             "cmsisdn": registration.mom_msisdn,
             "id": self.get_patient_id(
                 registration.mom_id_type, registration.mom_id_no,
-                'overlooked_field_passport_origin', registration.mom_msisdn),
+                registration.mom_passport_origin, registration.mom_msisdn),
             "type": self.get_subscription_type(registration.authority),
             "lang": registration.mom_lang,
             "encdate": self.get_timestamp(),

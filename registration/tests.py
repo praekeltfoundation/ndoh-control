@@ -19,6 +19,7 @@ TEST_REG_DATA = {
         "hcw_msisdn": None,
         "mom_msisdn": "+27001",
         "mom_id_type": "sa_id",
+        "mom_passport_origin": None,
         "mom_lang": "en",
         "mom_edd": "2015-08-01",
         "mom_id_no": "8009151234001",
@@ -30,6 +31,7 @@ TEST_REG_DATA = {
         "hcw_msisdn": "+27820010001",
         "mom_msisdn": "+27001",
         "mom_id_type": "passport",
+        "mom_passport_origin": "zw",
         "mom_lang": "af",
         "mom_edd": "2015-09-01",
         "mom_id_no": "5551111",
@@ -41,6 +43,7 @@ TEST_REG_DATA = {
         "hcw_msisdn": None,
         "mom_msisdn": "+27002",
         "mom_id_type": "none",
+        "mom_passport_origin": None,
         "mom_lang": "xh",
         "mom_edd": None,
         "mom_id_no": None,
@@ -52,6 +55,7 @@ TEST_REG_DATA = {
         "hcw_msisdn": "+27820020002",
         "mom_msisdn": "+27002",
         "mom_id_type": "sa_id",
+        "mom_passport_origin": None,
         "mom_lang": "zu",
         "mom_edd": None,
         "mom_id_no": "8011151234001",
@@ -63,6 +67,7 @@ TEST_REG_DATA = {
         "hcw_msisdn": None,
         "mom_msisdn": "+27003",
         "mom_id_type": "passport",
+        "mom_passport_origin": "mz",
         "mom_lang": "st",
         "mom_edd": None,
         "mom_id_no": "5552222",
@@ -207,7 +212,7 @@ class TestJembiPostJsonTask(AuthenticatedAPITestCase):
         reg = Registration.objects.get(pk=registration_clinic_hcw.data["id"])
         expected_json_clinic_hcw = {
             'edd': '20150901',
-            'id': '5551111^^^OVERLOOKED_FIELD_PASSPORT_ORIGIN^PPN',
+            'id': '5551111^^^ZW^PPN',
             'lang': 'af',
             'dob': None,
             'dmsisdn': "+27820010001",
@@ -264,7 +269,7 @@ class TestJembiPostJsonTask(AuthenticatedAPITestCase):
             post_data=TEST_REG_DATA["personal"])
         reg = Registration.objects.get(pk=registration_personal.data["id"])
         expected_json_personal = {
-            'id': '5552222^^^OVERLOOKED_FIELD_PASSPORT_ORIGIN^PPN',
+            'id': '5552222^^^MZ^PPN',
             'lang': 'st',
             'dob': None,
             'dmsisdn': None,
