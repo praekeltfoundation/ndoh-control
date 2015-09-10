@@ -9,4 +9,4 @@ install:
   - "pip install -r requirements-dev.txt --use-wheel"
 script:
   - flake8 .
-  - py.test .
+  - py.test . --ds=control.testsettings
