@@ -7,8 +7,8 @@ from rest_framework.test import APIClient
 from rest_framework.authtoken.models import Token
 from rest_framework import status
 from .models import Source, Registration, fire_jembi_post
-from .tasks import jembi_post_json
-from .tasks import Jembi_Post_Json
+from .tasks import jembi_post_json, jembi_post_xml
+from .tasks import Jembi_Post_Json, Jembi_Post_Xml
 
 
 Jembi_Post_Json.get_timestamp = lambda x: "20130819144811"
@@ -165,3 +165,13 @@ class TestJembiPostJsonTask(AuthenticatedAPITestCase):
         task_response = jembi_post_json.apply_async(
             kwargs={"registration_id": registration.data["id"]})
         self.assertEqual(task_response.get(), 'jembi_post_json task')
+
+
+class TestJembiPostXmlTask(AuthenticatedAPITestCase):
+
+    def test_build_jembi_xml(self):
+        registration = self.make_registration()
+        reg = Registration.objects.get(pk=registration.data["id"])
+        result = jembi_post_xml.build_jembi_xml(reg)
+        print result
+        self.assertEqual(1, 2)
