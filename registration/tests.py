@@ -3,6 +3,7 @@ import responses
 from django.contrib.auth.models import User
 from django.test import TestCase
 from django.db.models.signals import post_save
+from django.core.exceptions import ValidationError
 from rest_framework.test import APIClient
 from rest_framework.authtoken.models import Token
 from rest_framework import status
@@ -79,6 +80,95 @@ TEST_REG_DATA = {
 
 TEST_SOURCE_DATA = {
     "name": "Test Source"
+}
+
+TEST_REG_DATA_BROKEN = {
+    # single field null-violation test
+    "no_msisdn": {
+        "hcw_msisdn": None,
+        "mom_msisdn": None,
+        "mom_id_type": "sa_id",
+        "mom_passport_origin": None,
+        "mom_lang": "en",
+        "mom_edd": "2015-08-01",
+        "mom_id_no": "555111",
+        "mom_dob": "1980-09-15",
+        "clinic_code": "12345",
+        "authority": "clinic"
+    },
+    # data below is for combination validation testing
+    "no_sa_id_no": {
+        "hcw_msisdn": None,
+        "mom_msisdn": "+27001",
+        "mom_id_type": "sa_id",
+        "mom_passport_origin": None,
+        "mom_lang": "en",
+        "mom_edd": "2015-08-01",
+        "mom_id_no": None,
+        "mom_dob": "1980-09-15",
+        "clinic_code": "12345",
+        "authority": "clinic"
+    },
+    "no_passport_no": {
+        "hcw_msisdn": None,
+        "mom_msisdn": "+27001",
+        "mom_id_type": "passport",
+        "mom_passport_origin": "zw",
+        "mom_lang": "en",
+        "mom_edd": "2015-08-01",
+        "mom_id_no": None,
+        "mom_dob": "1980-09-15",
+        "clinic_code": "12345",
+        "authority": "clinic"
+    },
+    "no_passport_origin": {
+        "hcw_msisdn": None,
+        "mom_msisdn": "+27001",
+        "mom_id_type": "passport",
+        "mom_passport_origin": None,
+        "mom_lang": "en",
+        "mom_edd": "2015-08-01",
+        "mom_id_no": "555111",
+        "mom_dob": "1980-09-15",
+        "clinic_code": "12345",
+        "authority": "clinic"
+    },
+    "no_dob": {
+        "hcw_msisdn": None,
+        "mom_msisdn": "+27001",
+        "mom_id_type": "none",
+        "mom_passport_origin": None,
+        "mom_lang": "en",
+        "mom_edd": "2015-08-01",
+        "mom_id_no": "555111",
+        "mom_dob": None,
+        "clinic_code": "12345",
+        "authority": "clinic"
+    },
+    "no_edd": {
+        "hcw_msisdn": None,
+        "mom_msisdn": "+27001",
+        "mom_id_type": "none",
+        "mom_passport_origin": None,
+        "mom_lang": "en",
+        "mom_edd": None,
+        "mom_id_no": "555111",
+        "mom_dob": "1980-09-15",
+        "clinic_code": "12345",
+        "authority": "clinic"
+    },
+    "no_clinic_code": {
+        "hcw_msisdn": None,
+        "mom_msisdn": "+27001",
+        "mom_id_type": "none",
+        "mom_passport_origin": None,
+        "mom_lang": "en",
+        "mom_edd": "2015-08-01",
+        "mom_id_no": "555111",
+        "mom_dob": "1980-09-15",
+        "clinic_code": None,
+        "authority": "clinic"
+    }
 }
 
 
@@ -182,6 +272,82 @@ class TestRegistrationsAPI(AuthenticatedAPITestCase):
 
         d = Registration.objects.last()
         self.assertEqual(d.mom_id_type, 'sa_id')
+
+    def test_create_broken_registration_no_mom_msisdn(self):
+        reg_response = self.make_registration(
+            post_data=TEST_REG_DATA_BROKEN["no_msisdn"])
+        self.assertEqual(reg_response.status_code, status.HTTP_400_BAD_REQUEST)
+
+        d = Registration.objects.last()
+        self.assertEqual(d, None)
+
+    def test_create_broken_registration_no_sa_id_no(self):
+        self.assertRaises(ValidationError, lambda: self.make_registration(
+            post_data=TEST_REG_DATA_BROKEN["no_sa_id_no"]))
+
+        d = Registration.objects.last()
+        self.assertEqual(d, None)
+
+    def test_create_broken_registration_no_passport_no(self):
+        self.assertRaises(ValidationError, lambda: self.make_registration(
+            post_data=TEST_REG_DATA_BROKEN["no_passport_no"]))
+
+        d = Registration.objects.last()
+        self.assertEqual(d, None)
+
+    def test_create_broken_registration_no_passport_origin(self):
+        self.assertRaises(ValidationError, lambda: self.make_registration(
+            post_data=TEST_REG_DATA_BROKEN["no_passport_origin"]))
+
+        d = Registration.objects.last()
+        self.assertEqual(d, None)
+
+    def test_create_broken_registration_no_dob(self):
+        self.assertRaises(ValidationError, lambda: self.make_registration(
+            post_data=TEST_REG_DATA_BROKEN["no_dob"]))
+
+        d = Registration.objects.last()
+        self.assertEqual(d, None)
+
+    def test_create_broken_registration_no_edd(self):
+        self.assertRaises(ValidationError, lambda: self.make_registration(
+            post_data=TEST_REG_DATA_BROKEN["no_edd"]))
+
+        d = Registration.objects.last()
+        self.assertEqual(d, None)
+
+    def test_create_broken_registration_no_clinic_code(self):
+        self.assertRaises(ValidationError, lambda: self.make_registration(
+            post_data=TEST_REG_DATA_BROKEN["no_clinic_code"]))
+
+        d = Registration.objects.last()
+        self.assertEqual(d, None)
+
+    @responses.activate
+    def test_create_registration_fires_tasks(self):
+        # restore the post_save hooks just for this test
+        post_save.connect(fire_jembi_post, sender=Registration)
+        # TODO #89, #90, #94 connect other tasks
+
+        responses.add(responses.POST,
+                      "http://test/v2/json/subscription",
+                      body='jembi_post_json task', status=201,
+                      content_type='application/json')
+
+        # Make a new registration
+        reg_response = self.make_registration(
+            post_data=TEST_REG_DATA["clinic_self"])
+
+        # Test registration object has been created
+        self.assertEqual(reg_response.status_code, status.HTTP_201_CREATED)
+        d = Registration.objects.last()
+        self.assertEqual(d.mom_id_type, 'sa_id')
+
+        # Test task has fired
+        self.assertEqual(len(responses.calls), 1)
+
+        # remove post_save hooks to prevent teardown errors
+        post_save.disconnect(fire_jembi_post, sender=Registration)
 
 
 class TestJembiPostJsonTask(AuthenticatedAPITestCase):
