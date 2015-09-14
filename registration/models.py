@@ -1,4 +1,6 @@
 from django.db import models
+from django.utils.translation import ugettext_lazy as _
+from django.core.exceptions import ValidationError
 from django.contrib.auth.models import User
 
 
@@ -69,6 +71,31 @@ class Registration(models.Model):
     def __unicode__(self):
         return u"Registration for %s" % self.mom_msisdn
 
+    def clean(self):
+        if self.mom_id_type == 'sa_id' and self.mom_id_no is None:
+            raise ValidationError(
+                _("Provide an id number in the mom_id_no field."))
+        if self.mom_id_type == 'passport' and self.mom_id_no is None:
+            raise ValidationError(
+                _("Provide a passport number in the mom_id_no field."))
+        if self.mom_id_type == 'passport' and self.mom_passport_origin is None:
+            raise ValidationError(
+                _("Provide a passport country of origin in the \
+                   mom_passport_origin field."))
+        if self.mom_id_type == 'none' and self.mom_dob is None:
+            raise ValidationError(
+                _("Provide the mother's date of birth in the mom_dob field."))
+        if self.authority == 'clinic' and self.mom_edd is None:
+            raise ValidationError(
+                _("Provide an estimated due date in the mom_edd field."))
+        if self.authority == 'clinic' and self.clinic_code is None:
+            raise ValidationError(
+                _("Provide a clinic code in the clinic_code field."))
+
+    def save(self, *args, **kwargs):
+        self.clean()
+        super(Registration, self).save(*args, **kwargs)
+
 
 from django.db.models.signals import post_save
 from django.dispatch import receiver
@@ -81,8 +108,10 @@ def fire_jembi_post(sender, instance, created, **kwargs):
         For the clinic and chw registrations, fires an additional task that
         uploads an XML document.
     """
-    jembi_post_json.apply_async(kwargs={"registration_id": instance.id})
-    if instance.authority == 'clinic' or instance.authority == 'chw':
-        # TODO #94
-        # jembi_post_xml.apply_async(kwargs={"registration_id": instance.id})
-        pass
+    if created:
+        jembi_post_json.apply_async(kwargs={"registration_id": instance.id})
+        if instance.authority == 'clinic' or instance.authority == 'chw':
+            # TODO #94
+            # jembi_post_xml.apply_async(
+            #     kwargs={"registration_id": instance.id})
+            pass
