@@ -7,7 +7,7 @@ from go_http.send import HttpApiSender
 from go_http.contacts import ContactsApiClient
 from besnappy import SnappyApiSender
 
-import control.settings as settings
+from django.conf import settings
 
 logger = get_task_logger(__name__)
 

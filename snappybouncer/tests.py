@@ -276,7 +276,7 @@ class JembiSubmissionTest(TestCase):
         tags = ["@tester", "#compliment"]
 
         responses.add(responses.POST,
-                      "http://npr-staging.jembi.org:5001/ws/rest/v1/helpdesk",
+                      "http://test/v2/helpdesk",
                       body='Request added to queue', status=202,
                       content_type='application/json')
         responses.add(responses.GET,
@@ -291,6 +291,6 @@ class JembiSubmissionTest(TestCase):
         self.assertEqual(len(responses.calls), 2)
         self.assertEqual(
             responses.calls[1].request.url,
-            'http://npr-staging.jembi.org:5001/ws/rest/v1/helpdesk')
+            'http://test/v2/helpdesk')
         self.assertEqual(responses.calls[1].response.text,
                          'Request added to queue')
