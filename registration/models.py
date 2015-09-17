@@ -75,6 +75,9 @@ class Registration(models.Model):
         if self.mom_id_type == 'sa_id' and self.mom_id_no is None:
             raise ValidationError(
                 _("Provide an id number in the mom_id_no field."))
+        if self.mom_id_type == 'sa_id' and self.mom_dob is None:
+            raise ValidationError(
+                _("Provide a date of birth in the mom_dob field."))
         if self.mom_id_type == 'passport' and self.mom_id_no is None:
             raise ValidationError(
                 _("Provide a passport number in the mom_id_no field."))
@@ -99,7 +102,7 @@ class Registration(models.Model):
 
 from django.db.models.signals import post_save
 from django.dispatch import receiver
-from .tasks import jembi_post_json
+from .tasks import jembi_post_json, update_create_vumi_contact
 
 
 @receiver(post_save, sender=Registration)
@@ -109,9 +112,16 @@ def fire_jembi_post(sender, instance, created, **kwargs):
         uploads an XML document.
     """
     if created:
-        jembi_post_json.apply_async(kwargs={"registration_id": instance.id})
+        # Fire Jembi send tasks
+        jembi_post_json.apply_async(
+            kwargs={"registration_id": instance.id})
         if instance.authority == 'clinic' or instance.authority == 'chw':
             # TODO #94
             # jembi_post_xml.apply_async(
             #     kwargs={"registration_id": instance.id})
             pass
+
+        # Fire Contact update create tasks
+        update_create_vumi_contact.apply_async(
+            kwargs={"registration_id": instance.id})
+

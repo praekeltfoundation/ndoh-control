@@ -1,12 +1,12 @@
 import requests
 import json
-
 from datetime import datetime
 from celery.task import Task
 from celery.utils.log import get_task_logger
 from celery.exceptions import SoftTimeLimitExceeded
 from django.core.exceptions import ObjectDoesNotExist
 from django.conf import settings
+from go_http.contacts import ContactsApiClient
 from .models import Registration
 
 
@@ -108,13 +108,80 @@ class Update_Create_Vumi_Contact(Task):
         """ The attempted task failed because of a non-200 HTTP return code.
         """
 
-    def run(self, registration_id, **kwargs):
-        # check if contact exists
+    def get_tomorrow(self):
+        return (datetime.date.today() + datetime.timedelta(days=1)
+                ).strftime("%Y%m%d")
 
-        # if the contact doesn't exist, create it
+    def define_extras(self, _extras, registration):
+        # Set up the new extras
+        _extras[u"is_registered"] = "true"
+        _extras[u"is_registered_by"] = registration.authority
+        _extras[u"language_choice"] = registration.mom_lang
+        _extras[u"source_name"] = registration.source.name
+        if registration.hcw_msisdn:
+            _extras[u"registered_by"] = registration.hcw_msisdn
+        if registration.mom_id_type == "sa_id":
+            _extras[u"sa_id"] = registration.mom_id_no
+        elif registration.mom_id_type == "passport":
+            _extras[u"passport_no"] = registration.mom_id_no
+            _extras[u"passport_origin"] = registration.mom_passport_origin
+        if registration.authority == 'clinic':
+            _extras[u"clinic_code"] = registration.clinic_code
+            _extras[u"last_service_rating"] = 'never'
+            _extras[u"service_rating_reminders"] = '0'
+            _extras[u"service_rating_reminder"] = self.get_tomorrow()
+        if registration.mom_id_type != 'passport':
+            _extras[u"dob"] = registration.mom_dob.strftime("%Y-%m-%d")
 
-        # if the contact exists, update it
+        # sub_type, sub_rate, seq_start? currently saved but not useful?
+        # edd? not currently being saved but useful
 
-        return
+        return _extras
+
+    def update_contact(self, contact, registration, client):
+        # Setup new values - only extras need updating
+        existing_extras = contact["extra"]
+        _extras = self.define_extras(existing_extras, registration)
+        update_data = {u"extra": _extras}
+        return client.update_contact(contact["key"], update_data)
+
+    def create_contact(self, registration, client):
+        contact_data = {
+            u"msisdn": registration.mom_msisdn
+        }
+        _extras = self.define_extras({}, registration)
+        contact_data[u"extra"] = _extras
+        return client.create_contact(contact_data)
+
+    def run(self, registration_id, client=None, **kwargs):
+        try:
+            if client is None:
+                client = ContactsApiClient(settings.VUMI_GO_API_TOKEN,
+                                           api_url=settings.VUMI_GO_BASE_URL)
+
+            # Load the registration
+            try:
+                registration = Registration.objects.get(pk=registration_id)
+
+                try:
+                    # Get and update the contact if it exists
+                    contact = client.get_contact(
+                        msisdn=registration.mom_msisdn)
+                    updated_contact = self.update_contact(
+                        contact, registration, client)
+                    return updated_contact
+
+                except:
+                    # Create the contact as it doesn't exist
+                    contact = self.create_contact(registration, client)
+                    return contact
+
+            except ObjectDoesNotExist:
+                logger.error('Missing Registration object', exc_info=True)
+
+        except SoftTimeLimitExceeded:
+            logger.error(
+                'Soft time limit exceeded processing Jembi send via Celery.',
+                exc_info=True)
 
 update_create_vumi_contact = Update_Create_Vumi_Contact()

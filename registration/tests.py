@@ -7,12 +7,17 @@ from django.core.exceptions import ValidationError
 from rest_framework.test import APIClient
 from rest_framework.authtoken.models import Token
 from rest_framework import status
+from requests.adapters import HTTPAdapter
+from requests_testadapter import TestSession, Resp
+from go_http.contacts import ContactsApiClient
+from fake_go_contacts import Request, FakeContactsApi
 from .models import Source, Registration, fire_jembi_post
-from .tasks import jembi_post_json
-from .tasks import Jembi_Post_Json
+from .tasks import jembi_post_json, update_create_vumi_contact
+from .tasks import Jembi_Post_Json, Update_Create_Vumi_Contact
 
 
 Jembi_Post_Json.get_timestamp = lambda x: "20130819144811"
+Update_Create_Vumi_Contact.get_tomorrow = lambda x: "2014-01-02"
 
 
 TEST_REG_DATA = {
@@ -77,11 +82,9 @@ TEST_REG_DATA = {
         "authority": "personal"
     }
 }
-
 TEST_SOURCE_DATA = {
     "name": "Test Source"
 }
-
 TEST_REG_DATA_BROKEN = {
     # single field null-violation test
     "no_msisdn": {
@@ -170,6 +173,19 @@ TEST_REG_DATA_BROKEN = {
         "authority": "clinic"
     }
 }
+TEST_CONTACT_DATA = {
+    u"key": u"knownuuid",
+    u"msisdn": u"+155564",
+    u"user_account": u"knownaccount",
+    u"extra": {
+        u"last_service_rating": u"now",
+        u"service_rating_reminder": "2015-02-01",
+        u"service_rating_reminders": "0",
+    }
+}
+API_URL = "http://example.com/go"
+AUTH_TOKEN = "auth_token"
+MAX_CONTACTS_PER_PAGE = 10
 
 
 class APITestCase(TestCase):
@@ -177,6 +193,34 @@ class APITestCase(TestCase):
     def setUp(self):
         self.adminclient = APIClient()
         self.normalclient = APIClient()
+
+
+class FakeContactsApiAdapter(HTTPAdapter):
+
+    """
+    Adapter for FakeContactsApi.
+
+    This inherits directly from HTTPAdapter instead of using TestAdapter
+    because it overrides everything TestAdaptor does.
+    """
+
+    def __init__(self, contacts_api):
+        self.contacts_api = contacts_api
+        super(FakeContactsApiAdapter, self).__init__()
+
+    def send(self, request, stream=False, timeout=None, verify=True,
+             cert=None, proxies=None):
+        req = Request(
+            request.method, request.path_url, request.body, request.headers)
+        resp = self.contacts_api.handle_request(req)
+        response = Resp(resp.body, resp.code, resp.headers)
+        r = self.build_response(request, response)
+        if not stream:
+            # force prefetching content unless streaming in use
+            r.content
+        return r
+
+make_contact_dict = FakeContactsApi.make_contact_dict
 
 
 class AuthenticatedAPITestCase(APITestCase):
@@ -216,9 +260,19 @@ class AuthenticatedAPITestCase(APITestCase):
                                           content_type='application/json')
         return response
 
+    def make_client(self):
+        return ContactsApiClient(auth_token=AUTH_TOKEN, api_url=API_URL,
+                                 session=self.session)
+
+    def make_existing_contact(self, contact_data=TEST_CONTACT_DATA):
+        existing_contact = make_contact_dict(contact_data)
+        self.contacts_data[existing_contact[u"key"]] = existing_contact
+        return existing_contact
+
     def setUp(self):
         super(AuthenticatedAPITestCase, self).setUp()
         self._replace_post_save_hooks()
+
         # adminclient setup
         self.adminusername = 'testadminuser'
         self.adminpassword = 'testadminpass'
@@ -230,6 +284,7 @@ class AuthenticatedAPITestCase(APITestCase):
         self.admintoken = admintoken.key
         self.adminclient.credentials(
             HTTP_AUTHORIZATION='Token ' + self.admintoken)
+
         # normalclient setup
         self.normalusername = 'testnormaluser'
         self.normalpassword = 'testnormalpass'
@@ -242,8 +297,68 @@ class AuthenticatedAPITestCase(APITestCase):
         self.normalclient.credentials(
             HTTP_AUTHORIZATION='Token ' + self.normaltoken)
 
+        # contacts client setup
+        self.contacts_data = {}
+        self.groups_data = {}
+        self.contacts_backend = FakeContactsApi(
+            "go/", AUTH_TOKEN, self.contacts_data, self.groups_data,
+            contacts_limit=MAX_CONTACTS_PER_PAGE)
+        self.session = TestSession()
+        adapter = FakeContactsApiAdapter(self.contacts_backend)
+        self.session.mount(API_URL, adapter)
+
     def tearDown(self):
         self._restore_post_save_hooks()
+
+
+class TestContactsAPI(AuthenticatedAPITestCase):
+
+    def test_get_contact_by_key(self):
+        client = self.make_client()
+        existing_contact = self.make_existing_contact()
+        contact = client.get_contact(u"knownuuid")
+        self.assertEqual(contact, existing_contact)
+
+    def test_get_contact_by_msisdn(self):
+        client = self.make_client()
+        existing_contact = self.make_existing_contact()
+        contact = client.get_contact(msisdn="+155564")
+        self.assertEqual(contact, existing_contact)
+
+    def test_update_contact(self):
+        client = self.make_client()
+        existing_contact = self.make_existing_contact()
+        expected_contact = existing_contact.copy()
+        expected_contact[u"name"] = u"Bob"
+        updated_contact = client.update_contact(
+            u"knownuuid", {u"name": u"Bob"})
+
+        self.assertEqual(updated_contact, expected_contact)
+
+    def test_update_contact_extras(self):
+        client = self.make_client()
+        existing_contact = self.make_existing_contact()
+        expected_contact = existing_contact.copy()
+        expected_contact[u"extra"][u"last_service_rating"] = u"now"
+        updated_contact = client.update_contact(
+            u"knownuuid", {
+                # Note the whole extra dict needs passing in
+                u"extra": {
+                    u"last_service_rating": u"now",
+                    u"service_rating_reminder": "2015-02-01",
+                    u"service_rating_reminders": "0",
+                }
+            }
+        )
+        self.assertEqual(updated_contact, expected_contact)
+
+    def test_create_contact(self):
+        client = self.make_client()
+        created_contact = client.create_contact({
+            u"msisdn": "+111"
+        })
+        self.assertEqual(created_contact["msisdn"], "+111")
+        self.assertIsNotNone(created_contact["key"])
 
 
 class TestRegistrationsAPI(AuthenticatedAPITestCase):
@@ -327,7 +442,6 @@ class TestRegistrationsAPI(AuthenticatedAPITestCase):
     def test_create_registration_fires_tasks(self):
         # restore the post_save hooks just for this test
         post_save.connect(fire_jembi_post, sender=Registration)
-        # TODO #89, #90, #94 connect other tasks
 
         responses.add(responses.POST,
                       "http://test/v2/json/subscription",
@@ -343,8 +457,8 @@ class TestRegistrationsAPI(AuthenticatedAPITestCase):
         d = Registration.objects.last()
         self.assertEqual(d.mom_id_type, 'sa_id')
 
-        # Test task has fired
-        self.assertEqual(len(responses.calls), 1)
+        # Test post has been made to jembi
+        self.assertEqual(len(responses.calls), 3)  # why is this 3 now?!
 
         # remove post_save hooks to prevent teardown errors
         post_save.disconnect(fire_jembi_post, sender=Registration)
@@ -462,3 +576,101 @@ class TestJembiPostJsonTask(AuthenticatedAPITestCase):
         task_response = jembi_post_json.apply_async(
             kwargs={"registration_id": registration.data["id"]})
         self.assertEqual(task_response.get(), 'jembi_post_json task')
+
+
+class TestUpdateCreateVumiContactTask(AuthenticatedAPITestCase):
+
+    def test_update_vumi_contact(self):
+        registration = self.make_registration(
+            post_data=TEST_REG_DATA["clinic_self"])
+        client = self.make_client()
+        self.make_existing_contact({
+            u"key": u"knownuuid",
+            u"msisdn": u"+27001",
+            u"user_account": u"knownaccount",
+            u"extra": {}
+        })
+
+        contact = update_create_vumi_contact.apply_async(
+            kwargs={"registration_id": registration.data["id"],
+                    "client": client})
+        self.assertEqual(contact.get()["msisdn"], "+27001")
+        self.assertEqual(contact.get()["key"], "knownuuid")
+        self.assertEqual(contact.get()["user_account"], "knownaccount")
+        self.assertEqual(contact.get()["extra"], {
+            "is_registered": "true",
+            "is_registered_by": "clinic",
+            "language_choice": "en",
+            "source_name": "Test Source",
+            "sa_id": "8009151234001",
+            "clinic_code": "12345",
+            "dob": "1980-09-15",
+            "last_service_rating": "never",
+            "service_rating_reminders": "0",
+            "service_rating_reminder": "2014-01-02"
+        })
+
+    def test_create_vumi_contact_1(self):
+        # make registration for contact with msisdn +27002
+        registration = self.make_registration(
+            post_data=TEST_REG_DATA["chw_self"])
+        client = self.make_client()
+        # make different existing contact
+        self.make_existing_contact({
+            u"key": u"knownuuid",
+            u"msisdn": u"+27001",
+            u"user_account": u"knownaccount",
+            u"extra": {}
+        })
+
+        contact = update_create_vumi_contact.apply_async(
+            kwargs={"registration_id": registration.data["id"],
+                    "client": client})
+        self.assertEqual(contact.get()["msisdn"], "+27002")
+        self.assertEqual(contact.get()["extra"], {
+            "is_registered": "true",
+            "is_registered_by": "chw",
+            "language_choice": "xh",
+            "source_name": "Test Source",
+            "dob": "1980-10-15",
+        })
+        self.assertEqual(contact.get()["extra"]["is_registered"], "true")
+        self.assertEqual(contact.get()["extra"]["is_registered_by"], "chw")
+        self.assertEqual(contact.get()["extra"]["language_choice"], "xh")
+        self.assertEqual(contact.get()["extra"]["source_name"], "Test Source")
+        self.assertEqual(contact.get()["extra"]["dob"], "1980-10-15")
+
+    def test_create_vumi_contact_2(self):
+        # make registration for contact with msisdn +27001
+        registration = self.make_registration(
+            post_data=TEST_REG_DATA["clinic_hcw"])
+        client = self.make_client()
+        # make different existing contact
+        self.make_existing_contact({
+            u"key": u"knownuuid",
+            u"msisdn": u"+27005",
+            u"user_account": u"knownaccount",
+            u"extra": {}
+        })
+
+        contact = update_create_vumi_contact.apply_async(
+            kwargs={"registration_id": registration.data["id"],
+                    "client": client})
+        self.assertEqual(contact.get()["msisdn"], "+27001")
+        self.assertEqual(contact.get()["extra"], {
+            "is_registered": "true",
+            "is_registered_by": "clinic",
+            "language_choice": "af",
+            "source_name": "Test Source",
+            "passport_no": "5551111",
+            "passport_origin": "zw",
+            "clinic_code": "12345",
+            "last_service_rating": "never",
+            "service_rating_reminders": "0",
+            "service_rating_reminder": "2014-01-02",
+            "registered_by": "+27820010001"
+        })
+        self.assertEqual(contact.get()["extra"]["is_registered"], "true")
+        self.assertEqual(contact.get()["extra"]["is_registered_by"], "clinic")
+        self.assertEqual(contact.get()["extra"]["language_choice"], "af")
+        self.assertEqual(contact.get()["extra"]["source_name"], "Test Source")
