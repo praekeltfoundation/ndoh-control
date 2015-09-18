@@ -214,6 +214,7 @@ CELERY_IMPORTS = (
     'subsend.tasks',
     'subscription.tasks',
     'snappybouncer.tasks',
+    'registration.tasks'
 )
 
 # Enabling priority routing for snappy bouncer tasks to allow those to
@@ -291,6 +292,12 @@ CELERY_ROUTES = {
         'queue': 'lowpriority',
     },
     'subsend.tasks.processes_message': {
+        'queue': 'lowpriority',
+    },
+    'registration.tasks.jembi_post_json': {
+        'queue': 'lowpriority',
+    },
+    'registration.tasks.update_create_vumi_contact': {
         'queue': 'lowpriority',
     }
 }
