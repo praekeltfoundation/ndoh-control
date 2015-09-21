@@ -465,7 +465,16 @@ class TestRegistrationsAPI(AuthenticatedAPITestCase):
         self.assertEqual(d.mom_id_type, 'sa_id')
 
         # Test post has been made to jembi
-        self.assertEqual(len(responses.calls), 3)  # why is this 3 now?!
+        self.assertEqual(len(responses.calls), 3)
+        self.assertEqual(
+            responses.calls[0].request.url,
+            "http://test/v2/json/subscription")
+        self.assertEqual(
+            responses.calls[1].request.url,
+            "http://vumi_go_test/contacts/?query=msisdn%3D%2B27001")
+        self.assertEqual(
+            responses.calls[2].request.url,
+            "http://vumi_go_test/contacts/")
 
         # remove post_save hooks to prevent teardown errors
         post_save.disconnect(fire_jembi_post, sender=Registration)
