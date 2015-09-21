@@ -88,11 +88,12 @@ def define_extras(_extras, registration):
         _extras[u"last_service_rating"] = 'never'
         _extras[u"service_rating_reminders"] = '0'
         _extras[u"service_rating_reminder"] = get_tomorrow()
+        _extras[u"edd"] = registration.mom_edd.strftime("%Y-%m-%d")
+        _extras[u"due_date_year"] = registration.mom_edd.strftime("%Y")
+        _extras[u"due_date_month"] = registration.mom_edd.strftime("%m")
+        _extras[u"due_date_day"] = registration.mom_edd.strftime("%d")
     if registration.mom_id_type != 'passport':
         _extras[u"dob"] = registration.mom_dob.strftime("%Y-%m-%d")
-
-    # sub_type, sub_rate, seq_start? currently saved but not useful?
-    # edd? not currently being saved but useful yes and year
 
     return _extras
 

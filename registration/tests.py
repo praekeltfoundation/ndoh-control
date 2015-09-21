@@ -623,7 +623,11 @@ class TestUpdateCreateVumiContactTask(AuthenticatedAPITestCase):
             "dob": "1980-09-15",
             "last_service_rating": "never",
             "service_rating_reminders": "0",
-            "service_rating_reminder": "2014-01-02"
+            "service_rating_reminder": "2014-01-02",
+            "edd": "2015-08-01",
+            "due_date_year": "2015",
+            "due_date_month": "08",
+            "due_date_day": "01",
         })
 
     def test_create_vumi_contact_1(self):
@@ -684,7 +688,11 @@ class TestUpdateCreateVumiContactTask(AuthenticatedAPITestCase):
             "last_service_rating": "never",
             "service_rating_reminders": "0",
             "service_rating_reminder": "2014-01-02",
-            "registered_by": "+27820010001"
+            "registered_by": "+27820010001",
+            "edd": "2015-09-01",
+            "due_date_year": "2015",
+            "due_date_month": "09",
+            "due_date_day": "01",
         })
         self.assertEqual(contact.get()["extra"]["is_registered"], "true")
         self.assertEqual(contact.get()["extra"]["is_registered_by"], "clinic")
