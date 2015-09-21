@@ -92,7 +92,7 @@ def define_extras(_extras, registration):
         _extras[u"dob"] = registration.mom_dob.strftime("%Y-%m-%d")
 
     # sub_type, sub_rate, seq_start? currently saved but not useful?
-    # edd? not currently being saved but useful
+    # edd? not currently being saved but useful yes and year
 
     return _extras
 
@@ -166,6 +166,8 @@ def update_create_vumi_contact(registration_id, client=None):
                     contact, registration, client)
                 return updated_contact
 
+            # This exception should rather look for a 404 if the contact is
+            # not found, but currently a Bad Request is returned.
             except:
                 # Create the contact as it doesn't exist
                 contact = create_contact(registration, client)
