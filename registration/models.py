@@ -111,8 +111,6 @@ def fire_jembi_post(sender, instance, created, **kwargs):
         For the clinic and chw registrations, fires an additional task that
         uploads an XML document.
     """
-    print "fire_jembi_post was called"
-    print "created was: %s" % created
     if created:
         # Fire Jembi send tasks
         jembi_post_json.apply_async(
@@ -126,4 +124,3 @@ def fire_jembi_post(sender, instance, created, **kwargs):
         # Fire Contact update create tasks
         update_create_vumi_contact.apply_async(
             kwargs={"registration_id": instance.id})
-
