@@ -2,7 +2,6 @@ import requests
 import json
 from datetime import datetime
 from celery import task
-from celery.task import Task
 from celery.utils.log import get_task_logger
 from celery.exceptions import SoftTimeLimitExceeded
 from django.core.exceptions import ObjectDoesNotExist
@@ -13,15 +12,6 @@ from .models import Registration
 
 logger = get_task_logger(__name__)
 
-
-# class Jembi_Post_Json(Task):
-#     """ Task to send registrations to Jembi
-#     """
-#     name = "registrations.tasks.jembi_post_json"
-
-# class FailedEventRequest(Exception):
-#     """ The attempted task failed because of a non-200 HTTP return code.
-#     """
 
 def get_timestamp():
     return datetime.today().strftime("%Y%m%d%H%M%S")
