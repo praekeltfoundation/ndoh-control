@@ -12,12 +12,19 @@ from requests_testadapter import TestSession, Resp
 from go_http.contacts import ContactsApiClient
 from fake_go_contacts import Request, FakeContactsApi
 from .models import Source, Registration, fire_jembi_post
-from .tasks import jembi_post_json, update_create_vumi_contact
-from .tasks import Jembi_Post_Json, Update_Create_Vumi_Contact
+from registration import tasks
 
 
-Jembi_Post_Json.get_timestamp = lambda x: "20130819144811"
-Update_Create_Vumi_Contact.get_tomorrow = lambda x: "2014-01-02"
+def override_get_timestamp():
+    return "20130819144811"
+
+tasks.get_timestamp = override_get_timestamp
+
+
+def override_get_tomorrow():
+    return "2014-01-02"
+
+tasks.get_tomorrow = override_get_tomorrow
 
 
 TEST_REG_DATA = {
@@ -483,7 +490,7 @@ class TestJembiPostJsonTask(AuthenticatedAPITestCase):
             'type': 3,
             'swt': 1
         }
-        json = jembi_post_json.build_jembi_json(reg)
+        json = tasks.build_jembi_json(reg)
         self.assertEqual(expected_json_clinic_self, json)
 
     def test_build_jembi_json_clinic_hcw(self):
@@ -503,7 +510,7 @@ class TestJembiPostJsonTask(AuthenticatedAPITestCase):
             'type': 3,
             'swt': 1
         }
-        json = jembi_post_json.build_jembi_json(reg)
+        json = tasks.build_jembi_json(reg)
         self.assertEqual(expected_json_clinic_hcw, json)
 
     def test_build_jembi_json_chw_self(self):
@@ -522,7 +529,7 @@ class TestJembiPostJsonTask(AuthenticatedAPITestCase):
             'type': 2,
             'swt': 1
         }
-        json = jembi_post_json.build_jembi_json(reg)
+        json = tasks.build_jembi_json(reg)
         self.assertEqual(expected_json_chw_self, json)
 
     def test_build_jembi_json_chw_hcw(self):
@@ -541,7 +548,7 @@ class TestJembiPostJsonTask(AuthenticatedAPITestCase):
             'type': 2,
             'swt': 1
         }
-        json = jembi_post_json.build_jembi_json(reg)
+        json = tasks.build_jembi_json(reg)
         self.assertEqual(expected_json_chw_hcw, json)
 
     def test_build_jembi_json_personal(self):
@@ -560,7 +567,7 @@ class TestJembiPostJsonTask(AuthenticatedAPITestCase):
             'type': 1,
             'swt': 1
         }
-        json = jembi_post_json.build_jembi_json(reg)
+        json = tasks.build_jembi_json(reg)
         self.assertEqual(expected_json_personal, json)
 
     @responses.activate
@@ -573,7 +580,7 @@ class TestJembiPostJsonTask(AuthenticatedAPITestCase):
                       body='jembi_post_json task', status=201,
                       content_type='application/json')
 
-        task_response = jembi_post_json.apply_async(
+        task_response = tasks.jembi_post_json.apply_async(
             kwargs={"registration_id": registration.data["id"]})
         self.assertEqual(task_response.get(), 'jembi_post_json task')
 
@@ -591,7 +598,7 @@ class TestUpdateCreateVumiContactTask(AuthenticatedAPITestCase):
             u"extra": {}
         })
 
-        contact = update_create_vumi_contact.apply_async(
+        contact = tasks.update_create_vumi_contact.apply_async(
             kwargs={"registration_id": registration.data["id"],
                     "client": client})
         self.assertEqual(contact.get()["msisdn"], "+27001")
@@ -623,7 +630,7 @@ class TestUpdateCreateVumiContactTask(AuthenticatedAPITestCase):
             u"extra": {}
         })
 
-        contact = update_create_vumi_contact.apply_async(
+        contact = tasks.update_create_vumi_contact.apply_async(
             kwargs={"registration_id": registration.data["id"],
                     "client": client})
         self.assertEqual(contact.get()["msisdn"], "+27002")
@@ -653,7 +660,7 @@ class TestUpdateCreateVumiContactTask(AuthenticatedAPITestCase):
             u"extra": {}
         })
 
-        contact = update_create_vumi_contact.apply_async(
+        contact = tasks.update_create_vumi_contact.apply_async(
             kwargs={"registration_id": registration.data["id"],
                     "client": client})
         self.assertEqual(contact.get()["msisdn"], "+27001")

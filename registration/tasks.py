@@ -75,24 +75,75 @@ def build_jembi_json(registration):
     return json_template
 
 
+def get_tomorrow():
+    return (datetime.date.today() + datetime.timedelta(days=1)
+            ).strftime("%Y%m%d")
+
+
+def define_extras(_extras, registration):
+    # Set up the new extras
+    _extras[u"is_registered"] = "true"
+    _extras[u"is_registered_by"] = registration.authority
+    _extras[u"language_choice"] = registration.mom_lang
+    _extras[u"source_name"] = registration.source.name
+    if registration.hcw_msisdn:
+        _extras[u"registered_by"] = registration.hcw_msisdn
+    if registration.mom_id_type == "sa_id":
+        _extras[u"sa_id"] = registration.mom_id_no
+    elif registration.mom_id_type == "passport":
+        _extras[u"passport_no"] = registration.mom_id_no
+        _extras[u"passport_origin"] = registration.mom_passport_origin
+    if registration.authority == 'clinic':
+        _extras[u"clinic_code"] = registration.clinic_code
+        _extras[u"last_service_rating"] = 'never'
+        _extras[u"service_rating_reminders"] = '0'
+        _extras[u"service_rating_reminder"] = get_tomorrow()
+    if registration.mom_id_type != 'passport':
+        _extras[u"dob"] = registration.mom_dob.strftime("%Y-%m-%d")
+
+    # sub_type, sub_rate, seq_start? currently saved but not useful?
+    # edd? not currently being saved but useful
+
+    return _extras
+
+
+def update_contact(contact, registration, client):
+    # Setup new values - only extras need updating
+    existing_extras = contact["extra"]
+    _extras = define_extras(existing_extras, registration)
+    update_data = {u"extra": _extras}
+    return client.update_contact(contact["key"], update_data)
+
+
+def create_contact(registration, client):
+    contact_data = {
+        u"msisdn": registration.mom_msisdn
+    }
+    _extras = define_extras({}, registration)
+    contact_data[u"extra"] = _extras
+    return client.create_contact(contact_data)
+
+
 @task()
 def jembi_post_json(registration_id):
-    """ Load registration, construct Jembi Json doc and send it off. """
-    l = logger
+    """ Task to send registrations to Jembi"""
 
-    l.info("Compiling Jembi Json data")
+    logger.info("Compiling Jembi Json data")
     try:
         registration = Registration.objects.get(pk=registration_id)
         json_doc = build_jembi_json(registration)
 
-        result = requests.post(
-            "%s/json/subscription" % settings.JEMBI_BASE_URL,  # url
-            headers={'Content-Type': 'application/json'},
-            data=json.dumps(json_doc),
-            auth=(settings.JEMBI_USERNAME, settings.JEMBI_PASSWORD),
-            verify=False
-        )
-        return result.text
+        try:
+            result = requests.post(
+                "%s/json/subscription" % settings.JEMBI_BASE_URL,  # url
+                headers={'Content-Type': 'application/json'},
+                data=json.dumps(json_doc),
+                auth=(settings.JEMBI_USERNAME, settings.JEMBI_PASSWORD),
+                verify=False
+            )
+            return result.text
+        except:
+            logger.error('Problem connecting to Jembi', exc_info=True)
 
     except ObjectDoesNotExist:
         logger.error('Missing Registration object', exc_info=True)
@@ -102,107 +153,38 @@ def jembi_post_json(registration_id):
             'Soft time limit exceeded processing Jembi send via Celery.',
             exc_info=True)
 
-# jembi_post_json = Jembi_Post_Json()
 
-
-# @task()
-# def jembi_post_json(sayit):
-#     try:
-#         logger.info("Say what?: %" % sayit)
-#         return True
-#     except SoftTimeLimitExceeded:
-#         logger.error(
-#             'Soft time limit exceed processing metric fire to Vumi HTTP API '
-#             'via Celery',
-#             exc_info=True)
-
-
-class Update_Create_Vumi_Contact(Task):
-
+@task()
+def update_create_vumi_contact(registration_id, client=None):
     """ Task to update or create a Vumi contact when a registration
         is created.
     """
-    name = "registrations.tasks.update_create_vumi_contact"
+    try:
+        if client is None:
+            client = ContactsApiClient(settings.VUMI_GO_API_TOKEN,
+                                       api_url=settings.VUMI_GO_BASE_URL)
 
-    class FailedEventRequest(Exception):
-
-        """ The attempted task failed because of a non-200 HTTP return code.
-        """
-
-    def get_tomorrow(self):
-        return (datetime.date.today() + datetime.timedelta(days=1)
-                ).strftime("%Y%m%d")
-
-    def define_extras(self, _extras, registration):
-        # Set up the new extras
-        _extras[u"is_registered"] = "true"
-        _extras[u"is_registered_by"] = registration.authority
-        _extras[u"language_choice"] = registration.mom_lang
-        _extras[u"source_name"] = registration.source.name
-        if registration.hcw_msisdn:
-            _extras[u"registered_by"] = registration.hcw_msisdn
-        if registration.mom_id_type == "sa_id":
-            _extras[u"sa_id"] = registration.mom_id_no
-        elif registration.mom_id_type == "passport":
-            _extras[u"passport_no"] = registration.mom_id_no
-            _extras[u"passport_origin"] = registration.mom_passport_origin
-        if registration.authority == 'clinic':
-            _extras[u"clinic_code"] = registration.clinic_code
-            _extras[u"last_service_rating"] = 'never'
-            _extras[u"service_rating_reminders"] = '0'
-            _extras[u"service_rating_reminder"] = self.get_tomorrow()
-        if registration.mom_id_type != 'passport':
-            _extras[u"dob"] = registration.mom_dob.strftime("%Y-%m-%d")
-
-        # sub_type, sub_rate, seq_start? currently saved but not useful?
-        # edd? not currently being saved but useful
-
-        return _extras
-
-    def update_contact(self, contact, registration, client):
-        # Setup new values - only extras need updating
-        existing_extras = contact["extra"]
-        _extras = self.define_extras(existing_extras, registration)
-        update_data = {u"extra": _extras}
-        return client.update_contact(contact["key"], update_data)
-
-    def create_contact(self, registration, client):
-        contact_data = {
-            u"msisdn": registration.mom_msisdn
-        }
-        _extras = self.define_extras({}, registration)
-        contact_data[u"extra"] = _extras
-        return client.create_contact(contact_data)
-
-    def run(self, registration_id, client=None, **kwargs):
+        # Load the registration
         try:
-            if client is None:
-                client = ContactsApiClient(settings.VUMI_GO_API_TOKEN,
-                                           api_url=settings.VUMI_GO_BASE_URL)
+            registration = Registration.objects.get(pk=registration_id)
 
-            # Load the registration
             try:
-                registration = Registration.objects.get(pk=registration_id)
+                # Get and update the contact if it exists
+                contact = client.get_contact(
+                    msisdn=registration.mom_msisdn)
+                updated_contact = update_contact(
+                    contact, registration, client)
+                return updated_contact
 
-                try:
-                    # Get and update the contact if it exists
-                    contact = client.get_contact(
-                        msisdn=registration.mom_msisdn)
-                    updated_contact = self.update_contact(
-                        contact, registration, client)
-                    return updated_contact
+            except:
+                # Create the contact as it doesn't exist
+                contact = create_contact(registration, client)
+                return contact
 
-                except:
-                    # Create the contact as it doesn't exist
-                    contact = self.create_contact(registration, client)
-                    return contact
+        except ObjectDoesNotExist:
+            logger.error('Missing Registration object', exc_info=True)
 
-            except ObjectDoesNotExist:
-                logger.error('Missing Registration object', exc_info=True)
-
-        except SoftTimeLimitExceeded:
-            logger.error(
-                'Soft time limit exceeded processing Jembi send via Celery.',
-                exc_info=True)
-
-update_create_vumi_contact = Update_Create_Vumi_Contact()
+    except SoftTimeLimitExceeded:
+        logger.error(
+            'Soft time limit exceeded processing Jembi send via Celery.',
+            exc_info=True)
