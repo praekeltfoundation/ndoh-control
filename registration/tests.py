@@ -498,8 +498,8 @@ class TestJembiPostJsonTask(AuthenticatedAPITestCase):
             'type': 3,
             'swt': 1
         }
-        json = tasks.build_jembi_json(reg)
-        self.assertEqual(expected_json_clinic_self, json)
+        payload = tasks.build_jembi_json(reg)
+        self.assertEqual(expected_json_clinic_self, payload)
 
     def test_build_jembi_json_clinic_hcw(self):
         registration_clinic_hcw = self.make_registration(
@@ -518,8 +518,8 @@ class TestJembiPostJsonTask(AuthenticatedAPITestCase):
             'type': 3,
             'swt': 1
         }
-        json = tasks.build_jembi_json(reg)
-        self.assertEqual(expected_json_clinic_hcw, json)
+        payload = tasks.build_jembi_json(reg)
+        self.assertEqual(expected_json_clinic_hcw, payload)
 
     def test_build_jembi_json_chw_self(self):
         registration_chw_self = self.make_registration(
@@ -537,8 +537,8 @@ class TestJembiPostJsonTask(AuthenticatedAPITestCase):
             'type': 2,
             'swt': 1
         }
-        json = tasks.build_jembi_json(reg)
-        self.assertEqual(expected_json_chw_self, json)
+        payload = tasks.build_jembi_json(reg)
+        self.assertEqual(expected_json_chw_self, payload)
 
     def test_build_jembi_json_chw_hcw(self):
         registration_chw_hcw = self.make_registration(
@@ -556,8 +556,8 @@ class TestJembiPostJsonTask(AuthenticatedAPITestCase):
             'type': 2,
             'swt': 1
         }
-        json = tasks.build_jembi_json(reg)
-        self.assertEqual(expected_json_chw_hcw, json)
+        payload = tasks.build_jembi_json(reg)
+        self.assertEqual(expected_json_chw_hcw, payload)
 
     def test_build_jembi_json_personal(self):
         registration_personal = self.make_registration(
@@ -575,8 +575,8 @@ class TestJembiPostJsonTask(AuthenticatedAPITestCase):
             'type': 1,
             'swt': 1
         }
-        json = tasks.build_jembi_json(reg)
-        self.assertEqual(expected_json_personal, json)
+        payload = tasks.build_jembi_json(reg)
+        self.assertEqual(expected_json_personal, payload)
 
     @responses.activate
     def test_jembi_post_json(self):
