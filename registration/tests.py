@@ -791,3 +791,29 @@ class TestUpdateCreateVumiContactTask(AuthenticatedAPITestCase):
         self.assertEqual(contact.get()["extra"]["is_registered_by"], "clinic")
         self.assertEqual(contact.get()["extra"]["language_choice"], "af")
         self.assertEqual(contact.get()["extra"]["source_name"], "Test Source")
+
+
+class TestCreateSubscriptionTask(AuthenticatedAPITestCase):
+
+    def test_build_subscription_json(self):
+        contact_35 = {
+            "key": "knownkey",
+            "msisdn": "knownaddr",
+            "user_account": "knownaccount",
+            "extra": {
+                "language_choice": "en",
+                "is_registered_by": "clinic",
+                "edd": "2013-09-24"
+            }
+        }
+        expected_payload = {
+            'contact_key': 'knownkey',
+            'to_addr': 'knownaddr',
+            'user_account': 'knownaccount',
+            'lang': 'en',
+            'message_set': '/api/v1/message_set/2/',
+            'schedule': '/api/v1/periodic_task/4/',
+            'next_sequence_number': '13'
+        }
+        payload = tasks.build_subscription_json(contact_35)
+        self.assertEqual(payload, expected_payload)

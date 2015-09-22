@@ -131,7 +131,7 @@ def jembi_post_json(registration_id):
         try:
             result = requests.post(
                 "%s/json/subscription" % settings.JEMBI_BASE_URL,  # url
-                headers={'Content-Type': 'application/json'},
+                headers={'Content-Type': ['application/json']},
                 data=json.dumps(json_doc),
                 auth=(settings.JEMBI_USERNAME, settings.JEMBI_PASSWORD),
                 verify=False
@@ -154,6 +154,7 @@ def update_create_vumi_contact(registration_id, client=None):
     """ Task to update or create a Vumi contact when a registration
         is created.
     """
+    logger.info("Creating / Updating Contact")
     try:
         if client is None:
             client = ContactsApiClient(settings.VUMI_GO_API_TOKEN,
@@ -167,19 +168,23 @@ def update_create_vumi_contact(registration_id, client=None):
                 # Get and update the contact if it exists
                 contact = client.get_contact(
                     msisdn=registration.mom_msisdn)
+                logger.info("Contact exists - updating contact")
                 updated_contact = update_contact(
                     contact, registration, client)
 
-                create_subscription(updated_contact)
+                create_subscription.apply_async(
+                    kwargs={"contact": updated_contact})
                 return updated_contact
 
             # This exception should rather look for a 404 if the contact is
             # not found, but currently a Bad Request is returned.
             except:
                 # Create the contact as it doesn't exist
+                logger.info("Contact doesn't exist - creating new contact")
                 contact = create_contact(registration, client)
 
-                create_subscription(contact)
+                create_subscription.apply_async(
+                    kwargs={"contact": contact})
                 return contact
 
         except ObjectDoesNotExist:
@@ -260,6 +265,28 @@ def build_subscription_json(contact):
     return json_template
 
 
+@task()
 def create_subscription(contact):
-    payload = build_subscription_json(contact)
-    return contact
+    """ Task to create new Control messaging subscription"""
+
+    logger.info("Creating new Control messaging subscription")
+    try:
+        # Gather info to Post
+        payload = build_subscription_json(contact)
+
+        # Post to Control
+        result = requests.post(
+            "%s/subscription/" % settings.CONTROL_BASE_URL,  # url
+            headers={'Content-Type': ['application/json'],
+                     'Authorization': ['ApiKey %s: %s' % (
+                         settings.CONTROL_USERNAME,
+                         settings.CONTROL_API_KEY)]},
+            data=json.dumps(payload),
+            verify=False
+        )
+        return result.text
+
+    except SoftTimeLimitExceeded:
+        logger.error(
+            'Soft time limit exceeded processing Jembi send via Celery.',
+            exc_info=True)
