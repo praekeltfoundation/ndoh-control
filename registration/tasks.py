@@ -196,7 +196,7 @@ def get_subscription_details(contact):
 
 
 def create_subscription(contact):
-    """ Task to create new Control messaging subscription"""
+    """ Create new Control messaging subscription"""
 
     logger.info("Creating new Control messaging subscription")
     try:
