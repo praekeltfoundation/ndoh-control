@@ -1,5 +1,6 @@
 import json
 import responses
+from datetime import datetime
 from django.contrib.auth.models import User
 from django.test import TestCase
 from django.db.models.signals import post_save
@@ -15,10 +16,10 @@ from .models import Source, Registration, fire_jembi_post
 from registration import tasks
 
 
-def override_get_timestamp():
-    return "20130819144811"
+def override_get_today():
+    return datetime.strptime("20130819144811", "%Y%m%d%H%M%S")
 
-tasks.get_timestamp = override_get_timestamp
+tasks.get_today = override_get_today
 
 
 def override_get_tomorrow():
@@ -595,6 +596,98 @@ class TestJembiPostJsonTask(AuthenticatedAPITestCase):
 
 
 class TestUpdateCreateVumiContactTask(AuthenticatedAPITestCase):
+
+    def test_week_calc(self):
+        weeks = tasks.get_pregnancy_week(datetime(2014, 7, 13), "2014-07-14")
+        self.assertEqual(weeks, 40)
+        weeks = tasks.get_pregnancy_week(datetime(2014, 7, 6), "2014-07-14")
+        self.assertEqual(weeks, 39)
+        weeks = tasks.get_pregnancy_week(datetime(2014, 6, 29), "2014-07-14")
+        self.assertEqual(weeks, 38)
+        weeks = tasks.get_pregnancy_week(datetime(2014, 1, 1), "2014-09-21")
+        self.assertEqual(weeks, 3)
+        weeks = tasks.get_pregnancy_week(datetime(2014, 1, 1), "2014-10-03")
+        self.assertEqual(weeks, 2)
+
+        weeks = tasks.get_pregnancy_week(datetime(2013, 8, 19), "2013-08-20")
+        self.assertEqual(weeks, 40)
+        weeks = tasks.get_pregnancy_week(datetime(2013, 8, 19), "2013-08-27")
+        self.assertEqual(weeks, 39)
+        weeks = tasks.get_pregnancy_week(datetime(2013, 8, 19), "2013-09-03")
+        self.assertEqual(weeks, 38)
+        weeks = tasks.get_pregnancy_week(datetime(2013, 8, 19), "2013-09-10")
+        self.assertEqual(weeks, 37)
+        weeks = tasks.get_pregnancy_week(datetime(2013, 8, 19), "2013-09-17")
+        self.assertEqual(weeks, 36)
+        weeks = tasks.get_pregnancy_week(datetime(2013, 8, 19), "2013-09-24")
+        self.assertEqual(weeks, 35)
+        weeks = tasks.get_pregnancy_week(datetime(2013, 8, 19), "2013-10-15")
+        self.assertEqual(weeks, 32)
+        weeks = tasks.get_pregnancy_week(datetime(2013, 8, 19), "2013-10-22")
+        self.assertEqual(weeks, 31)
+        weeks = tasks.get_pregnancy_week(datetime(2013, 8, 19), "2014-04-24")
+        self.assertEqual(weeks, 5)
+        weeks = tasks.get_pregnancy_week(datetime(2013, 8, 19), "2014-05-07")
+        self.assertEqual(weeks, 3)
+
+    def test_sub_details(self):
+        contact = {"extra": {"is_registered_by": "personal"}}
+        sub_details = tasks.get_subscription_details(contact)
+        self.assertEqual(sub_details, (9, 3, 1))
+
+        contact = {"extra": {"is_registered_by": "chw"}}
+        sub_details = tasks.get_subscription_details(contact)
+        self.assertEqual(sub_details, (10, 3, 1))
+
+        contact_40 = {"extra": {"is_registered_by": "clinic",
+                                "edd": "2013-08-20"}}
+        sub_details = tasks.get_subscription_details(contact_40)
+        self.assertEqual(sub_details, (3, 1, 1))
+
+        contact_39 = {"extra": {"is_registered_by": "clinic",
+                                "edd": "2013-08-27"}}
+        sub_details = tasks.get_subscription_details(contact_39)
+        self.assertEqual(sub_details, (3, 1, 1))
+
+        contact_38 = {"extra": {"is_registered_by": "clinic",
+                                "edd": "2013-09-03"}}
+        sub_details = tasks.get_subscription_details(contact_38)
+        self.assertEqual(sub_details, (3, 6, 1))
+
+        contact_37 = {"extra": {"is_registered_by": "clinic",
+                                "edd": "2013-09-10"}}
+        sub_details = tasks.get_subscription_details(contact_37)
+        self.assertEqual(sub_details, (3, 5, 1))
+
+        contact_36 = {"extra": {"is_registered_by": "clinic",
+                                "edd": "2013-09-17"}}
+        sub_details = tasks.get_subscription_details(contact_36)
+        self.assertEqual(sub_details, (3, 4, 1))
+
+        contact_35 = {"extra": {"is_registered_by": "clinic",
+                                "edd": "2013-09-24"}}
+        sub_details = tasks.get_subscription_details(contact_35)
+        self.assertEqual(sub_details, (2, 4, 13))
+
+        contact_32 = {"extra": {"is_registered_by": "clinic",
+                                "edd": "2013-10-15"}}
+        sub_details = tasks.get_subscription_details(contact_32)
+        self.assertEqual(sub_details, (2, 4, 4))
+
+        contact_31 = {"extra": {"is_registered_by": "clinic",
+                                "edd": "2013-10-22"}}
+        sub_details = tasks.get_subscription_details(contact_31)
+        self.assertEqual(sub_details, (1, 3, 53))
+
+        contact_05 = {"extra": {"is_registered_by": "clinic",
+                                "edd": "2014-04-24"}}
+        sub_details = tasks.get_subscription_details(contact_05)
+        self.assertEqual(sub_details, (1, 3, 1))
+
+        contact_03 = {"extra": {"is_registered_by": "clinic",
+                                "edd": "2014-05-07"}}
+        sub_details = tasks.get_subscription_details(contact_03)
+        self.assertEqual(sub_details, (1, 3, 1))
 
     def test_update_vumi_contact(self):
         registration = self.make_registration(

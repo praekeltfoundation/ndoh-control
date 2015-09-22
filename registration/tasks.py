@@ -13,8 +13,12 @@ from .models import Registration
 logger = get_task_logger(__name__)
 
 
+def get_today():
+    return datetime.today()
+
+
 def get_timestamp():
-    return datetime.today().strftime("%Y%m%d%H%M%S")
+    return get_today().strftime("%Y%m%d%H%M%S")
 
 
 def get_dob(mom_dob):
@@ -165,6 +169,8 @@ def update_create_vumi_contact(registration_id, client=None):
                     msisdn=registration.mom_msisdn)
                 updated_contact = update_contact(
                     contact, registration, client)
+
+                create_subscription(updated_contact)
                 return updated_contact
 
             # This exception should rather look for a 404 if the contact is
@@ -172,6 +178,8 @@ def update_create_vumi_contact(registration_id, client=None):
             except:
                 # Create the contact as it doesn't exist
                 contact = create_contact(registration, client)
+
+                create_subscription(contact)
                 return contact
 
         except ObjectDoesNotExist:
@@ -181,3 +189,77 @@ def update_create_vumi_contact(registration_id, client=None):
         logger.error(
             'Soft time limit exceeded processing Jembi send via Celery.',
             exc_info=True)
+
+
+def get_pregnancy_week(today, edd):
+    due_date = datetime.strptime(edd, "%Y-%m-%d")
+    time_diff = due_date - today
+    time_diff_weeks = time_diff.days / 7
+    preg_weeks = 40 - time_diff_weeks
+    # You can't be less than two week pregnant
+    if preg_weeks <= 1:
+        preg_weeks = 2  # changed from JS's 'false' to achieve same result
+    return preg_weeks
+
+
+def clinic_sub_map(weeks):
+    # Calculate clinic message set, sending rate & starting point
+
+    # Set commonly used values
+    sub_type = settings.SUBSCRIPTION_TYPES["accelerated"]
+    seq_start = 1
+
+    if weeks <= 4:
+        sub_type = settings.SUBSCRIPTION_TYPES["standard"]
+        sub_rate = settings.SUBSCRIPTION_RATES["two_per_week"]
+    elif weeks <= 31:
+        sub_type = settings.SUBSCRIPTION_TYPES["standard"]
+        sub_rate = settings.SUBSCRIPTION_RATES["two_per_week"]
+        seq_start = ((weeks-4)*2)-1
+    elif weeks <= 35:
+        sub_type = settings.SUBSCRIPTION_TYPES["later"]
+        sub_rate = settings.SUBSCRIPTION_RATES["three_per_week"]
+        seq_start = ((weeks-30)*3)-2
+    elif weeks == 36:
+        sub_rate = settings.SUBSCRIPTION_RATES["three_per_week"]
+    elif weeks == 37:
+        sub_rate = settings.SUBSCRIPTION_RATES["four_per_week"]
+    elif weeks == 38:
+        sub_rate = settings.SUBSCRIPTION_RATES["five_per_week"]
+    else:
+        sub_rate = settings.SUBSCRIPTION_RATES["daily"]
+    return sub_type, sub_rate, seq_start
+
+
+def get_subscription_details(contact):
+    sub_type = None,
+    sub_rate = settings.SUBSCRIPTION_RATES["two_per_week"]
+    seq_start = 1
+    if contact["extra"]["is_registered_by"] == "personal":
+        sub_type = settings.SUBSCRIPTION_TYPES["subscription"]
+    if contact["extra"]["is_registered_by"] == "chw":
+        sub_type = settings.SUBSCRIPTION_TYPES["chw"]
+    if contact["extra"]["is_registered_by"] == "clinic":
+        preg_weeks = get_pregnancy_week(get_today(), contact["extra"]["edd"])
+        sub_type, sub_rate, seq_start = clinic_sub_map(preg_weeks)
+
+    return sub_type, sub_rate, seq_start
+
+
+def build_subscription_json(contact):
+    sub_details = get_subscription_details(contact)
+    json_template = {
+        "contact_key": contact["key"],
+        "to_addr": contact["msisdn"],
+        "user_account": contact["user_account"],
+        "lang": contact["extra"]["language_choice"],
+        "message_set": "/api/v1/message_set/" + str(sub_details[0]) + "/",
+        "schedule": "/api/v1/periodic_task/" + str(sub_details[1]) + "/",
+        "next_sequence_number": str(sub_details[2]),
+    }
+    return json_template
+
+
+def create_subscription(contact):
+    payload = build_subscription_json(contact)
+    return contact

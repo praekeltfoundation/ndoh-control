@@ -363,6 +363,27 @@ JEMBI_BASE_URL = "http://npr-staging.jembi.org:5001/ws/rest/v1"
 JEMBI_USERNAME = "test"
 JEMBI_PASSWORD = "test"
 
+SUBSCRIPTION_RATES = {
+    "daily": 1,
+    "one_per_week": 2,
+    "two_per_week": 3,
+    "three_per_week": 4,
+    "four_per_week": 5,
+    "five_per_week": 6
+}
+SUBSCRIPTION_TYPES = {
+    "standard": 1,
+    "later": 2,
+    "accelerated": 3,
+    "baby1": 4,
+    "baby2": 5,
+    "miscarriage": 6,
+    "stillbirth": 7,
+    "babyloss": 8,
+    "subscription": 9,
+    "chw": 10
+}
+
 try:
     from local_settings import *  # flake8: noqa
 except ImportError:
