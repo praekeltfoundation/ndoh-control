@@ -76,7 +76,7 @@ def get_tomorrow():
             ).strftime("%Y%m%d")
 
 
-def define_extras(_extras, registration):
+def define_extras_registration(_extras, registration):
     # Set up the new extras
     _extras[u"is_registered"] = "true"
     _extras[u"is_registered_by"] = registration.authority
@@ -104,10 +104,26 @@ def define_extras(_extras, registration):
     return _extras
 
 
-def update_contact(contact, registration, client):
+def define_extras_subscription(_extras, subscription):
+    # Set up the new extras
+    _extras[u"subscription_type"] = str(subscription.message_set.id)
+    _extras[u"subscription_rate"] = str(subscription.schedule.id)
+    _extras[u"subscription_seq_start"] = str(subscription.next_sequence_number)
+    return _extras
+
+
+def update_contact_registration(contact, registration, client):
     # Setup new values - only extras need updating
     existing_extras = contact["extra"]
-    _extras = define_extras(existing_extras, registration)
+    _extras = define_extras_registration(existing_extras, registration)
+    update_data = {u"extra": _extras}
+    return client.update_contact(contact["key"], update_data)
+
+
+def update_contact_subscription(contact, subscription, client):
+    # Setup new values - only extras need updating
+    existing_extras = contact["extra"]
+    _extras = define_extras_subscription(existing_extras, subscription)
     update_data = {u"extra": _extras}
     return client.update_contact(contact["key"], update_data)
 
@@ -116,7 +132,7 @@ def create_contact(registration, client):
     contact_data = {
         u"msisdn": registration.mom_msisdn
     }
-    _extras = define_extras({}, registration)
+    _extras = define_extras_registration({}, registration)
     contact_data[u"extra"] = _extras
     return client.create_contact(contact_data)
 
@@ -257,10 +273,16 @@ def update_create_vumi_contact(registration_id, client=None):
                 contact = client.get_contact(
                     msisdn=registration.mom_msisdn)
                 logger.info("Contact exists - updating contact")
-                updated_contact = update_contact(
+                updated_contact = update_contact_registration(
                     contact, registration, client)
 
-                create_subscription(contact)
+                # Create new subscription for the contact
+                subscription = create_subscription(updated_contact)
+
+                # Update the contact with subscription details
+                updated_contact = update_contact_subscription(
+                    contact, subscription, client)
+
                 return updated_contact
 
             # This exception should rather look for a 404 if the contact is
@@ -270,8 +292,14 @@ def update_create_vumi_contact(registration_id, client=None):
                 logger.info("Contact doesn't exist - creating new contact")
                 contact = create_contact(registration, client)
 
-                create_subscription(contact)
-                return contact
+                # Create new subscription for the contact
+                subscription = create_subscription(contact)
+
+                # Update the contact with subscription details
+                updated_contact = update_contact_subscription(
+                    contact, subscription, client)
+
+                return updated_contact
 
         except ObjectDoesNotExist:
             logger.error('Missing Registration object', exc_info=True)

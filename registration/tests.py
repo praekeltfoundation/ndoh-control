@@ -721,6 +721,9 @@ class TestUpdateCreateVumiContactTask(AuthenticatedAPITestCase):
             "due_date_year": "2015",
             "due_date_month": "08",
             "due_date_day": "01",
+            "subscription_type": "1",
+            "subscription_rate": "3",
+            "subscription_seq_start": "1"
         })
 
     def test_create_vumi_contact_1(self):
@@ -746,12 +749,10 @@ class TestUpdateCreateVumiContactTask(AuthenticatedAPITestCase):
             "language_choice": "xh",
             "source_name": "Test Source",
             "dob": "1980-10-15",
+            "subscription_type": "10",
+            "subscription_rate": "3",
+            "subscription_seq_start": "1"
         })
-        self.assertEqual(contact.get()["extra"]["is_registered"], "true")
-        self.assertEqual(contact.get()["extra"]["is_registered_by"], "chw")
-        self.assertEqual(contact.get()["extra"]["language_choice"], "xh")
-        self.assertEqual(contact.get()["extra"]["source_name"], "Test Source")
-        self.assertEqual(contact.get()["extra"]["dob"], "1980-10-15")
 
     def test_create_vumi_contact_2(self):
         # make registration for contact with msisdn +27001
@@ -786,11 +787,10 @@ class TestUpdateCreateVumiContactTask(AuthenticatedAPITestCase):
             "due_date_year": "2015",
             "due_date_month": "09",
             "due_date_day": "01",
+            "subscription_type": "1",
+            "subscription_rate": "3",
+            "subscription_seq_start": "1"
         })
-        self.assertEqual(contact.get()["extra"]["is_registered"], "true")
-        self.assertEqual(contact.get()["extra"]["is_registered_by"], "clinic")
-        self.assertEqual(contact.get()["extra"]["language_choice"], "af")
-        self.assertEqual(contact.get()["extra"]["source_name"], "Test Source")
 
     def test_create_subscription(self):
         contact_35 = {
