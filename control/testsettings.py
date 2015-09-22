@@ -2,6 +2,8 @@ from control.settings import *  # flake8: noqa
 
 JEMBI_BASE_URL = "http://test/v2"
 
+VUMI_GO_BASE_URL = "http://vumi_go_test"
+
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
