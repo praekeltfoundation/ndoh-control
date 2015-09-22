@@ -609,10 +609,11 @@ class TestUpdateCreateVumiContactTask(AuthenticatedAPITestCase):
         contact = tasks.update_create_vumi_contact.apply_async(
             kwargs={"registration_id": registration.data["id"],
                     "client": client})
-        self.assertEqual(contact.get()["msisdn"], "+27001")
-        self.assertEqual(contact.get()["key"], "knownuuid")
-        self.assertEqual(contact.get()["user_account"], "knownaccount")
-        self.assertEqual(contact.get()["extra"], {
+        result = contact.get()
+        self.assertEqual(result["msisdn"], "+27001")
+        self.assertEqual(result["key"], "knownuuid")
+        self.assertEqual(result["user_account"], "knownaccount")
+        self.assertEqual(result["extra"], {
             "is_registered": "true",
             "is_registered_by": "clinic",
             "language_choice": "en",
@@ -645,19 +646,15 @@ class TestUpdateCreateVumiContactTask(AuthenticatedAPITestCase):
         contact = tasks.update_create_vumi_contact.apply_async(
             kwargs={"registration_id": registration.data["id"],
                     "client": client})
-        self.assertEqual(contact.get()["msisdn"], "+27002")
-        self.assertEqual(contact.get()["extra"], {
+        result = contact.get()
+        self.assertEqual(result["msisdn"], "+27002")
+        self.assertEqual(result["extra"], {
             "is_registered": "true",
             "is_registered_by": "chw",
             "language_choice": "xh",
             "source_name": "Test Source",
             "dob": "1980-10-15",
         })
-        self.assertEqual(contact.get()["extra"]["is_registered"], "true")
-        self.assertEqual(contact.get()["extra"]["is_registered_by"], "chw")
-        self.assertEqual(contact.get()["extra"]["language_choice"], "xh")
-        self.assertEqual(contact.get()["extra"]["source_name"], "Test Source")
-        self.assertEqual(contact.get()["extra"]["dob"], "1980-10-15")
 
     def test_create_vumi_contact_2(self):
         # make registration for contact with msisdn +27001
@@ -675,8 +672,9 @@ class TestUpdateCreateVumiContactTask(AuthenticatedAPITestCase):
         contact = tasks.update_create_vumi_contact.apply_async(
             kwargs={"registration_id": registration.data["id"],
                     "client": client})
-        self.assertEqual(contact.get()["msisdn"], "+27001")
-        self.assertEqual(contact.get()["extra"], {
+        result = contact.get()
+        self.assertEqual(result["msisdn"], "+27001")
+        self.assertEqual(result["extra"], {
             "is_registered": "true",
             "is_registered_by": "clinic",
             "language_choice": "af",
@@ -693,7 +691,3 @@ class TestUpdateCreateVumiContactTask(AuthenticatedAPITestCase):
             "due_date_month": "09",
             "due_date_day": "01",
         })
-        self.assertEqual(contact.get()["extra"]["is_registered"], "true")
-        self.assertEqual(contact.get()["extra"]["is_registered_by"], "clinic")
-        self.assertEqual(contact.get()["extra"]["language_choice"], "af")
-        self.assertEqual(contact.get()["extra"]["source_name"], "Test Source")
