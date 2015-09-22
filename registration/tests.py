@@ -633,61 +633,61 @@ class TestUpdateCreateVumiContactTask(AuthenticatedAPITestCase):
     def test_sub_details(self):
         contact = {"extra": {"is_registered_by": "personal"}}
         sub_details = tasks.get_subscription_details(contact)
-        self.assertEqual(sub_details, (9, 3, 1))
+        self.assertEqual(sub_details, ("subscription", "two_per_week", 1))
 
         contact = {"extra": {"is_registered_by": "chw"}}
         sub_details = tasks.get_subscription_details(contact)
-        self.assertEqual(sub_details, (10, 3, 1))
+        self.assertEqual(sub_details, ("chw", "two_per_week", 1))
 
         contact_40 = {"extra": {"is_registered_by": "clinic",
                                 "edd": "2013-08-20"}}
         sub_details = tasks.get_subscription_details(contact_40)
-        self.assertEqual(sub_details, (3, 1, 1))
+        self.assertEqual(sub_details, ("accelerated", "daily", 1))
 
         contact_39 = {"extra": {"is_registered_by": "clinic",
                                 "edd": "2013-08-27"}}
         sub_details = tasks.get_subscription_details(contact_39)
-        self.assertEqual(sub_details, (3, 1, 1))
+        self.assertEqual(sub_details, ("accelerated", "daily", 1))
 
         contact_38 = {"extra": {"is_registered_by": "clinic",
                                 "edd": "2013-09-03"}}
         sub_details = tasks.get_subscription_details(contact_38)
-        self.assertEqual(sub_details, (3, 6, 1))
+        self.assertEqual(sub_details, ("accelerated", "five_per_week", 1))
 
         contact_37 = {"extra": {"is_registered_by": "clinic",
                                 "edd": "2013-09-10"}}
         sub_details = tasks.get_subscription_details(contact_37)
-        self.assertEqual(sub_details, (3, 5, 1))
+        self.assertEqual(sub_details, ("accelerated", "four_per_week", 1))
 
         contact_36 = {"extra": {"is_registered_by": "clinic",
                                 "edd": "2013-09-17"}}
         sub_details = tasks.get_subscription_details(contact_36)
-        self.assertEqual(sub_details, (3, 4, 1))
+        self.assertEqual(sub_details, ("accelerated", "three_per_week", 1))
 
         contact_35 = {"extra": {"is_registered_by": "clinic",
                                 "edd": "2013-09-24"}}
         sub_details = tasks.get_subscription_details(contact_35)
-        self.assertEqual(sub_details, (2, 4, 13))
+        self.assertEqual(sub_details, ("later", "three_per_week", 13))
 
         contact_32 = {"extra": {"is_registered_by": "clinic",
                                 "edd": "2013-10-15"}}
         sub_details = tasks.get_subscription_details(contact_32)
-        self.assertEqual(sub_details, (2, 4, 4))
+        self.assertEqual(sub_details, ("later", "three_per_week", 4))
 
         contact_31 = {"extra": {"is_registered_by": "clinic",
                                 "edd": "2013-10-22"}}
         sub_details = tasks.get_subscription_details(contact_31)
-        self.assertEqual(sub_details, (1, 3, 53))
+        self.assertEqual(sub_details, ("standard", "two_per_week", 53))
 
         contact_05 = {"extra": {"is_registered_by": "clinic",
                                 "edd": "2014-04-24"}}
         sub_details = tasks.get_subscription_details(contact_05)
-        self.assertEqual(sub_details, (1, 3, 1))
+        self.assertEqual(sub_details, ("standard", "two_per_week", 1))
 
         contact_03 = {"extra": {"is_registered_by": "clinic",
                                 "edd": "2014-05-07"}}
         sub_details = tasks.get_subscription_details(contact_03)
-        self.assertEqual(sub_details, (1, 3, 1))
+        self.assertEqual(sub_details, ("standard", "two_per_week", 1))
 
     def test_update_vumi_contact(self):
         registration = self.make_registration(
@@ -792,10 +792,7 @@ class TestUpdateCreateVumiContactTask(AuthenticatedAPITestCase):
         self.assertEqual(contact.get()["extra"]["language_choice"], "af")
         self.assertEqual(contact.get()["extra"]["source_name"], "Test Source")
 
-
-class TestCreateSubscriptionTask(AuthenticatedAPITestCase):
-
-    def test_build_subscription_json(self):
+    def test_create_subscription(self):
         contact_35 = {
             "key": "knownkey",
             "msisdn": "knownaddr",
@@ -806,14 +803,5 @@ class TestCreateSubscriptionTask(AuthenticatedAPITestCase):
                 "edd": "2013-09-24"
             }
         }
-        expected_payload = {
-            'contact_key': 'knownkey',
-            'to_addr': 'knownaddr',
-            'user_account': 'knownaccount',
-            'lang': 'en',
-            'message_set': '/api/v1/message_set/2/',
-            'schedule': '/api/v1/periodic_task/4/',
-            'next_sequence_number': '13'
-        }
-        payload = tasks.build_subscription_json(contact_35)
-        self.assertEqual(payload, expected_payload)
+        subscription = tasks.create_subscription(contact_35)
+        self.assertEqual(subscription.to_addr, "knownaddr")
