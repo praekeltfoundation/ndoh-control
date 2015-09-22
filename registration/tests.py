@@ -19,12 +19,11 @@ from registration import tasks
 def override_get_today():
     return datetime.strptime("20130819144811", "%Y%m%d%H%M%S")
 
-tasks.get_today = override_get_today
-
 
 def override_get_tomorrow():
     return "2014-01-02"
 
+tasks.get_today = override_get_today
 tasks.get_tomorrow = override_get_tomorrow
 
 
@@ -500,8 +499,8 @@ class TestJembiPostJsonTask(AuthenticatedAPITestCase):
             'type': 3,
             'swt': 1
         }
-        json = tasks.build_jembi_json(reg)
-        self.assertEqual(expected_json_clinic_self, json)
+        payload = tasks.build_jembi_json(reg)
+        self.assertEqual(expected_json_clinic_self, payload)
 
     def test_build_jembi_json_clinic_hcw(self):
         registration_clinic_hcw = self.make_registration(
@@ -520,8 +519,8 @@ class TestJembiPostJsonTask(AuthenticatedAPITestCase):
             'type': 3,
             'swt': 1
         }
-        json = tasks.build_jembi_json(reg)
-        self.assertEqual(expected_json_clinic_hcw, json)
+        payload = tasks.build_jembi_json(reg)
+        self.assertEqual(expected_json_clinic_hcw, payload)
 
     def test_build_jembi_json_chw_self(self):
         registration_chw_self = self.make_registration(
@@ -539,8 +538,8 @@ class TestJembiPostJsonTask(AuthenticatedAPITestCase):
             'type': 2,
             'swt': 1
         }
-        json = tasks.build_jembi_json(reg)
-        self.assertEqual(expected_json_chw_self, json)
+        payload = tasks.build_jembi_json(reg)
+        self.assertEqual(expected_json_chw_self, payload)
 
     def test_build_jembi_json_chw_hcw(self):
         registration_chw_hcw = self.make_registration(
@@ -558,8 +557,8 @@ class TestJembiPostJsonTask(AuthenticatedAPITestCase):
             'type': 2,
             'swt': 1
         }
-        json = tasks.build_jembi_json(reg)
-        self.assertEqual(expected_json_chw_hcw, json)
+        payload = tasks.build_jembi_json(reg)
+        self.assertEqual(expected_json_chw_hcw, payload)
 
     def test_build_jembi_json_personal(self):
         registration_personal = self.make_registration(
@@ -577,8 +576,8 @@ class TestJembiPostJsonTask(AuthenticatedAPITestCase):
             'type': 1,
             'swt': 1
         }
-        json = tasks.build_jembi_json(reg)
-        self.assertEqual(expected_json_personal, json)
+        payload = tasks.build_jembi_json(reg)
+        self.assertEqual(expected_json_personal, payload)
 
     @responses.activate
     def test_jembi_post_json(self):
@@ -703,10 +702,11 @@ class TestUpdateCreateVumiContactTask(AuthenticatedAPITestCase):
         contact = tasks.update_create_vumi_contact.apply_async(
             kwargs={"registration_id": registration.data["id"],
                     "client": client})
-        self.assertEqual(contact.get()["msisdn"], "+27001")
-        self.assertEqual(contact.get()["key"], "knownuuid")
-        self.assertEqual(contact.get()["user_account"], "knownaccount")
-        self.assertEqual(contact.get()["extra"], {
+        result = contact.get()
+        self.assertEqual(result["msisdn"], "+27001")
+        self.assertEqual(result["key"], "knownuuid")
+        self.assertEqual(result["user_account"], "knownaccount")
+        self.assertEqual(result["extra"], {
             "is_registered": "true",
             "is_registered_by": "clinic",
             "language_choice": "en",
@@ -742,8 +742,9 @@ class TestUpdateCreateVumiContactTask(AuthenticatedAPITestCase):
         contact = tasks.update_create_vumi_contact.apply_async(
             kwargs={"registration_id": registration.data["id"],
                     "client": client})
-        self.assertEqual(contact.get()["msisdn"], "+27002")
-        self.assertEqual(contact.get()["extra"], {
+        result = contact.get()
+        self.assertEqual(result["msisdn"], "+27002")
+        self.assertEqual(result["extra"], {
             "is_registered": "true",
             "is_registered_by": "chw",
             "language_choice": "xh",
@@ -770,8 +771,9 @@ class TestUpdateCreateVumiContactTask(AuthenticatedAPITestCase):
         contact = tasks.update_create_vumi_contact.apply_async(
             kwargs={"registration_id": registration.data["id"],
                     "client": client})
-        self.assertEqual(contact.get()["msisdn"], "+27001")
-        self.assertEqual(contact.get()["extra"], {
+        result = contact.get()
+        self.assertEqual(result["msisdn"], "+27001")
+        self.assertEqual(result["extra"], {
             "is_registered": "true",
             "is_registered_by": "clinic",
             "language_choice": "af",

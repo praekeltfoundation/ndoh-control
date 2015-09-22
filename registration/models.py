@@ -76,6 +76,7 @@ class Registration(models.Model):
             raise ValidationError(
                 _("Provide an id number in the mom_id_no field."))
         if self.mom_id_type == 'sa_id' and self.mom_dob is None:
+            # TODO #97 Optimise by extracting dob from ID number
             raise ValidationError(
                 _("Provide a date of birth in the mom_dob field."))
         if self.mom_id_type == 'passport' and self.mom_id_no is None:
