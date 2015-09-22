@@ -18,12 +18,11 @@ from registration import tasks
 def override_get_timestamp():
     return "20130819144811"
 
-tasks.get_timestamp = override_get_timestamp
-
 
 def override_get_tomorrow():
     return "2014-01-02"
 
+tasks.get_timestamp = override_get_timestamp
 tasks.get_tomorrow = override_get_tomorrow
 
 
