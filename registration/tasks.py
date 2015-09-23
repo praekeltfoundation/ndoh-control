@@ -10,6 +10,7 @@ from go_http.contacts import ContactsApiClient
 from .models import Registration
 from djcelery.models import PeriodicTask
 from subscription.models import Subscription, MessageSet
+import xml.etree.ElementTree as ET
 
 
 logger = get_task_logger(__name__)
@@ -69,6 +70,77 @@ def build_jembi_json(registration):
         json_template["edd"] = registration.mom_edd.strftime("%Y%m%d")
 
     return json_template
+
+
+def get_uuid():
+    # Complete this (complicated)
+    return
+
+
+def get_clinic_code(clinic_code):
+    if clinic_code:
+        return clinic_code
+    else:
+        # Temp hardcode instructed
+        return '11399'
+
+
+def get_pregnancy_code(authority):
+    if authority == 'chw':
+        return '102874004'
+    else:
+        return '77386006'
+
+
+def get_preg_display_name(authority):
+    if authority == 'chw':
+        return 'Unconfirmed pregnancy'
+    else:
+        return 'Pregnancy confirmed'
+
+
+def get_due_date(edd):
+    if edd:
+        return edd.strftime("%Y%m%d")
+    else:
+        return '17000101'
+
+
+def prep_xml_strings(registration):
+    uuid = get_uuid()  # TODO
+    patient_id = get_patient_id(
+        registration.mom_id_type, registration.mom_id_no,
+        registration.mom_passport_origin, registration.mom_msisdn)
+    contact_msisdn = registration.mom_msisdn
+    birth_time = get_dob(registration.mom_dob)  # TODO nullFlavor
+    lang_code = registration.mom_lang
+    hcw_cell_number = registration.hcw_msisdn  # TODO nullFlavor
+    clinic_code = get_clinic_code(registration.clinic_code)
+    author_timestamp = get_timestamp()
+    effective_timestamp = get_timestamp()
+    app_code = 'PF'
+    app_name = 'Vumi'  # source name?
+    preg_status_code = get_pregnancy_code(registration.authority)
+    preg_display_name = get_preg_display_name(registration.authority)
+    due_date = get_due_date(registration.mom_edd)
+
+    return (uuid, patient_id, contact_msisdn, birth_time, lang_code,
+            hcw_cell_number, clinic_code, author_timestamp,
+            effective_timestamp, app_code, app_name, preg_status_code,
+            preg_display_name, due_date)
+
+
+def make_cda(record_uuid, patient_id, contact_msisdn, birth_time, lang_code,
+             hcw_cell_number, clinic_code, author_timestamp,
+             effective_timestamp, app_code, app_name, preg_status_code,
+             preg_display_name, due_date):
+    return 'success'
+
+
+def build_jembi_xml(registration):
+    xml_strings = prep_xml_strings(registration)
+    xml_doc = make_cda(*xml_strings)
+    return xml_doc
 
 
 def get_tomorrow():
@@ -225,7 +297,7 @@ def create_subscription(contact):
 
 @task()
 def jembi_post_json(registration_id):
-    """ Task to send registrations to Jembi"""
+    """ Task to send registrations Json to Jembi"""
 
     logger.info("Compiling Jembi Json data")
     try:
@@ -240,6 +312,39 @@ def jembi_post_json(registration_id):
                 auth=(settings.JEMBI_USERNAME, settings.JEMBI_PASSWORD),
                 verify=False
             )
+            return result.text
+        except:
+            logger.error('Problem connecting to Jembi', exc_info=True)
+
+    except ObjectDoesNotExist:
+        logger.error('Missing Registration object', exc_info=True)
+
+    except SoftTimeLimitExceeded:
+        logger.error(
+            'Soft time limit exceeded processing Jembi send via Celery.',
+            exc_info=True)
+
+
+@task()
+def jembi_post_xml(registration_id):
+    """ Task to send clinic & chw registrations XML to Jembi"""
+
+    logger.info("Compiling Jembi XML data")
+    try:
+        registration = Registration.objects.get(pk=registration_id)
+        xml_doc = build_jembi_xml(registration)
+
+        api_url = "%s/registration/net.ihe/DocumentDossier" % (
+            settings.JEMBI_BASE_URL)
+        headers = {
+            'Accept-Encoding': 'gzip',
+            'Content-Type': 'multipart/form-data; boundary=yolo'
+        }
+        auth = (settings.JEMBI_USERNAME, settings.JEMBI_PASSWORD)
+
+        try:
+            result = requests.post(api_url, headers=headers, data=xml_doc,
+                                   auth=auth, verify=False)
             return result.text
         except:
             logger.error('Problem connecting to Jembi', exc_info=True)

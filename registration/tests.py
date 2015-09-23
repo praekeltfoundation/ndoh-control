@@ -594,6 +594,21 @@ class TestJembiPostJsonTask(AuthenticatedAPITestCase):
         self.assertEqual(task_response.get(), 'jembi_post_json task')
 
 
+class TestJembiPostXmlTask(AuthenticatedAPITestCase):
+
+    def test_get_dob(self):
+        self.make_registration(post_data=TEST_REG_DATA["clinic_self"])
+        reg = Registration.objects.last()
+        birth_time = tasks.get_dob(reg.mom_dob)
+        self.assertEqual(birth_time, "19800915")
+
+        self.make_registration(post_data=TEST_REG_DATA["clinic_hcw"])
+        reg = Registration.objects.last()
+        birth_time = tasks.get_dob(reg.mom_dob)
+        self.assertEqual(birth_time, None)
+
+
+
 class TestUpdateCreateVumiContactTask(AuthenticatedAPITestCase):
 
     def test_week_calc(self):
