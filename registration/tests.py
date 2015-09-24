@@ -493,7 +493,7 @@ class TestRegistrationsAPI(AuthenticatedAPITestCase):
                       content_type='application/json')
         responses.add(responses.POST,
                       "http://test/v2/registration/net.ihe/DocumentDossier",
-                      body='jembi_post_xml task', status=201,
+                      body="Request added to queue", status=202,
                       content_type='application/json')
 
         # Set up the client
