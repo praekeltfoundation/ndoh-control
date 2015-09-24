@@ -608,7 +608,6 @@ class TestJembiPostXmlTask(AuthenticatedAPITestCase):
         self.assertEqual(birth_time, None)
 
 
-
 class TestUpdateCreateVumiContactTask(AuthenticatedAPITestCase):
 
     def test_week_calc(self):
