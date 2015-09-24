@@ -22,7 +22,7 @@ def override_get_today():
 
 
 def override_get_tomorrow():
-    return "2014-01-02"
+    return "2013-08-20"
 
 
 tasks.get_today = override_get_today
@@ -188,7 +188,7 @@ TEST_CONTACT_DATA = {
     u"user_account": u"knownaccount",
     u"extra": {
         u"last_service_rating": u"now",
-        u"service_rating_reminder": "2015-02-01",
+        u"service_rating_reminder": "2013-08-20",
         u"service_rating_reminders": "0",
     }
 }
@@ -357,7 +357,7 @@ class TestContactsAPI(AuthenticatedAPITestCase):
                 # Note the whole extra dict needs passing in
                 u"extra": {
                     u"last_service_rating": u"now",
-                    u"service_rating_reminder": "2015-02-01",
+                    u"service_rating_reminder": "2013-08-20",
                     u"service_rating_reminders": "0",
                 }
             }
@@ -380,7 +380,7 @@ class TestContactsAPI(AuthenticatedAPITestCase):
                 u'language_choice': u'en',
                 u'last_service_rating': 'never',
                 u'sa_id': u'8009151234001',
-                u'service_rating_reminder': '2014-01-02',
+                u'service_rating_reminder': "2013-08-20",
                 u'service_rating_reminders': '0',
                 u'source_name': u'Test Source'
             }
@@ -757,7 +757,7 @@ class TestUpdateCreateVumiContactTask(AuthenticatedAPITestCase):
             "dob": "1980-09-15",
             "last_service_rating": "never",
             "service_rating_reminders": "0",
-            "service_rating_reminder": "2014-01-02",
+            "service_rating_reminder": "2013-08-20",
             "edd": "2015-08-01",
             "due_date_year": "2015",
             "due_date_month": "08",
@@ -824,7 +824,7 @@ class TestUpdateCreateVumiContactTask(AuthenticatedAPITestCase):
             "clinic_code": "12345",
             "last_service_rating": "never",
             "service_rating_reminders": "0",
-            "service_rating_reminder": "2014-01-02",
+            "service_rating_reminder": "2013-08-20",
             "registered_by": "+27820010001",
             "edd": "2015-09-01",
             "due_date_year": "2015",
