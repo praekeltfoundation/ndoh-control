@@ -491,12 +491,10 @@ class TestRegistrationsAPI(AuthenticatedAPITestCase):
         post_save.connect(fire_jembi_post, sender=Registration)
 
         # Check number of subscriptions before task fire
-        subscriptions = Subscription.objects.all()
-        self.assertEqual(len(subscriptions), 1)
+        self.assertEqual(Subscription.objects.all().count(), 1)
 
         # Check there are no pre-existing registration objects
-        d = Registration.objects.all()
-        self.assertEqual(len(d), 0)
+        self.assertEqual(Registration.objects.all().count(), 0)
 
         responses.add(responses.POST,
                       "http://test/v2/json/subscription",
@@ -519,7 +517,7 @@ class TestRegistrationsAPI(AuthenticatedAPITestCase):
 
         # Test there is now a registration object in the database
         d = Registration.objects.all()
-        self.assertEqual(len(d), 1)
+        self.assertEqual(Registration.objects.all().count(), 1)
 
         # Test the registration object is the one you added
         d = Registration.objects.last()
@@ -535,8 +533,7 @@ class TestRegistrationsAPI(AuthenticatedAPITestCase):
             "http://test/v2/registration/net.ihe/DocumentDossier")
 
         # Test number of subscriptions after task fire
-        subscriptions = Subscription.objects.all()
-        self.assertEqual(len(subscriptions), 2)
+        self.assertEqual(Subscription.objects.all().count(), 2)
 
         # Test subscription object is the one you added
         d = Subscription.objects.last()
