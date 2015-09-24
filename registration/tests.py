@@ -1,5 +1,6 @@
 import json
 import responses
+from datetime import datetime
 from django.contrib.auth.models import User
 from django.test import TestCase
 from django.db.models.signals import post_save
@@ -12,17 +13,19 @@ from requests_testadapter import TestSession, Resp
 from go_http.contacts import ContactsApiClient
 from fake_go_contacts import Request, FakeContactsApi
 from .models import Source, Registration, fire_jembi_post
+from subscription.models import Subscription
 from registration import tasks
 
 
-def override_get_timestamp():
-    return "20130819144811"
+def override_get_today():
+    return datetime.strptime("20130819144811", "%Y%m%d%H%M%S")
 
 
 def override_get_tomorrow():
-    return "2014-01-02"
+    return "2013-08-20"
 
-tasks.get_timestamp = override_get_timestamp
+
+tasks.get_today = override_get_today
 tasks.get_tomorrow = override_get_tomorrow
 
 
@@ -185,7 +188,7 @@ TEST_CONTACT_DATA = {
     u"user_account": u"knownaccount",
     u"extra": {
         u"last_service_rating": u"now",
-        u"service_rating_reminder": "2015-02-01",
+        u"service_rating_reminder": "2013-08-20",
         u"service_rating_reminders": "0",
     }
 }
@@ -270,6 +273,9 @@ class AuthenticatedAPITestCase(APITestCase):
         return ContactsApiClient(auth_token=AUTH_TOKEN, api_url=API_URL,
                                  session=self.session)
 
+    def override_get_client(self):
+            return self.make_client()
+
     def make_existing_contact(self, contact_data=TEST_CONTACT_DATA):
         existing_contact = make_contact_dict(contact_data)
         self.contacts_data[existing_contact[u"key"]] = existing_contact
@@ -351,7 +357,7 @@ class TestContactsAPI(AuthenticatedAPITestCase):
                 # Note the whole extra dict needs passing in
                 u"extra": {
                     u"last_service_rating": u"now",
-                    u"service_rating_reminder": "2015-02-01",
+                    u"service_rating_reminder": "2013-08-20",
                     u"service_rating_reminders": "0",
                 }
             }
@@ -361,7 +367,23 @@ class TestContactsAPI(AuthenticatedAPITestCase):
     def test_create_contact(self):
         client = self.make_client()
         created_contact = client.create_contact({
-            u"msisdn": "+111"
+            u"msisdn": "+111",
+            u"extra": {
+                u'clinic_code': u'12345',
+                u'dob': '1980-09-15',
+                u'due_date_day': '01',
+                u'due_date_month': '08',
+                u'due_date_year': '2015',
+                u'edd': '2015-08-01',
+                u'is_registered': 'true',
+                u'is_registered_by': u'clinic',
+                u'language_choice': u'en',
+                u'last_service_rating': 'never',
+                u'sa_id': u'8009151234001',
+                u'service_rating_reminder': "2013-08-20",
+                u'service_rating_reminders': '0',
+                u'source_name': u'Test Source'
+            }
         })
         self.assertEqual(created_contact["msisdn"], "+111")
         self.assertIsNotNone(created_contact["key"])
@@ -449,31 +471,47 @@ class TestRegistrationsAPI(AuthenticatedAPITestCase):
         # restore the post_save hooks just for this test
         post_save.connect(fire_jembi_post, sender=Registration)
 
+        # Check number of subscriptions before task fire
+        self.assertEqual(Subscription.objects.all().count(), 1)
+
+        # Check there are no pre-existing registration objects
+        self.assertEqual(Registration.objects.all().count(), 0)
+
         responses.add(responses.POST,
                       "http://test/v2/json/subscription",
                       body='jembi_post_json task', status=201,
                       content_type='application/json')
 
+        # Set up the client
+        tasks.get_client = self.override_get_client
+
         # Make a new registration
         reg_response = self.make_registration(
             post_data=TEST_REG_DATA["clinic_self"])
 
-        # Test registration object has been created
+        # Test registration object has been created successfully
         self.assertEqual(reg_response.status_code, status.HTTP_201_CREATED)
+
+        # Test there is now a registration object in the database
+        d = Registration.objects.all()
+        self.assertEqual(Registration.objects.all().count(), 1)
+
+        # Test the registration object is the one you added
         d = Registration.objects.last()
         self.assertEqual(d.mom_id_type, 'sa_id')
 
-        # Test post has been made to jembi
-        self.assertEqual(len(responses.calls), 3)
+        # Test json post request has been made to jembi
+        self.assertEqual(len(responses.calls), 1)
         self.assertEqual(
             responses.calls[0].request.url,
             "http://test/v2/json/subscription")
-        self.assertEqual(
-            responses.calls[1].request.url,
-            "http://vumi_go_test/contacts/?query=msisdn%3D%2B27001")
-        self.assertEqual(
-            responses.calls[2].request.url,
-            "http://vumi_go_test/contacts/")
+
+        # Test number of subscriptions after task fire
+        self.assertEqual(Subscription.objects.all().count(), 2)
+
+        # Test subscription object is the one you added
+        d = Subscription.objects.last()
+        self.assertEqual(d.to_addr, "+27001")
 
         # remove post_save hooks to prevent teardown errors
         post_save.disconnect(fire_jembi_post, sender=Registration)
@@ -595,9 +633,102 @@ class TestJembiPostJsonTask(AuthenticatedAPITestCase):
 
 class TestUpdateCreateVumiContactTask(AuthenticatedAPITestCase):
 
+    def test_week_calc(self):
+        weeks = tasks.get_pregnancy_week(datetime(2014, 7, 13), "2014-07-14")
+        self.assertEqual(weeks, 40)
+        weeks = tasks.get_pregnancy_week(datetime(2014, 7, 6), "2014-07-14")
+        self.assertEqual(weeks, 39)
+        weeks = tasks.get_pregnancy_week(datetime(2014, 6, 29), "2014-07-14")
+        self.assertEqual(weeks, 38)
+        weeks = tasks.get_pregnancy_week(datetime(2014, 1, 1), "2014-09-21")
+        self.assertEqual(weeks, 3)
+        weeks = tasks.get_pregnancy_week(datetime(2014, 1, 1), "2014-10-03")
+        self.assertEqual(weeks, 2)
+
+        weeks = tasks.get_pregnancy_week(datetime(2013, 8, 19), "2013-08-20")
+        self.assertEqual(weeks, 40)
+        weeks = tasks.get_pregnancy_week(datetime(2013, 8, 19), "2013-08-27")
+        self.assertEqual(weeks, 39)
+        weeks = tasks.get_pregnancy_week(datetime(2013, 8, 19), "2013-09-03")
+        self.assertEqual(weeks, 38)
+        weeks = tasks.get_pregnancy_week(datetime(2013, 8, 19), "2013-09-10")
+        self.assertEqual(weeks, 37)
+        weeks = tasks.get_pregnancy_week(datetime(2013, 8, 19), "2013-09-17")
+        self.assertEqual(weeks, 36)
+        weeks = tasks.get_pregnancy_week(datetime(2013, 8, 19), "2013-09-24")
+        self.assertEqual(weeks, 35)
+        weeks = tasks.get_pregnancy_week(datetime(2013, 8, 19), "2013-10-15")
+        self.assertEqual(weeks, 32)
+        weeks = tasks.get_pregnancy_week(datetime(2013, 8, 19), "2013-10-22")
+        self.assertEqual(weeks, 31)
+        weeks = tasks.get_pregnancy_week(datetime(2013, 8, 19), "2014-04-24")
+        self.assertEqual(weeks, 5)
+        weeks = tasks.get_pregnancy_week(datetime(2013, 8, 19), "2014-05-07")
+        self.assertEqual(weeks, 3)
+
+    def test_sub_details(self):
+        contact = {"extra": {"is_registered_by": "personal"}}
+        sub_details = tasks.get_subscription_details(contact)
+        self.assertEqual(sub_details, ("subscription", "two_per_week", 1))
+
+        contact = {"extra": {"is_registered_by": "chw"}}
+        sub_details = tasks.get_subscription_details(contact)
+        self.assertEqual(sub_details, ("chw", "two_per_week", 1))
+
+        contact_40 = {"extra": {"is_registered_by": "clinic",
+                                "edd": "2013-08-20"}}
+        sub_details = tasks.get_subscription_details(contact_40)
+        self.assertEqual(sub_details, ("accelerated", "daily", 1))
+
+        contact_39 = {"extra": {"is_registered_by": "clinic",
+                                "edd": "2013-08-27"}}
+        sub_details = tasks.get_subscription_details(contact_39)
+        self.assertEqual(sub_details, ("accelerated", "daily", 1))
+
+        contact_38 = {"extra": {"is_registered_by": "clinic",
+                                "edd": "2013-09-03"}}
+        sub_details = tasks.get_subscription_details(contact_38)
+        self.assertEqual(sub_details, ("accelerated", "five_per_week", 1))
+
+        contact_37 = {"extra": {"is_registered_by": "clinic",
+                                "edd": "2013-09-10"}}
+        sub_details = tasks.get_subscription_details(contact_37)
+        self.assertEqual(sub_details, ("accelerated", "four_per_week", 1))
+
+        contact_36 = {"extra": {"is_registered_by": "clinic",
+                                "edd": "2013-09-17"}}
+        sub_details = tasks.get_subscription_details(contact_36)
+        self.assertEqual(sub_details, ("accelerated", "three_per_week", 1))
+
+        contact_35 = {"extra": {"is_registered_by": "clinic",
+                                "edd": "2013-09-24"}}
+        sub_details = tasks.get_subscription_details(contact_35)
+        self.assertEqual(sub_details, ("later", "three_per_week", 13))
+
+        contact_32 = {"extra": {"is_registered_by": "clinic",
+                                "edd": "2013-10-15"}}
+        sub_details = tasks.get_subscription_details(contact_32)
+        self.assertEqual(sub_details, ("later", "three_per_week", 4))
+
+        contact_31 = {"extra": {"is_registered_by": "clinic",
+                                "edd": "2013-10-22"}}
+        sub_details = tasks.get_subscription_details(contact_31)
+        self.assertEqual(sub_details, ("standard", "two_per_week", 53))
+
+        contact_05 = {"extra": {"is_registered_by": "clinic",
+                                "edd": "2014-04-24"}}
+        sub_details = tasks.get_subscription_details(contact_05)
+        self.assertEqual(sub_details, ("standard", "two_per_week", 1))
+
+        contact_03 = {"extra": {"is_registered_by": "clinic",
+                                "edd": "2014-05-07"}}
+        sub_details = tasks.get_subscription_details(contact_03)
+        self.assertEqual(sub_details, ("standard", "two_per_week", 1))
+
     def test_update_vumi_contact(self):
         registration = self.make_registration(
             post_data=TEST_REG_DATA["clinic_self"])
+
         client = self.make_client()
         self.make_existing_contact({
             u"key": u"knownuuid",
@@ -623,11 +754,14 @@ class TestUpdateCreateVumiContactTask(AuthenticatedAPITestCase):
             "dob": "1980-09-15",
             "last_service_rating": "never",
             "service_rating_reminders": "0",
-            "service_rating_reminder": "2014-01-02",
+            "service_rating_reminder": "2013-08-20",
             "edd": "2015-08-01",
             "due_date_year": "2015",
             "due_date_month": "08",
             "due_date_day": "01",
+            "subscription_type": "1",
+            "subscription_rate": "3",
+            "subscription_seq_start": "1"
         })
 
     def test_create_vumi_contact_1(self):
@@ -654,6 +788,9 @@ class TestUpdateCreateVumiContactTask(AuthenticatedAPITestCase):
             "language_choice": "xh",
             "source_name": "Test Source",
             "dob": "1980-10-15",
+            "subscription_type": "10",
+            "subscription_rate": "3",
+            "subscription_seq_start": "1"
         })
 
     def test_create_vumi_contact_2(self):
@@ -684,10 +821,27 @@ class TestUpdateCreateVumiContactTask(AuthenticatedAPITestCase):
             "clinic_code": "12345",
             "last_service_rating": "never",
             "service_rating_reminders": "0",
-            "service_rating_reminder": "2014-01-02",
+            "service_rating_reminder": "2013-08-20",
             "registered_by": "+27820010001",
             "edd": "2015-09-01",
             "due_date_year": "2015",
             "due_date_month": "09",
             "due_date_day": "01",
+            "subscription_type": "1",
+            "subscription_rate": "3",
+            "subscription_seq_start": "1"
         })
+
+    def test_create_subscription(self):
+        contact_35 = {
+            "key": "knownkey",
+            "msisdn": "knownaddr",
+            "user_account": "knownaccount",
+            "extra": {
+                "language_choice": "en",
+                "is_registered_by": "clinic",
+                "edd": "2013-09-24"
+            }
+        }
+        subscription = tasks.create_subscription(contact_35)
+        self.assertEqual(subscription.to_addr, "knownaddr")

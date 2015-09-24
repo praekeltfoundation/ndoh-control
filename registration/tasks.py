@@ -8,13 +8,24 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.conf import settings
 from go_http.contacts import ContactsApiClient
 from .models import Registration
+from djcelery.models import PeriodicTask
+from subscription.models import Subscription, MessageSet
 
 
 logger = get_task_logger(__name__)
 
 
+def get_client():
+    return ContactsApiClient(settings.VUMI_GO_API_TOKEN,
+                             api_url=settings.VUMI_GO_BASE_URL)
+
+
+def get_today():
+    return datetime.today()
+
+
 def get_timestamp():
-    return datetime.today().strftime("%Y%m%d%H%M%S")
+    return get_today().strftime("%Y%m%d%H%M%S")
 
 
 def get_dob(mom_dob):
@@ -70,7 +81,7 @@ def get_tomorrow():
             ).strftime("%Y%m%d")
 
 
-def define_extras(_extras, registration):
+def define_extras_registration(_extras, registration):
     # Set up the new extras
     _extras[u"is_registered"] = "true"
     _extras[u"is_registered_by"] = registration.authority
@@ -98,10 +109,26 @@ def define_extras(_extras, registration):
     return _extras
 
 
-def update_contact(contact, registration, client):
+def define_extras_subscription(_extras, subscription):
+    # Set up the new extras
+    _extras[u"subscription_type"] = str(subscription.message_set.id)
+    _extras[u"subscription_rate"] = str(subscription.schedule.id)
+    _extras[u"subscription_seq_start"] = str(subscription.next_sequence_number)
+    return _extras
+
+
+def update_contact_registration(contact, registration, client):
     # Setup new values - only extras need updating
     existing_extras = contact["extra"]
-    _extras = define_extras(existing_extras, registration)
+    _extras = define_extras_registration(existing_extras, registration)
+    update_data = {u"extra": _extras}
+    return client.update_contact(contact["key"], update_data)
+
+
+def update_contact_subscription(contact, subscription, client):
+    # Setup new values - only extras need updating
+    existing_extras = contact["extra"]
+    _extras = define_extras_subscription(existing_extras, subscription)
     update_data = {u"extra": _extras}
     return client.update_contact(contact["key"], update_data)
 
@@ -110,9 +137,95 @@ def create_contact(registration, client):
     contact_data = {
         u"msisdn": registration.mom_msisdn
     }
-    _extras = define_extras({}, registration)
+    _extras = define_extras_registration({}, registration)
     contact_data[u"extra"] = _extras
     return client.create_contact(contact_data)
+
+
+def get_pregnancy_week(today, edd):
+    """ Calculate how far along the mother's prenancy is in weeks. """
+    due_date = datetime.strptime(edd, "%Y-%m-%d")
+    time_diff = due_date - today
+    time_diff_weeks = time_diff.days / 7
+    preg_weeks = 40 - time_diff_weeks
+    # You can't be less than two week pregnant
+    if preg_weeks <= 1:
+        preg_weeks = 2  # changed from JS's 'false' to achieve same result
+    return preg_weeks
+
+
+def clinic_sub_map(weeks):
+    """ Calculate clinic message set, sending rate & starting point. """
+
+    # Set commonly used values
+    msg_set = "accelerated"
+    seq_start = 1
+
+    # Calculate specific values
+    if weeks <= 4:
+        msg_set = "standard"
+        sub_rate = "two_per_week"
+    elif weeks <= 31:
+        msg_set = "standard"
+        sub_rate = "two_per_week"
+        seq_start = ((weeks-4)*2)-1
+    elif weeks <= 35:
+        msg_set = "later"
+        sub_rate = "three_per_week"
+        seq_start = ((weeks-30)*3)-2
+    elif weeks == 36:
+        sub_rate = "three_per_week"
+    elif weeks == 37:
+        sub_rate = "four_per_week"
+    elif weeks == 38:
+        sub_rate = "five_per_week"
+    else:
+        sub_rate = "daily"
+
+    return msg_set, sub_rate, seq_start
+
+
+def get_subscription_details(contact):
+    msg_set = None,
+    sub_rate = "two_per_week"
+    seq_start = 1
+    if contact["extra"]["is_registered_by"] == "personal":
+        msg_set = "subscription"
+    if contact["extra"]["is_registered_by"] == "chw":
+        msg_set = "chw"
+    if contact["extra"]["is_registered_by"] == "clinic":
+        preg_weeks = get_pregnancy_week(get_today(), contact["extra"]["edd"])
+        msg_set, sub_rate, seq_start = clinic_sub_map(preg_weeks)
+
+    return msg_set, sub_rate, seq_start
+
+
+def create_subscription(contact):
+    """ Create new Control messaging subscription"""
+
+    logger.info("Creating new Control messaging subscription")
+    try:
+        sub_details = get_subscription_details(contact)
+
+        subscription = Subscription(
+            contact_key=contact["key"],
+            to_addr=contact["msisdn"],
+            user_account=contact["user_account"],
+            lang=contact["extra"]["language_choice"],
+            message_set=MessageSet.objects.get(short_name=sub_details[0]),
+            schedule=PeriodicTask.objects.get(
+                id=settings.SUBSCRIPTION_RATES[sub_details[1]]),
+            next_sequence_number=sub_details[2],
+        )
+        subscription.save()
+        logger.info("Created subscription for %s" % subscription.to_addr)
+
+        return subscription
+
+    except:
+        logger.error(
+            'Error creating Subscription instance',
+            exc_info=True)
 
 
 @task()
@@ -150,10 +263,10 @@ def update_create_vumi_contact(registration_id, client=None):
     """ Task to update or create a Vumi contact when a registration
         is created.
     """
+    logger.info("Creating / Updating Contact")
     try:
         if client is None:
-            client = ContactsApiClient(settings.VUMI_GO_API_TOKEN,
-                                       api_url=settings.VUMI_GO_BASE_URL)
+            client = get_client()
 
         # Load the registration
         try:
@@ -163,16 +276,34 @@ def update_create_vumi_contact(registration_id, client=None):
                 # Get and update the contact if it exists
                 contact = client.get_contact(
                     msisdn=registration.mom_msisdn)
-                updated_contact = update_contact(
+                logger.info("Contact exists - updating contact")
+                updated_contact = update_contact_registration(
                     contact, registration, client)
+
+                # Create new subscription for the contact
+                subscription = create_subscription(updated_contact)
+
+                # Update the contact with subscription details
+                updated_contact = update_contact_subscription(
+                    contact, subscription, client)
+
                 return updated_contact
 
             # This exception should rather look for a 404 if the contact is
             # not found, but currently a Bad Request is returned.
             except:
                 # Create the contact as it doesn't exist
+                logger.info("Contact doesn't exist - creating new contact")
                 contact = create_contact(registration, client)
-                return contact
+
+                # Create new subscription for the contact
+                subscription = create_subscription(contact)
+
+                # Update the contact with subscription details
+                updated_contact = update_contact_subscription(
+                    contact, subscription, client)
+
+                return updated_contact
 
         except ObjectDoesNotExist:
             logger.error('Missing Registration object', exc_info=True)
