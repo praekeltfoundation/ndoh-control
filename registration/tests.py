@@ -192,6 +192,10 @@ TEST_CONTACT_DATA = {
         u"service_rating_reminders": "0",
     }
 }
+# TEST_GROUP_DATA = {
+#     u"key": u"en_key",
+#     u"name": u"en"
+# }
 API_URL = "http://example.com/go"
 AUTH_TOKEN = "auth_token"
 MAX_CONTACTS_PER_PAGE = 10
@@ -230,6 +234,7 @@ class FakeContactsApiAdapter(HTTPAdapter):
         return r
 
 make_contact_dict = FakeContactsApi.make_contact_dict
+# make_group_dict = FakeContactsApi.make_group_dict
 
 
 class AuthenticatedAPITestCase(APITestCase):
@@ -280,6 +285,11 @@ class AuthenticatedAPITestCase(APITestCase):
         existing_contact = make_contact_dict(contact_data)
         self.contacts_data[existing_contact[u"key"]] = existing_contact
         return existing_contact
+
+    # def make_existing_group(self, group_data=TEST_GROUP_DATA):
+    #     existing_group = make_group_dict(group_data)
+    #     self.contacts_data[existing_group[u"key"]] = existing_group
+    #     return existing_group
 
     def setUp(self):
         super(AuthenticatedAPITestCase, self).setUp()
@@ -387,6 +397,15 @@ class TestContactsAPI(AuthenticatedAPITestCase):
         })
         self.assertEqual(created_contact["msisdn"], "+111")
         self.assertIsNotNone(created_contact["key"])
+        self.assertEqual(1, 2)
+
+    def test_get_group_by_key(self):
+        client = self.make_client()
+        existing_group = client.create_group({
+            "name": 'groupname'
+            })
+        group = client.get_group(existing_group[u'key'])
+        self.assertEqual(group, existing_group)
 
 
 class TestRegistrationsAPI(AuthenticatedAPITestCase):
