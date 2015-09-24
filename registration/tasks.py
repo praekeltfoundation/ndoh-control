@@ -151,7 +151,7 @@ def make_cda(record_uuid, patient_id, contact_msisdn, birth_time, lang_code,
              effective_timestamp, app_code, app_name, preg_status_code,
              preg_display_name, due_date):
 
-    tree = etree.parse('CDA_template.xml')
+    tree = etree.parse('registration/CDA_template.xml')
     root = tree.getroot()
 
     # # id uniqueId

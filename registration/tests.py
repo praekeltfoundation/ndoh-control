@@ -483,6 +483,10 @@ class TestRegistrationsAPI(AuthenticatedAPITestCase):
                       "http://test/v2/json/subscription",
                       body='jembi_post_json task', status=201,
                       content_type='application/json')
+        responses.add(responses.POST,
+                      "http://test/v2/registration/net.ihe/DocumentDossier",
+                      body='jembi_post_xml task', status=201,
+                      content_type='application/json')
 
         # Set up the client
         tasks.get_client = self.override_get_client
@@ -502,11 +506,14 @@ class TestRegistrationsAPI(AuthenticatedAPITestCase):
         d = Registration.objects.last()
         self.assertEqual(d.mom_id_type, 'sa_id')
 
-        # Test json post request has been made to jembi
-        self.assertEqual(len(responses.calls), 1)
+        # Test post requests has been made to Jembi
+        self.assertEqual(len(responses.calls), 2)
         self.assertEqual(
             responses.calls[0].request.url,
             "http://test/v2/json/subscription")
+        self.assertEqual(
+            responses.calls[1].request.url,
+            "http://test/v2/registration/net.ihe/DocumentDossier")
 
         # Test number of subscriptions after task fire
         subscriptions = Subscription.objects.all()
