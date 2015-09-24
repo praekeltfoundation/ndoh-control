@@ -481,6 +481,10 @@ class TestRegistrationsAPI(AuthenticatedAPITestCase):
                       "http://test/v2/json/subscription",
                       body='jembi_post_json task', status=201,
                       content_type='application/json')
+        responses.add(responses.POST,
+                      "http://test/v2/registration/net.ihe/DocumentDossier",
+                      body="Request added to queue", status=202,
+                      content_type='application/json')
 
         # Set up the client
         tasks.get_client = self.override_get_client
@@ -500,11 +504,14 @@ class TestRegistrationsAPI(AuthenticatedAPITestCase):
         d = Registration.objects.last()
         self.assertEqual(d.mom_id_type, 'sa_id')
 
-        # Test json post request has been made to jembi
-        self.assertEqual(len(responses.calls), 1)
+        # Test post requests has been made to Jembi
+        self.assertEqual(len(responses.calls), 2)
         self.assertEqual(
             responses.calls[0].request.url,
             "http://test/v2/json/subscription")
+        self.assertEqual(
+            responses.calls[1].request.url,
+            "http://test/v2/registration/net.ihe/DocumentDossier")
 
         # Test number of subscriptions after task fire
         self.assertEqual(Subscription.objects.all().count(), 2)
@@ -629,6 +636,20 @@ class TestJembiPostJsonTask(AuthenticatedAPITestCase):
         task_response = tasks.jembi_post_json.apply_async(
             kwargs={"registration_id": registration.data["id"]})
         self.assertEqual(task_response.get(), 'jembi_post_json task')
+
+
+class TestJembiPostXmlTask(AuthenticatedAPITestCase):
+
+    def test_get_dob(self):
+        self.make_registration(post_data=TEST_REG_DATA["clinic_self"])
+        reg = Registration.objects.last()
+        birth_time = tasks.get_dob(reg.mom_dob)
+        self.assertEqual(birth_time, "19800915")
+
+        self.make_registration(post_data=TEST_REG_DATA["clinic_hcw"])
+        reg = Registration.objects.last()
+        birth_time = tasks.get_dob(reg.mom_dob)
+        self.assertEqual(birth_time, None)
 
 
 class TestUpdateCreateVumiContactTask(AuthenticatedAPITestCase):

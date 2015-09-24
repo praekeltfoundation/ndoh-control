@@ -1,7 +1,10 @@
 import requests
 import json
+import uuid
+import hashlib
 from datetime import datetime
 from celery import task
+from lxml import etree
 from celery.utils.log import get_task_logger
 from celery.exceptions import SoftTimeLimitExceeded
 from django.core.exceptions import ObjectDoesNotExist
@@ -44,7 +47,7 @@ def get_subscription_type(authority):
     return authority_map[authority]
 
 
-def get_patient_id(id_type, id_no, passport_origin, mom_msisdn):
+def get_patient_id(id_type, id_no=None, passport_origin=None, mom_msisdn=None):
     if id_type == 'sa_id':
         return id_no + "^^^ZAF^NI"
     elif id_type == 'passport':
@@ -74,6 +77,227 @@ def build_jembi_json(registration):
         json_template["edd"] = registration.mom_edd.strftime("%Y%m%d")
 
     return json_template
+
+
+def get_uuid():
+    return '%s' % uuid.uuid4()
+
+
+def get_oid():
+    return '2.25.%s' % uuid.uuid4().int
+
+
+def get_clinic_code(clinic_code):
+    if clinic_code:
+        return clinic_code
+    else:
+        # Temp hardcode instructed
+        return '11399'
+
+
+def get_pregnancy_code(authority):
+    if authority == 'chw':
+        return '102874004'
+    else:
+        return '77386006'
+
+
+def get_preg_display_name(authority):
+    if authority == 'chw':
+        return 'Unconfirmed pregnancy'
+    else:
+        return 'Pregnancy confirmed'
+
+
+def get_due_date(edd):
+    if edd:
+        return edd.strftime("%Y%m%d")
+    else:
+        return '17000101'
+
+
+def prep_xml_strings(registration):
+    uuid = get_uuid()
+    patient_id = get_patient_id(
+        registration.mom_id_type, registration.mom_id_no,
+        registration.mom_passport_origin, registration.mom_msisdn)
+    contact_msisdn = registration.mom_msisdn
+    birth_time = get_dob(registration.mom_dob)
+    lang_code = registration.mom_lang
+    hcw_cell_number = registration.hcw_msisdn
+    clinic_code = get_clinic_code(registration.clinic_code)
+    author_timestamp = get_timestamp()
+    effective_timestamp = get_timestamp()
+    app_code = 'PF'
+    app_name = 'Vumi'
+    preg_status_code = get_pregnancy_code(registration.authority)
+    preg_display_name = get_preg_display_name(registration.authority)
+    due_date = get_due_date(registration.mom_edd)
+
+    return (uuid, patient_id, contact_msisdn, birth_time, lang_code,
+            hcw_cell_number, clinic_code, author_timestamp,
+            effective_timestamp, app_code, app_name, preg_status_code,
+            preg_display_name, due_date)
+
+
+def build_jembi_xml(registration):
+    xml_strings = prep_xml_strings(registration)
+    cda = make_cda(*xml_strings)
+    return cda
+
+
+def make_cda(record_uuid, patient_id, contact_msisdn, birth_time, lang_code,
+             hcw_cell_number, clinic_code, author_timestamp,
+             effective_timestamp, app_code, app_name, preg_status_code,
+             preg_display_name, due_date):
+
+    tree = etree.parse('registration/CDA_template.xml')
+    root = tree.getroot()
+
+    # # id uniqueId
+    root_id = root.find('id')
+    root_id.set('root', record_uuid)
+
+    record_target_element = root.find('recordTarget')
+    patient_role_element = record_target_element.find('patientRole')
+
+    # id patient
+    patient_id_element = patient_role_element.find('id')
+    patient_id_element.set('extension', patient_id)
+
+    # patient cell number
+    contact_msisdn_element = patient_role_element.find('telecom')
+    contact_msisdn_element.set('value', "tel:%s" % contact_msisdn)
+
+    # birth time
+    patient_element = patient_role_element.find('patient')
+    birth_time_element = patient_element.find('birthTime')
+    if birth_time is not None:
+        birth_time_element.set('value', birth_time)
+    else:
+        birth_time_element.set('nullFlavor', "NI")
+
+    # language code
+    lang_comm_element = patient_element.find('languageCommunication')
+    lang_code_element = lang_comm_element.find('languageCode')
+    lang_code_element.set('code', lang_code)
+
+    # hcw cell number
+    hcw_author_element = root.find('author')
+    assigned_author_element = hcw_author_element.find('assignedAuthor')
+    hcw_msisdn_element = assigned_author_element.find('telecom')
+    if hcw_cell_number is not None:
+        hcw_msisdn_element.set('value', "tel:%s" % hcw_cell_number)
+    else:
+        hcw_msisdn_element.set('nullFlavor', "NI")
+
+    # id clinic
+    rep_org_element = assigned_author_element.find('representedOrganization')
+    clinic_code_element = rep_org_element.find('id')
+    clinic_code_element.set('extension', clinic_code)
+
+    # author time
+    for time_element in root.iter('time'):
+        time_element.set('value', author_timestamp)
+
+    # effective time
+    for effective_time_element in root.iter('effectiveTime'):
+        effective_time_element.set('value', effective_timestamp)
+
+    # application code & software name
+    for authoring_device_element in root.iter('assignedAuthoringDevice'):
+        application_code_element = authoring_device_element.find('code')
+        application_code_element.set('code', app_code)
+        software_name_element = authoring_device_element.find('softwareName')
+        software_name_element.text = app_name
+
+    # pregnancy status code, pregnancy display name, due date
+    for entry_element in root.iter('entry'):
+        observation_element = entry_element.find('observation')
+        value_element = observation_element.find('value')
+        value_element.set('code', preg_status_code)
+        value_element.set('displayName', preg_display_name)
+
+        entry_relationship_element = \
+            observation_element.find('entryRelationship')
+        for value_element in entry_relationship_element.iter('value'):
+            value_element.set('value', due_date)
+
+    root.set("xmlns", "urn:hl7-org:v3")
+
+    return etree.tostring(tree, pretty_print=True, encoding='UTF-8',
+                          xml_declaration=True)
+
+
+def build_multipart_data(boundary, parts):
+    response = []
+    for part in parts:
+        response.append("\n".join([
+            '--' + boundary,
+            'Content-Disposition: form-data; name="' +
+            part["name"] + '"; filename="' + part["file_name"] + '"',
+            'Content-Type: ' + part["content_type"],
+            '',
+            part["body"]
+        ]))
+    return "\n".join(response)
+
+
+def build_multipart_parts(json_body, xml_body):
+    return [
+        {
+            "name": "ihe-mhd-metadata",
+            "file_name": "MHDMetadata.json",
+            "content_type": "application/json",
+            "body": json_body
+        },
+        {
+            "name": "content",
+            "file_name": "CDARequest.xml",
+            "content_type": "text/xml",
+            "body": xml_body
+        }
+    ]
+
+
+def build_metadata(cda, patient_id, oid, eid):
+    shasum = hashlib.sha1()
+    shasum.update(cda)
+
+    return {
+        "documentEntry": {
+            "patientId": patient_id,
+            "uniqueId": oid,
+            "entryUUID": "urn:uuid:%s" % eid,
+            # NOTE: these need to be these hard coded values according to
+            #       https://jembiprojects.jira.com/wiki/display/NPRE/Save+Registration+Encounter
+            "classCode": {
+                "code": "51855-5", "codingScheme": "2.16.840.1.113883.6.1",
+                "codeName": "Patient Note"
+            },
+            "typeCode": {
+                "code": "51855-5", "codingScheme": "2.16.840.1.113883.6.1",
+                "codeName": "Patient Note"
+            },
+            "formatCode": {
+                "code": "npr-pn-cda",
+                "codingScheme": "4308822c-d4de-49db-9bb8-275394ee971d",
+                "codeName": "NPR Patient Note CDA"
+            },
+            "mimeType": "text/xml",
+            "hash": shasum.hexdigest(),
+            "size": len(cda)
+        }
+    }
+
+
+def build_json_body(cda, registration):
+    patient_id = get_patient_id(
+        registration.mom_id_type, registration.mom_id_no,
+        registration.mom_passport_origin, registration.mom_msisdn)
+    oid = get_oid()
+    eid = get_uuid()
+    return json.dumps(build_metadata(cda, patient_id, oid, eid))
 
 
 def get_tomorrow():
@@ -230,7 +454,7 @@ def create_subscription(contact):
 
 @task()
 def jembi_post_json(registration_id):
-    """ Task to send registrations to Jembi"""
+    """ Task to send registrations Json to Jembi"""
 
     logger.info("Compiling Jembi Json data")
     try:
@@ -245,6 +469,42 @@ def jembi_post_json(registration_id):
                 auth=(settings.JEMBI_USERNAME, settings.JEMBI_PASSWORD),
                 verify=False
             )
+            return result.text
+        except:
+            logger.error('Problem connecting to Jembi', exc_info=True)
+
+    except ObjectDoesNotExist:
+        logger.error('Missing Registration object', exc_info=True)
+
+    except SoftTimeLimitExceeded:
+        logger.error(
+            'Soft time limit exceeded processing Jembi send via Celery.',
+            exc_info=True)
+
+
+@task()
+def jembi_post_xml(registration_id):
+    """ Task to send clinic & chw registrations XML to Jembi"""
+
+    logger.info("Compiling Jembi XML data")
+    try:
+        registration = Registration.objects.get(pk=registration_id)
+        xml_body = build_jembi_xml(registration)
+        json_body = build_json_body(xml_body, registration)
+        data = build_multipart_data("yolo", build_multipart_parts(json_body,
+                                                                  xml_body))
+
+        api_url = "%s/registration/net.ihe/DocumentDossier" % (
+            settings.JEMBI_BASE_URL)
+        headers = {
+            'Accept-Encoding': 'gzip',
+            'Content-Type': 'multipart/form-data; boundary=yolo'
+        }
+        auth = (settings.JEMBI_USERNAME, settings.JEMBI_PASSWORD)
+
+        try:
+            result = requests.post(api_url, headers=headers, data=data,
+                                   auth=auth, verify=False)
             return result.text
         except:
             logger.error('Problem connecting to Jembi', exc_info=True)

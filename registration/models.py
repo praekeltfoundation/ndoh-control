@@ -103,7 +103,7 @@ class Registration(models.Model):
 
 from django.db.models.signals import post_save
 from django.dispatch import receiver
-from .tasks import jembi_post_json, update_create_vumi_contact
+from .tasks import jembi_post_json, jembi_post_xml, update_create_vumi_contact
 
 
 @receiver(post_save, sender=Registration)
@@ -116,11 +116,10 @@ def fire_jembi_post(sender, instance, created, **kwargs):
         # Fire Jembi send tasks
         jembi_post_json.apply_async(
             kwargs={"registration_id": instance.id})
-        if instance.authority == 'clinic' or instance.authority == 'chw':
-            # TODO #94
-            # jembi_post_xml.apply_async(
-            #     kwargs={"registration_id": instance.id})
-            pass
+
+        if (instance.authority == 'clinic' or instance.authority == 'chw'):
+            jembi_post_xml.apply_async(
+                kwargs={"registration_id": instance.id})
 
         # Fire Contact update create tasks
         update_create_vumi_contact.apply_async(
