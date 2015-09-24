@@ -225,7 +225,6 @@ def make_cda(record_uuid, patient_id, contact_msisdn, birth_time, lang_code,
 
     root.set("xmlns", "urn:hl7-org:v3")
 
-    # tree.write('Mikeoutputlxml.xml', encoding='UTF-8', xml_declaration=True)
     return etree.tostring(tree, pretty_print=True, encoding='UTF-8',
                           xml_declaration=True)
 
