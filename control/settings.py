@@ -372,6 +372,20 @@ SUBSCRIPTION_RATES = {
     "five_per_week": 6
 }
 
+LANG_GROUP_KEYS = {
+    "en": "ee47385f0c954fc6b614ec3961dbf30b",
+    "af": "672442947cdf4a2aae0f96ccb688df05",
+    "zu": "4baf3a89aa0243feb328ca664d1a5e8c",
+    "xh": "13140076f49f4e84a752a5d5ab961091",
+    "ve": "82370a4df3134352a6d7e6c9ccfed323",
+    "ts": "c8b90679389143e78c656c16d0f999c7",
+    "tn": "0106c492e4b04b03ae7849300eea0cc4",
+    "nso": "969fcdd2358e4c8cb063f4c5035fc8c6",
+    "st": "f4738d01b4f74e41b9a6e804fc7eda56",
+    "ss": "b1e6bbd5d28b477aabb9cce43de7e9d1",
+    "nr": "778479e9ad7c4b00a898b61be6dbcac3"
+}
+
 try:
     from local_settings import *  # flake8: noqa
 except ImportError:

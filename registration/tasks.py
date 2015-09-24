@@ -346,7 +346,12 @@ def update_contact_registration(contact, registration, client):
     # Setup new values - only extras need updating
     existing_extras = contact["extra"]
     _extras = define_extras_registration(existing_extras, registration)
-    update_data = {u"extra": _extras}
+
+    groups = contact["groups"]
+    groups.append(settings.LANG_GROUP_KEYS[registration.mom_lang])
+
+    update_data = {u"extra": _extras,
+                   u"groups": groups}
     return client.update_contact(contact["key"], update_data)
 
 
@@ -360,7 +365,8 @@ def update_contact_subscription(contact, subscription, client):
 
 def create_contact(registration, client):
     contact_data = {
-        u"msisdn": registration.mom_msisdn
+        u"msisdn": registration.mom_msisdn,
+        u"groups": [settings.LANG_GROUP_KEYS[registration.mom_lang]]
     }
     _extras = define_extras_registration({}, registration)
     contact_data[u"extra"] = _extras
