@@ -18,6 +18,11 @@ from subscription.models import Subscription, MessageSet
 logger = get_task_logger(__name__)
 
 
+def get_client():
+    return ContactsApiClient(settings.VUMI_GO_API_TOKEN,
+                             api_url=settings.VUMI_GO_BASE_URL)
+
+
 def get_today():
     return datetime.today()
 
@@ -460,7 +465,7 @@ def jembi_post_json(registration_id):
         try:
             result = requests.post(
                 "%s/json/subscription" % settings.JEMBI_BASE_URL,  # url
-                headers={'Content-Type': ['application/json']},
+                headers={'Content-Type': 'application/json'},
                 data=json.dumps(json_doc),
                 auth=(settings.JEMBI_USERNAME, settings.JEMBI_PASSWORD),
                 verify=False
@@ -522,8 +527,7 @@ def update_create_vumi_contact(registration_id, client=None):
     logger.info("Creating / Updating Contact")
     try:
         if client is None:
-            client = ContactsApiClient(settings.VUMI_GO_API_TOKEN,
-                                       api_url=settings.VUMI_GO_BASE_URL)
+            client = get_client()
 
         # Load the registration
         try:
