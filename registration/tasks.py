@@ -8,6 +8,7 @@ from lxml import etree
 from celery.utils.log import get_task_logger
 from celery.exceptions import SoftTimeLimitExceeded
 from django.core.exceptions import ObjectDoesNotExist
+from requests.exceptions import HTTPError
 from django.conf import settings
 from go_http.contacts import ContactsApiClient
 from .models import Registration
@@ -458,8 +459,8 @@ def create_subscription(contact):
             exc_info=True)
 
 
-@task()
-def jembi_post_json(registration_id):
+@task(bind=True, time_limit=10)
+def jembi_post_json(self, registration_id):
     """ Task to send registrations Json to Jembi"""
 
     logger.info("Compiling Jembi Json data")
@@ -475,9 +476,16 @@ def jembi_post_json(registration_id):
                 auth=(settings.JEMBI_USERNAME, settings.JEMBI_PASSWORD),
                 verify=False
             )
-            return result.text
+            result.raise_for_status()
+        except HTTPError as e:
+            # retry message sending if in 500 range (3 default retries)
+            if 500 < e.response.status_code < 599:
+                raise self.retry(exc=e)
+            else:
+                raise e
         except:
-            logger.error('Problem connecting to Jembi', exc_info=True)
+            logger.error('Problem posting JSON to Jembi', exc_info=True)
+        return result.text
 
     except ObjectDoesNotExist:
         logger.error('Missing Registration object', exc_info=True)
@@ -488,8 +496,8 @@ def jembi_post_json(registration_id):
             exc_info=True)
 
 
-@task()
-def jembi_post_xml(registration_id):
+@task(bind=True, time_limit=10)
+def jembi_post_xml(self, registration_id):
     """ Task to send clinic & chw registrations XML to Jembi"""
 
     logger.info("Compiling Jembi XML data")
@@ -511,9 +519,16 @@ def jembi_post_xml(registration_id):
         try:
             result = requests.post(api_url, headers=headers, data=data,
                                    auth=auth, verify=False)
-            return result.text
+            result.raise_for_status()
+        except HTTPError as e:
+            # retry message sending if in 500 range (3 default retries)
+            if 500 < e.response.status_code < 599:
+                raise self.retry(exc=e)
+            else:
+                raise e
         except:
-            logger.error('Problem connecting to Jembi', exc_info=True)
+            logger.error('Problem posting XML to Jembi', exc_info=True)
+        return result.text
 
     except ObjectDoesNotExist:
         logger.error('Missing Registration object', exc_info=True)
@@ -524,8 +539,8 @@ def jembi_post_xml(registration_id):
             exc_info=True)
 
 
-@task()
-def update_create_vumi_contact(registration_id, client=None):
+@task(bind=True, time_limit=10)
+def update_create_vumi_contact(self, registration_id, client=None):
     """ Task to update or create a Vumi contact when a registration
         is created.
     """
@@ -542,6 +557,8 @@ def update_create_vumi_contact(registration_id, client=None):
                 # Get and update the contact if it exists
                 contact = client.get_contact(
                     msisdn=registration.mom_msisdn)
+                # contact.raise_for_status()
+
                 logger.info("Contact exists - updating contact")
                 updated_contact = update_contact_registration(
                     contact, registration, client)
@@ -553,23 +570,30 @@ def update_create_vumi_contact(registration_id, client=None):
                 updated_contact = update_contact_subscription(
                     contact, subscription, client)
 
-                return updated_contact
-
             # This exception should rather look for a 404 if the contact is
-            # not found, but currently a Bad Request is returned.
+            # not found, but currently a 400 Bad Request is returned.
+            except HTTPError as e:
+                if e.response.status_code == 400:
+                    # Create the contact as it doesn't exist
+                    logger.info("Contact doesn't exist - creating new contact")
+                    contact = create_contact(registration, client)
+
+                    # Create new subscription for the contact
+                    subscription = create_subscription(contact)
+
+                    # Update the contact with subscription details
+                    updated_contact = update_contact_subscription(
+                        contact, subscription, client)
+
+                elif 500 < e.response.status_code < 599:
+                    # Retry task if 500 error
+                    raise self.retry(exc=e)
+                else:
+                    raise e
             except:
-                # Create the contact as it doesn't exist
-                logger.info("Contact doesn't exist - creating new contact")
-                contact = create_contact(registration, client)
+                logger.error('Problem contacting http_api', exc_info=True)
 
-                # Create new subscription for the contact
-                subscription = create_subscription(contact)
-
-                # Update the contact with subscription details
-                updated_contact = update_contact_subscription(
-                    contact, subscription, client)
-
-                return updated_contact
+            return updated_contact
 
         except ObjectDoesNotExist:
             logger.error('Missing Registration object', exc_info=True)
