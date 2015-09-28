@@ -368,6 +368,7 @@ class TestContactsAPI(AuthenticatedAPITestCase):
         client = self.make_client()
         created_contact = client.create_contact({
             u"msisdn": "+111",
+            u"groups": ['en'],
             u"extra": {
                 u'clinic_code': u'12345',
                 u'dob': '1980-09-15',
@@ -387,6 +388,14 @@ class TestContactsAPI(AuthenticatedAPITestCase):
         })
         self.assertEqual(created_contact["msisdn"], "+111")
         self.assertIsNotNone(created_contact["key"])
+
+    def test_get_group_by_key(self):
+        client = self.make_client()
+        existing_group = client.create_group({
+            "name": 'groupname'
+            })
+        group = client.get_group(existing_group[u'key'])
+        self.assertEqual(group, existing_group)
 
 
 class TestRegistrationsAPI(AuthenticatedAPITestCase):
@@ -754,6 +763,7 @@ class TestUpdateCreateVumiContactTask(AuthenticatedAPITestCase):
         self.make_existing_contact({
             u"key": u"knownuuid",
             u"msisdn": u"+27001",
+            u"groups": [u"672442947cdf4a2aae0f96ccb688df05"],
             u"user_account": u"knownaccount",
             u"extra": {}
         })
@@ -763,6 +773,9 @@ class TestUpdateCreateVumiContactTask(AuthenticatedAPITestCase):
                     "client": client})
         result = contact.get()
         self.assertEqual(result["msisdn"], "+27001")
+        self.assertEqual(result["groups"],
+                         [u"672442947cdf4a2aae0f96ccb688df05",
+                          u"ee47385f0c954fc6b614ec3961dbf30b"])
         self.assertEqual(result["key"], "knownuuid")
         self.assertEqual(result["user_account"], "knownaccount")
         self.assertEqual(result["extra"], {
@@ -803,6 +816,8 @@ class TestUpdateCreateVumiContactTask(AuthenticatedAPITestCase):
                     "client": client})
         result = contact.get()
         self.assertEqual(result["msisdn"], "+27002")
+        self.assertEqual(result["groups"],
+                         [u"13140076f49f4e84a752a5d5ab961091"])
         self.assertEqual(result["extra"], {
             "is_registered": "true",
             "is_registered_by": "chw",
@@ -832,6 +847,8 @@ class TestUpdateCreateVumiContactTask(AuthenticatedAPITestCase):
                     "client": client})
         result = contact.get()
         self.assertEqual(result["msisdn"], "+27001")
+        self.assertEqual(result["groups"],
+                         [u"672442947cdf4a2aae0f96ccb688df05"])
         self.assertEqual(result["extra"], {
             "is_registered": "true",
             "is_registered_by": "clinic",
