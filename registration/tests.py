@@ -230,7 +230,6 @@ class FakeContactsApiAdapter(HTTPAdapter):
         return r
 
 make_contact_dict = FakeContactsApi.make_contact_dict
-# make_group_dict = FakeContactsApi.make_group_dict
 
 
 class AuthenticatedAPITestCase(APITestCase):
