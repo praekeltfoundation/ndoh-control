@@ -37,12 +37,17 @@ class Registration(models.Model):
         ('none', 'None'),
     )
     LANG_CHOICES = (
-        ('en', 'English'),
+        ('zu', 'isiZulu'),
+        ('xh', 'isiXhosa'),
         ('af', 'Afrikaans'),
-        ('zu', 'Zulu'),
-        ('xh', 'Xhosa'),
-        ('st', 'Sotho'),
+        ('en', 'English'),
+        ('nso', 'Sesotho sa Leboa'),
         ('tn', 'Setswana'),
+        ('st', 'Sesotho'),
+        ('ts', 'Xitsonga'),
+        ('ss', 'siSwati'),
+        ('ve', 'Tshivenda'),
+        ('nr', 'isiNdebele'),
     )
     AUTHORITY_CHOICES = (
         ('personal', 'Personal / Public'),
