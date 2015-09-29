@@ -10,6 +10,7 @@ from rest_framework.authtoken.models import Token
 from rest_framework import status
 from requests.adapters import HTTPAdapter
 from requests_testadapter import TestSession, Resp
+from requests.exceptions import HTTPError
 from go_http.contacts import ContactsApiClient
 from fake_go_contacts import Request, FakeContactsApi
 from .models import Source, Registration, fire_jembi_post
@@ -644,7 +645,42 @@ class TestJembiPostJsonTask(AuthenticatedAPITestCase):
 
         task_response = tasks.jembi_post_json.apply_async(
             kwargs={"registration_id": registration.data["id"]})
+        self.assertEqual(len(responses.calls), 1)
         self.assertEqual(task_response.get(), 'jembi_post_json task')
+
+    @responses.activate
+    def test_jembi_post_json_retries(self):
+        registration = self.make_registration(
+            post_data=TEST_REG_DATA["clinic_self"])
+
+        responses.add(responses.POST,
+                      "http://test/v2/json/subscription",
+                      body='{"error": "jembi json problems"}', status=531,
+                      content_type='application/json')
+
+        task_response = tasks.jembi_post_json.apply_async(
+            kwargs={"registration_id": registration.data["id"]})
+        self.assertEqual(len(responses.calls), 4)
+        with self.assertRaises(HTTPError) as cm:
+            task_response.get()
+        self.assertEqual(cm.exception.response.status_code, 531)
+
+    @responses.activate
+    def test_jembi_post_json_other_httperror(self):
+        registration = self.make_registration(
+            post_data=TEST_REG_DATA["clinic_self"])
+
+        responses.add(responses.POST,
+                      "http://test/v2/json/subscription",
+                      body='{"error": "jembi json problems"}', status=404,
+                      content_type='application/json')
+
+        task_response = tasks.jembi_post_json.apply_async(
+            kwargs={"registration_id": registration.data["id"]})
+        self.assertEqual(len(responses.calls), 1)
+        with self.assertRaises(HTTPError) as cm:
+            task_response.get()
+        self.assertEqual(cm.exception.response.status_code, 404)
 
 
 class TestJembiPostXmlTask(AuthenticatedAPITestCase):
@@ -659,6 +695,40 @@ class TestJembiPostXmlTask(AuthenticatedAPITestCase):
         reg = Registration.objects.last()
         birth_time = tasks.get_dob(reg.mom_dob)
         self.assertEqual(birth_time, None)
+
+    @responses.activate
+    def test_jembi_post_xml_retries(self):
+        registration = self.make_registration(
+            post_data=TEST_REG_DATA["clinic_self"])
+
+        responses.add(responses.POST,
+                      "http://test/v2/registration/net.ihe/DocumentDossier",
+                      body='{"error": "jembi xml problems"}', status=531,
+                      content_type='application/json')
+
+        task_response = tasks.jembi_post_xml.apply_async(
+            kwargs={"registration_id": registration.data["id"]})
+        self.assertEqual(len(responses.calls), 4)
+        with self.assertRaises(HTTPError) as cm:
+            task_response.get()
+        self.assertEqual(cm.exception.response.status_code, 531)
+
+    @responses.activate
+    def test_jembi_post_xml_other_httperror(self):
+        registration = self.make_registration(
+            post_data=TEST_REG_DATA["clinic_self"])
+
+        responses.add(responses.POST,
+                      "http://test/v2/registration/net.ihe/DocumentDossier",
+                      body='{"error": "jembi xml problems"}', status=404,
+                      content_type='application/json')
+
+        task_response = tasks.jembi_post_xml.apply_async(
+            kwargs={"registration_id": registration.data["id"]})
+        self.assertEqual(len(responses.calls), 1)
+        with self.assertRaises(HTTPError) as cm:
+            task_response.get()
+        self.assertEqual(cm.exception.response.status_code, 404)
 
 
 class TestUpdateCreateVumiContactTask(AuthenticatedAPITestCase):
