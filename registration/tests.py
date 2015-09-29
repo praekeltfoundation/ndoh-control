@@ -90,6 +90,18 @@ TEST_REG_DATA = {
         "mom_dob": None,
         "clinic_code": None,
         "authority": "personal"
+    },
+    "personal_no_id": {
+        "hcw_msisdn": None,
+        "mom_msisdn": "+27004",
+        "mom_id_type": "none",
+        "mom_passport_origin": None,
+        "mom_lang": "ss",
+        "mom_edd": None,
+        "mom_id_no": None,
+        "mom_dob": None,
+        "clinic_code": None,
+        "authority": "personal"
     }
 }
 TEST_SOURCE_DATA = {
@@ -447,13 +459,6 @@ class TestRegistrationsAPI(AuthenticatedAPITestCase):
         d = Registration.objects.last()
         self.assertEqual(d, None)
 
-    def test_create_broken_registration_no_dob(self):
-        self.assertRaises(ValidationError, lambda: self.make_registration(
-            post_data=TEST_REG_DATA_BROKEN["no_dob"]))
-
-        d = Registration.objects.last()
-        self.assertEqual(d, None)
-
     def test_create_broken_registration_no_edd(self):
         self.assertRaises(ValidationError, lambda: self.make_registration(
             post_data=TEST_REG_DATA_BROKEN["no_edd"]))
@@ -617,6 +622,25 @@ class TestJembiPostJsonTask(AuthenticatedAPITestCase):
             'dmsisdn': None,
             'mha': 1,
             'cmsisdn': '+27003',
+            'faccode': None,
+            'encdate': '20130819144811',
+            'type': 1,
+            'swt': 1
+        }
+        payload = tasks.build_jembi_json(reg)
+        self.assertEqual(expected_json_personal, payload)
+
+    def test_build_jembi_json_personal_no_id(self):
+        registration_personal = self.make_registration(
+            post_data=TEST_REG_DATA["personal_no_id"])
+        reg = Registration.objects.get(pk=registration_personal.data["id"])
+        expected_json_personal = {
+            'id': '27004^^^ZAF^TEL',
+            'lang': 'ss',
+            'dob': None,
+            'dmsisdn': None,
+            'mha': 1,
+            'cmsisdn': '+27004',
             'faccode': None,
             'encdate': '20130819144811',
             'type': 1,
