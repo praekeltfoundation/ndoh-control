@@ -459,6 +459,13 @@ class TestRegistrationsAPI(AuthenticatedAPITestCase):
         d = Registration.objects.last()
         self.assertEqual(d, None)
 
+    def test_create_broken_registration_no_dob(self):
+        self.assertRaises(ValidationError, lambda: self.make_registration(
+            post_data=TEST_REG_DATA_BROKEN["no_dob"]))
+
+        d = Registration.objects.last()
+        self.assertEqual(d, None)
+
     def test_create_broken_registration_no_edd(self):
         self.assertRaises(ValidationError, lambda: self.make_registration(
             post_data=TEST_REG_DATA_BROKEN["no_edd"]))
