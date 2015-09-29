@@ -91,7 +91,8 @@ class Registration(models.Model):
             raise ValidationError(
                 _("Provide a passport country of origin in the \
                    mom_passport_origin field."))
-        if self.mom_id_type == 'none' and self.mom_dob is None:
+        if self.authority == 'clinic' and self.mom_id_type == 'none' and \
+           self.mom_dob is None:
             raise ValidationError(
                 _("Provide the mother's date of birth in the mom_dob field."))
         if self.authority == 'clinic' and self.mom_edd is None:
