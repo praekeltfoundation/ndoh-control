@@ -13,7 +13,7 @@ from requests_testadapter import TestSession, Resp
 from requests.exceptions import HTTPError
 from go_http.contacts import ContactsApiClient
 from fake_go_contacts import Request, FakeContactsApi
-from .models import Source, Registration, fire_jembi_post
+from .models import Registration, fire_jembi_post
 from subscription.models import Subscription
 from registration import tasks
 
@@ -253,7 +253,8 @@ class AuthenticatedAPITestCase(APITestCase):
         post_save.connect(fire_jembi_post, sender=Registration)
 
     def make_source(self, post_data=TEST_SOURCE_DATA):
-        user = User.objects.get(username='testadminuser')
+        # Make source for the normal user who submits data but using admin user
+        user = User.objects.get(username='testnormaluser')
         post_data["user"] = "/api/v2/users/%s/" % user.id
 
         response = self.adminclient.post('/api/v2/sources/',
@@ -262,9 +263,6 @@ class AuthenticatedAPITestCase(APITestCase):
         return response
 
     def make_registration(self, post_data):
-        source = self.make_source()
-        post_data["source"] = "/api/v2/sources/%s/" % source.data["id"]
-
         response = self.normalclient.post('/api/v2/registrations/',
                                           json.dumps(post_data),
                                           content_type='application/json')
@@ -309,6 +307,7 @@ class AuthenticatedAPITestCase(APITestCase):
         self.normaltoken = normaltoken.key
         self.normalclient.credentials(
             HTTP_AUTHORIZATION='Token ' + self.normaltoken)
+        self.make_source()
 
         # contacts client setup
         self.contacts_data = {}
@@ -400,13 +399,6 @@ class TestContactsAPI(AuthenticatedAPITestCase):
 
 
 class TestRegistrationsAPI(AuthenticatedAPITestCase):
-
-    def test_create_source(self):
-        response = self.make_source()
-
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        d = Source.objects.last()
-        self.assertEqual(d.name, 'Test Source')
 
     def test_create_source_deny_normaluser(self):
         user = User.objects.get(username='testnormaluser')

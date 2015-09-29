@@ -1,4 +1,4 @@
-from rest_framework import viewsets
+from rest_framework import viewsets, generics, mixins
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from django.contrib.auth.models import User, Group
 from .models import Source, Registration
@@ -36,11 +36,13 @@ class SourceViewSet(viewsets.ModelViewSet):
     serializer_class = SourceSerializer
 
 
-class RegistrationViewSet(viewsets.ModelViewSet):
-
-    """
-    API endpoint that allows registrations to be viewed or edited.
-    """
+class RegistrationPost(mixins.CreateModelMixin,  generics.GenericAPIView):
     permission_classes = (IsAuthenticated,)
     queryset = Registration.objects.all()
     serializer_class = RegistrationSerializer
+
+    def post(self, request, *args, **kwargs):
+        # load the users sources - posting users should only have one source
+        source = Source.objects.get(user=self.request.user)
+        request.data["source"] = source.id
+        return self.create(request, *args, **kwargs)
