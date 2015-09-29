@@ -459,8 +459,8 @@ def create_subscription(contact):
             exc_info=True)
 
 
-@task(bind=True, time_limit=10)
-def jembi_post_json(self, registration_id):
+@task(time_limit=10)
+def jembi_post_json(registration_id):
     """ Task to send registrations Json to Jembi"""
 
     logger.info("Compiling Jembi Json data")
@@ -480,7 +480,7 @@ def jembi_post_json(self, registration_id):
         except HTTPError as e:
             # retry message sending if in 500 range (3 default retries)
             if 500 < e.response.status_code < 599:
-                raise self.retry(exc=e)
+                raise jembi_post_json.retry(exc=e)
             else:
                 raise e
         except:
@@ -496,8 +496,8 @@ def jembi_post_json(self, registration_id):
             exc_info=True)
 
 
-@task(bind=True, time_limit=10)
-def jembi_post_xml(self, registration_id):
+@task(time_limit=10)
+def jembi_post_xml(registration_id):
     """ Task to send clinic & chw registrations XML to Jembi"""
 
     logger.info("Compiling Jembi XML data")
@@ -523,7 +523,7 @@ def jembi_post_xml(self, registration_id):
         except HTTPError as e:
             # retry message sending if in 500 range (3 default retries)
             if 500 < e.response.status_code < 599:
-                raise self.retry(exc=e)
+                raise jembi_post_xml.retry(exc=e)
             else:
                 raise e
         except:
@@ -539,8 +539,8 @@ def jembi_post_xml(self, registration_id):
             exc_info=True)
 
 
-@task(bind=True, time_limit=10)
-def update_create_vumi_contact(self, registration_id, client=None):
+@task(time_limit=10)
+def update_create_vumi_contact(registration_id, client=None):
     """ Task to update or create a Vumi contact when a registration
         is created.
     """
@@ -557,7 +557,6 @@ def update_create_vumi_contact(self, registration_id, client=None):
                 # Get and update the contact if it exists
                 contact = client.get_contact(
                     msisdn=registration.mom_msisdn)
-                # contact.raise_for_status()
 
                 logger.info("Contact exists - updating contact")
                 updated_contact = update_contact_registration(
@@ -587,7 +586,7 @@ def update_create_vumi_contact(self, registration_id, client=None):
 
                 elif 500 < e.response.status_code < 599:
                     # Retry task if 500 error
-                    raise self.retry(exc=e)
+                    raise update_create_vumi_contact.retry(exc=e)
                 else:
                     raise e
             except:
