@@ -8,3 +8,6 @@ dependencies:
  - libpq-dev
  - postgresql
  - rabbitmq-server
+ - libxml2-dev
+ - libxslt1-dev
+ - python-dev
