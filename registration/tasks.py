@@ -11,6 +11,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from requests.exceptions import HTTPError
 from django.conf import settings
 from go_http.contacts import ContactsApiClient
+from go_http import HttpApiSender
 from .models import Registration
 from djcelery.models import PeriodicTask
 from subscription.models import Subscription, MessageSet
@@ -22,6 +23,15 @@ logger = get_task_logger(__name__)
 def get_client():
     return ContactsApiClient(settings.VUMI_GO_API_TOKEN,
                              api_url=settings.VUMI_GO_BASE_URL)
+
+
+def get_sender():
+    sender = HttpApiSender(
+        account_key=settings.VUMI_GO_ACCOUNT_KEY,
+        conversation_key=settings.VUMI_GO_CONVERSATION_KEY,
+        conversation_token=settings.VUMI_GO_ACCOUNT_TOKEN
+    )
+    return sender
 
 
 def get_today():
@@ -460,7 +470,7 @@ def create_subscription(contact):
 
 
 @task(bind=True, time_limit=10)
-def jembi_post_json(self, registration_id):
+def jembi_post_json(self, registration_id, sender=None):
     """ Task to send registrations Json to Jembi"""
 
     logger.info("Compiling Jembi Json data")
@@ -477,6 +487,13 @@ def jembi_post_json(self, registration_id):
                 verify=False
             )
             result.raise_for_status()
+            vumi_fire_metric.apply_async(
+                kwargs={
+                    "metric": "test.metric",
+                    "value": 1,
+                    "agg": "last",
+                    "sender": sender}
+            )
         except HTTPError as e:
             # retry message sending if in 500 range (3 default retries)
             if 500 < e.response.status_code < 599:
@@ -520,6 +537,7 @@ def jembi_post_xml(self, registration_id):
             result = requests.post(api_url, headers=headers, data=data,
                                    auth=auth, verify=False)
             result.raise_for_status()
+
         except HTTPError as e:
             # retry message sending if in 500 range (3 default retries)
             if 500 < e.response.status_code < 599:
@@ -557,7 +575,6 @@ def update_create_vumi_contact(self, registration_id, client=None):
                 # Get and update the contact if it exists
                 contact = client.get_contact(
                     msisdn=registration.mom_msisdn)
-                # contact.raise_for_status()
 
                 logger.info("Contact exists - updating contact")
                 updated_contact = update_contact_registration(
@@ -601,4 +618,18 @@ def update_create_vumi_contact(self, registration_id, client=None):
     except SoftTimeLimitExceeded:
         logger.error(
             'Soft time limit exceeded processing Jembi send via Celery.',
+            exc_info=True)
+
+
+@task()
+def vumi_fire_metric(metric, value, agg, sender=None):
+    try:
+        if sender is None:
+            sender = get_sender()
+        sender.fire_metric(metric, value, agg=agg)
+        return sender
+    except SoftTimeLimitExceeded:
+        logger.error(
+            'Soft time limit exceed processing metric fire to Vumi HTTP API '
+            'via Celery',
             exc_info=True)

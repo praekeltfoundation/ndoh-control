@@ -1,5 +1,6 @@
 import json
 import responses
+import logging
 from datetime import datetime
 from django.contrib.auth.models import User
 from django.test import TestCase
@@ -12,6 +13,7 @@ from requests.adapters import HTTPAdapter
 from requests_testadapter import TestSession, Resp
 from requests.exceptions import HTTPError
 from go_http.contacts import ContactsApiClient
+from go_http.send import LoggingSender
 from fake_go_contacts import Request, FakeContactsApi
 from .models import Source, Registration, fire_jembi_post
 from subscription.models import Subscription
@@ -26,8 +28,13 @@ def override_get_tomorrow():
     return "2013-08-20"
 
 
+def override_get_sender():
+    return LoggingSender('go_http.test')
+
+
 tasks.get_today = override_get_today
 tasks.get_tomorrow = override_get_tomorrow
+tasks.get_sender = override_get_sender
 
 
 TEST_REG_DATA = {
@@ -198,11 +205,26 @@ AUTH_TOKEN = "auth_token"
 MAX_CONTACTS_PER_PAGE = 10
 
 
+class RecordingHandler(logging.Handler):
+    """ Record logs. """
+    logs = None
+
+    def emit(self, record):
+        if self.logs is None:
+            self.logs = []
+        self.logs.append(record)
+
+
 class APITestCase(TestCase):
 
     def setUp(self):
         self.adminclient = APIClient()
         self.normalclient = APIClient()
+        self.sender = LoggingSender('go_http.test')
+        self.handler = RecordingHandler()
+        logger = logging.getLogger('go_http.test')
+        logger.setLevel(logging.INFO)
+        logger.addHandler(self.handler)
 
 
 class FakeContactsApiAdapter(HTTPAdapter):
@@ -322,6 +344,16 @@ class AuthenticatedAPITestCase(APITestCase):
 
     def tearDown(self):
         self._restore_post_save_hooks()
+
+    def check_logs(self, msg):
+        if type(self.handler.logs) != list:
+            [logs] = self.handler.logs
+        else:
+            logs = self.handler.logs
+        for log in logs:
+            if log.msg == msg:
+                return True
+        return False
 
 
 class TestContactsAPI(AuthenticatedAPITestCase):
@@ -475,6 +507,17 @@ class TestRegistrationsAPI(AuthenticatedAPITestCase):
 
         d = Registration.objects.last()
         self.assertEqual(d, None)
+
+    def test_fire_metric(self):
+        tasks.vumi_fire_metric.apply_async(
+            kwargs={
+                "metric": "test.metric",
+                "value": 1,
+                "agg": "last",
+                "sender": self.sender}
+            )
+        self.assertEqual(True,
+                         self.check_logs("Metric: 'test.metric' [last] -> 1"))
 
     @responses.activate
     def test_create_registration_fires_tasks(self):
@@ -644,9 +687,12 @@ class TestJembiPostJsonTask(AuthenticatedAPITestCase):
                       content_type='application/json')
 
         task_response = tasks.jembi_post_json.apply_async(
-            kwargs={"registration_id": registration.data["id"]})
+            kwargs={"registration_id": registration.data["id"],
+                    "sender": self.sender})
         self.assertEqual(len(responses.calls), 1)
         self.assertEqual(task_response.get(), 'jembi_post_json task')
+        self.assertEqual(True, self.check_logs(
+            "Metric: 'test.metric' [last] -> 1"))
 
     @responses.activate
     def test_jembi_post_json_retries(self):
