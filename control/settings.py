@@ -295,10 +295,13 @@ CELERY_ROUTES = {
         'queue': 'lowpriority',
     },
     'registration.tasks.jembi_post_json': {
-        'queue': 'highpriority',
+        'queue': 'priority',
+    },
+    'registration.tasks.jembi_post_xml': {
+        'queue': 'priority',
     },
     'registration.tasks.update_create_vumi_contact': {
-        'queue': 'highpriority',
+        'queue': 'priority',
     }
 }
 

@@ -15,7 +15,7 @@ from requests.exceptions import HTTPError
 from go_http.contacts import ContactsApiClient
 from go_http.send import LoggingSender
 from fake_go_contacts import Request, FakeContactsApi
-from .models import Source, Registration, fire_jembi_post
+from .models import Registration, fire_jembi_post
 from subscription.models import Subscription
 from registration import tasks
 
@@ -94,6 +94,18 @@ TEST_REG_DATA = {
         "mom_lang": "st",
         "mom_edd": None,
         "mom_id_no": "5552222",
+        "mom_dob": None,
+        "clinic_code": None,
+        "authority": "personal"
+    },
+    "personal_no_id": {
+        "hcw_msisdn": None,
+        "mom_msisdn": "+27004",
+        "mom_id_type": "none",
+        "mom_passport_origin": None,
+        "mom_lang": "ss",
+        "mom_edd": None,
+        "mom_id_no": None,
         "mom_dob": None,
         "clinic_code": None,
         "authority": "personal"
@@ -275,7 +287,8 @@ class AuthenticatedAPITestCase(APITestCase):
         post_save.connect(fire_jembi_post, sender=Registration)
 
     def make_source(self, post_data=TEST_SOURCE_DATA):
-        user = User.objects.get(username='testadminuser')
+        # Make source for the normal user who submits data but using admin user
+        user = User.objects.get(username='testnormaluser')
         post_data["user"] = "/api/v2/users/%s/" % user.id
 
         response = self.adminclient.post('/api/v2/sources/',
@@ -284,9 +297,6 @@ class AuthenticatedAPITestCase(APITestCase):
         return response
 
     def make_registration(self, post_data):
-        source = self.make_source()
-        post_data["source"] = "/api/v2/sources/%s/" % source.data["id"]
-
         response = self.normalclient.post('/api/v2/registrations/',
                                           json.dumps(post_data),
                                           content_type='application/json')
@@ -331,6 +341,7 @@ class AuthenticatedAPITestCase(APITestCase):
         self.normaltoken = normaltoken.key
         self.normalclient.credentials(
             HTTP_AUTHORIZATION='Token ' + self.normaltoken)
+        self.make_source()
 
         # contacts client setup
         self.contacts_data = {}
@@ -432,13 +443,6 @@ class TestContactsAPI(AuthenticatedAPITestCase):
 
 
 class TestRegistrationsAPI(AuthenticatedAPITestCase):
-
-    def test_create_source(self):
-        response = self.make_source()
-
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        d = Source.objects.last()
-        self.assertEqual(d.name, 'Test Source')
 
     def test_create_source_deny_normaluser(self):
         user = User.objects.get(username='testnormaluser')
@@ -668,6 +672,25 @@ class TestJembiPostJsonTask(AuthenticatedAPITestCase):
             'dmsisdn': None,
             'mha': 1,
             'cmsisdn': '+27003',
+            'faccode': None,
+            'encdate': '20130819144811',
+            'type': 1,
+            'swt': 1
+        }
+        payload = tasks.build_jembi_json(reg)
+        self.assertEqual(expected_json_personal, payload)
+
+    def test_build_jembi_json_personal_no_id(self):
+        registration_personal = self.make_registration(
+            post_data=TEST_REG_DATA["personal_no_id"])
+        reg = Registration.objects.get(pk=registration_personal.data["id"])
+        expected_json_personal = {
+            'id': '27004^^^ZAF^TEL',
+            'lang': 'ss',
+            'dob': None,
+            'dmsisdn': None,
+            'mha': 1,
+            'cmsisdn': '+27004',
             'faccode': None,
             'encdate': '20130819144811',
             'type': 1,
