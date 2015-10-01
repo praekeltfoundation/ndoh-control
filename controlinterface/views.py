@@ -24,6 +24,7 @@ from subscription.forms import (MessageFindForm,
                                 SubscriptionConfirmCancelForm,
                                 SubscriptionConfirmBabyForm,
                                 SubscriptionCancelForm,
+                                SubscriptionOptOutForm,
                                 SubscriptionBabyForm,
                                 )
 
@@ -226,12 +227,16 @@ def subscription_edit(request):
             cancelform = SubscriptionCancelForm()
             cancelform.fields["msisdn"].initial = \
                 confirmcancelform.cleaned_data['msisdn']
+            optoutform = SubscriptionOptOutForm()
+            optoutform.fields["msisdn"].initial = \
+                confirmcancelform.cleaned_data['msisdn']
             form = SubscriptionFindForm()
             form.fields["msisdn"].widget = forms.HiddenInput()
             form.fields["msisdn"].initial = \
                 confirmcancelform.cleaned_data['msisdn']
             context.update({
                 "cancelform": cancelform,
+                "optoutform": optoutform,
                 "form": form
             })
             context.update(csrf(request))
@@ -270,6 +275,25 @@ def subscription_edit(request):
             form = SubscriptionFindForm()
             form.fields[
                 "msisdn"].initial = cancelform.cleaned_data['msisdn']
+            context.update({"form": form})
+            context.update(csrf(request))
+    elif request.method == "POST" and \
+            request.POST["subaction"] == "optout":
+        # Update the record
+        # TODO Opt user out when functionality available
+        optoutform = SubscriptionOptOutForm(request.POST)
+        if optoutform.is_valid():
+            subscriptions = Subscription.objects.filter(
+                to_addr=optoutform.cleaned_data['msisdn']).update(
+                active=False)
+            messages.success(request,
+                             "All subscriptions for %s have been cancelled \
+                             and user has been opted out" %
+                             optoutform.cleaned_data['msisdn'],
+                             extra_tags="success")
+            form = SubscriptionFindForm()
+            form.fields[
+                "msisdn"].initial = optoutform.cleaned_data['msisdn']
             context.update({"form": form})
             context.update(csrf(request))
     elif request.method == "POST" and \
