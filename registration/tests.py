@@ -1062,5 +1062,6 @@ class TestUpdateCreateVumiContactTask(AuthenticatedAPITestCase):
         }
         tasks.create_subscription(broken_contact, 'clinic')
         self.assertEqual(True, self.check_logs(
-            "Metric: u'test.clinic.sum.subscription_to_protocol_fail' [sum] -> 1"))
+            "Metric: u'test.clinic.sum.subscription_to_protocol_fail' " +
+            "[sum] -> 1"))
         self.assertEqual(1, self.check_logs_number_of_entries())
