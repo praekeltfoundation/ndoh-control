@@ -489,7 +489,8 @@ def jembi_post_json(registration_id, sender=None):
             result.raise_for_status()
             vumi_fire_metric.apply_async(
                 kwargs={
-                    "metric": "test.metric",
+                    "metric": u"%s.%s.sum.json_to_jembi_success" % (
+                        settings.METRIC_ENV, registration.authority),
                     "value": 1,
                     "agg": "last",
                     "sender": sender}
@@ -497,8 +498,26 @@ def jembi_post_json(registration_id, sender=None):
         except HTTPError as e:
             # retry message sending if in 500 range (3 default retries)
             if 500 < e.response.status_code < 599:
+                if jembi_post_json.max_retries == \
+                   jembi_post_json.request.retries:
+                    vumi_fire_metric.apply_async(
+                        kwargs={
+                            "metric": u"%s.%s.sum.json_to_jembi_fail" % (
+                                settings.METRIC_ENV, registration.authority),
+                            "value": 1,
+                            "agg": "last",
+                            "sender": None}
+                    )
                 raise jembi_post_json.retry(exc=e)
             else:
+                vumi_fire_metric.apply_async(
+                    kwargs={
+                        "metric": u"%s.%s.sum.json_to_jembi_fail" % (
+                            settings.METRIC_ENV, registration.authority),
+                        "value": 1,
+                        "agg": "last",
+                        "sender": None}
+                )
                 raise e
         except:
             logger.error('Problem posting JSON to Jembi', exc_info=True)
@@ -514,7 +533,7 @@ def jembi_post_json(registration_id, sender=None):
 
 
 @task(time_limit=10)
-def jembi_post_xml(registration_id):
+def jembi_post_xml(registration_id, sender=None):
     """ Task to send clinic & chw registrations XML to Jembi"""
 
     logger.info("Compiling Jembi XML data")
@@ -537,12 +556,45 @@ def jembi_post_xml(registration_id):
             result = requests.post(api_url, headers=headers, data=data,
                                    auth=auth, verify=False)
             result.raise_for_status()
-
+            vumi_fire_metric.apply_async(
+                kwargs={
+                    "metric": u"%s.%s.sum.doc_to_jembi_success" % (
+                        settings.METRIC_ENV, registration.authority),
+                    "value": 1,
+                    "agg": "last",
+                    "sender": sender}
+            )
+            vumi_fire_metric.apply_async(
+                kwargs={
+                    "metric": u"%s.sum.subscriptions" % (
+                        settings.METRIC_ENV),
+                    "value": 1,
+                    "agg": "last",
+                    "sender": sender}
+            )
         except HTTPError as e:
             # retry message sending if in 500 range (3 default retries)
             if 500 < e.response.status_code < 599:
+                if jembi_post_xml.max_retries == \
+                   jembi_post_xml.request.retries:
+                    vumi_fire_metric.apply_async(
+                        kwargs={
+                            "metric": u"%s.%s.sum.doc_to_jembi_fail" % (
+                                settings.METRIC_ENV, registration.authority),
+                            "value": 1,
+                            "agg": "last",
+                            "sender": None}
+                    )
                 raise jembi_post_xml.retry(exc=e)
             else:
+                vumi_fire_metric.apply_async(
+                    kwargs={
+                        "metric": u"%s.%s.sum.doc_to_jembi_fail" % (
+                            settings.METRIC_ENV, registration.authority),
+                        "value": 1,
+                        "agg": "last",
+                        "sender": None}
+                )
                 raise e
         except:
             logger.error('Problem posting XML to Jembi', exc_info=True)

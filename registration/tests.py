@@ -358,13 +358,20 @@ class AuthenticatedAPITestCase(APITestCase):
 
     def check_logs(self, msg):
         if type(self.handler.logs) != list:
-            [logs] = self.handler.logs
+            logs = [self.handler.logs]
         else:
             logs = self.handler.logs
         for log in logs:
             if log.msg == msg:
                 return True
         return False
+
+    def check_logs_number_of_entries(self):
+        if type(self.handler.logs) != list:
+            logs = [self.handler.logs]
+        else:
+            logs = self.handler.logs
+        return len(logs)
 
 
 class TestContactsAPI(AuthenticatedAPITestCase):
@@ -522,6 +529,7 @@ class TestRegistrationsAPI(AuthenticatedAPITestCase):
             )
         self.assertEqual(True,
                          self.check_logs("Metric: 'test.metric' [last] -> 1"))
+        self.assertEqual(1, self.check_logs_number_of_entries())
 
     @responses.activate
     def test_create_registration_fires_tasks(self):
@@ -576,6 +584,15 @@ class TestRegistrationsAPI(AuthenticatedAPITestCase):
         # Test subscription object is the one you added
         d = Subscription.objects.last()
         self.assertEqual(d.to_addr, "+27001")
+
+        # Test metrics have fired
+        self.assertEqual(True, self.check_logs(
+            "Metric: u'test.clinic.sum.json_to_jembi_success' [last] -> 1"))
+        self.assertEqual(True, self.check_logs(
+            "Metric: u'test.clinic.sum.doc_to_jembi_success' [last] -> 1"))
+        self.assertEqual(True, self.check_logs(
+            "Metric: u'test.sum.subscriptions' [last] -> 1"))
+        self.assertEqual(3, self.check_logs_number_of_entries())
 
         # remove post_save hooks to prevent teardown errors
         post_save.disconnect(fire_jembi_post, sender=Registration)
@@ -715,7 +732,8 @@ class TestJembiPostJsonTask(AuthenticatedAPITestCase):
         self.assertEqual(len(responses.calls), 1)
         self.assertEqual(task_response.get(), 'jembi_post_json task')
         self.assertEqual(True, self.check_logs(
-            "Metric: 'test.metric' [last] -> 1"))
+            "Metric: u'test.clinic.sum.json_to_jembi_success' [last] -> 1"))
+        self.assertEqual(1, self.check_logs_number_of_entries())
 
     @responses.activate
     def test_jembi_post_json_retries(self):
@@ -733,6 +751,9 @@ class TestJembiPostJsonTask(AuthenticatedAPITestCase):
         with self.assertRaises(HTTPError) as cm:
             task_response.get()
         self.assertEqual(cm.exception.response.status_code, 531)
+        self.assertEqual(True, self.check_logs(
+            "Metric: u'test.clinic.sum.json_to_jembi_fail' [last] -> 1"))
+        self.assertEqual(1, self.check_logs_number_of_entries())
 
     @responses.activate
     def test_jembi_post_json_other_httperror(self):
@@ -750,6 +771,9 @@ class TestJembiPostJsonTask(AuthenticatedAPITestCase):
         with self.assertRaises(HTTPError) as cm:
             task_response.get()
         self.assertEqual(cm.exception.response.status_code, 404)
+        self.assertEqual(True, self.check_logs(
+            "Metric: u'test.clinic.sum.json_to_jembi_fail' [last] -> 1"))
+        self.assertEqual(1, self.check_logs_number_of_entries())
 
 
 class TestJembiPostXmlTask(AuthenticatedAPITestCase):
@@ -781,6 +805,9 @@ class TestJembiPostXmlTask(AuthenticatedAPITestCase):
         with self.assertRaises(HTTPError) as cm:
             task_response.get()
         self.assertEqual(cm.exception.response.status_code, 531)
+        self.assertEqual(True, self.check_logs(
+            "Metric: u'test.clinic.sum.doc_to_jembi_fail' [last] -> 1"))
+        self.assertEqual(1, self.check_logs_number_of_entries())
 
     @responses.activate
     def test_jembi_post_xml_other_httperror(self):
@@ -798,6 +825,9 @@ class TestJembiPostXmlTask(AuthenticatedAPITestCase):
         with self.assertRaises(HTTPError) as cm:
             task_response.get()
         self.assertEqual(cm.exception.response.status_code, 404)
+        self.assertEqual(True, self.check_logs(
+            "Metric: u'test.clinic.sum.doc_to_jembi_fail' [last] -> 1"))
+        self.assertEqual(1, self.check_logs_number_of_entries())
 
 
 class TestUpdateCreateVumiContactTask(AuthenticatedAPITestCase):
