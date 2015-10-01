@@ -441,7 +441,7 @@ def get_subscription_details(contact):
     return msg_set, sub_rate, seq_start
 
 
-def create_subscription(contact):
+def create_subscription(contact, authority, sender=None):
     """ Create new Control messaging subscription"""
 
     logger.info("Creating new Control messaging subscription")
@@ -461,9 +461,34 @@ def create_subscription(contact):
         subscription.save()
         logger.info("Created subscription for %s" % subscription.to_addr)
 
+        vumi_fire_metric.apply_async(
+            kwargs={
+                "metric": u"%s.sum.subscriptions" % (
+                    settings.METRIC_ENV),
+                "value": 1,
+                "agg": "sum",
+                "sender": sender}
+        )
+        vumi_fire_metric.apply_async(
+            kwargs={
+                "metric": u"%s.%s.sum.subscription_to_protocol_success" % (
+                    settings.METRIC_ENV, authority),
+                "value": 1,
+                "agg": "sum",
+                "sender": sender}
+        )
+
         return subscription
 
     except:
+        vumi_fire_metric.apply_async(
+            kwargs={
+                "metric": u"%s.%s.sum.subscription_to_protocol_fail" % (
+                    settings.METRIC_ENV, authority),
+                "value": 1,
+                "agg": "sum",
+                "sender": sender}
+        )
         logger.error(
             'Error creating Subscription instance',
             exc_info=True)
@@ -492,7 +517,7 @@ def jembi_post_json(registration_id, sender=None):
                     "metric": u"%s.%s.sum.json_to_jembi_success" % (
                         settings.METRIC_ENV, registration.authority),
                     "value": 1,
-                    "agg": "last",
+                    "agg": "sum",
                     "sender": sender}
             )
         except HTTPError as e:
@@ -505,7 +530,7 @@ def jembi_post_json(registration_id, sender=None):
                             "metric": u"%s.%s.sum.json_to_jembi_fail" % (
                                 settings.METRIC_ENV, registration.authority),
                             "value": 1,
-                            "agg": "last",
+                            "agg": "sum",
                             "sender": None}
                     )
                 raise jembi_post_json.retry(exc=e)
@@ -515,7 +540,7 @@ def jembi_post_json(registration_id, sender=None):
                         "metric": u"%s.%s.sum.json_to_jembi_fail" % (
                             settings.METRIC_ENV, registration.authority),
                         "value": 1,
-                        "agg": "last",
+                        "agg": "sum",
                         "sender": None}
                 )
                 raise e
@@ -561,15 +586,7 @@ def jembi_post_xml(registration_id, sender=None):
                     "metric": u"%s.%s.sum.doc_to_jembi_success" % (
                         settings.METRIC_ENV, registration.authority),
                     "value": 1,
-                    "agg": "last",
-                    "sender": sender}
-            )
-            vumi_fire_metric.apply_async(
-                kwargs={
-                    "metric": u"%s.sum.subscriptions" % (
-                        settings.METRIC_ENV),
-                    "value": 1,
-                    "agg": "last",
+                    "agg": "sum",
                     "sender": sender}
             )
         except HTTPError as e:
@@ -582,7 +599,7 @@ def jembi_post_xml(registration_id, sender=None):
                             "metric": u"%s.%s.sum.doc_to_jembi_fail" % (
                                 settings.METRIC_ENV, registration.authority),
                             "value": 1,
-                            "agg": "last",
+                            "agg": "sum",
                             "sender": None}
                     )
                 raise jembi_post_xml.retry(exc=e)
@@ -592,7 +609,7 @@ def jembi_post_xml(registration_id, sender=None):
                         "metric": u"%s.%s.sum.doc_to_jembi_fail" % (
                             settings.METRIC_ENV, registration.authority),
                         "value": 1,
-                        "agg": "last",
+                        "agg": "sum",
                         "sender": None}
                 )
                 raise e
@@ -610,7 +627,7 @@ def jembi_post_xml(registration_id, sender=None):
 
 
 @task(time_limit=10)
-def update_create_vumi_contact(registration_id, client=None):
+def update_create_vumi_contact(registration_id, client=None, sender=None):
     """ Task to update or create a Vumi contact when a registration
         is created.
     """
@@ -633,7 +650,8 @@ def update_create_vumi_contact(registration_id, client=None):
                     contact, registration, client)
 
                 # Create new subscription for the contact
-                subscription = create_subscription(updated_contact)
+                subscription = create_subscription(
+                    updated_contact, registration.authority, sender)
 
                 # Update the contact with subscription details
                 updated_contact = update_contact_subscription(
@@ -648,7 +666,8 @@ def update_create_vumi_contact(registration_id, client=None):
                     contact = create_contact(registration, client)
 
                     # Create new subscription for the contact
-                    subscription = create_subscription(contact)
+                    subscription = create_subscription(
+                        contact, registration.authority, sender)
 
                     # Update the contact with subscription details
                     updated_contact = update_contact_subscription(

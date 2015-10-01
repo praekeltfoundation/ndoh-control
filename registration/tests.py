@@ -524,11 +524,11 @@ class TestRegistrationsAPI(AuthenticatedAPITestCase):
             kwargs={
                 "metric": "test.metric",
                 "value": 1,
-                "agg": "last",
+                "agg": "sum",
                 "sender": self.sender}
             )
         self.assertEqual(True,
-                         self.check_logs("Metric: 'test.metric' [last] -> 1"))
+                         self.check_logs("Metric: 'test.metric' [sum] -> 1"))
         self.assertEqual(1, self.check_logs_number_of_entries())
 
     @responses.activate
@@ -587,12 +587,15 @@ class TestRegistrationsAPI(AuthenticatedAPITestCase):
 
         # Test metrics have fired
         self.assertEqual(True, self.check_logs(
-            "Metric: u'test.clinic.sum.json_to_jembi_success' [last] -> 1"))
+            "Metric: u'test.clinic.sum.json_to_jembi_success' [sum] -> 1"))
         self.assertEqual(True, self.check_logs(
-            "Metric: u'test.clinic.sum.doc_to_jembi_success' [last] -> 1"))
+            "Metric: u'test.clinic.sum.doc_to_jembi_success' [sum] -> 1"))
         self.assertEqual(True, self.check_logs(
-            "Metric: u'test.sum.subscriptions' [last] -> 1"))
-        self.assertEqual(3, self.check_logs_number_of_entries())
+            "Metric: u'test.sum.subscriptions' [sum] -> 1"))
+        self.assertEqual(True, self.check_logs(
+            "Metric: u'test.clinic.sum.subscription_to_protocol_success' " +
+            "[sum] -> 1"))
+        self.assertEqual(4, self.check_logs_number_of_entries())
 
         # remove post_save hooks to prevent teardown errors
         post_save.disconnect(fire_jembi_post, sender=Registration)
@@ -732,7 +735,7 @@ class TestJembiPostJsonTask(AuthenticatedAPITestCase):
         self.assertEqual(len(responses.calls), 1)
         self.assertEqual(task_response.get(), 'jembi_post_json task')
         self.assertEqual(True, self.check_logs(
-            "Metric: u'test.clinic.sum.json_to_jembi_success' [last] -> 1"))
+            "Metric: u'test.clinic.sum.json_to_jembi_success' [sum] -> 1"))
         self.assertEqual(1, self.check_logs_number_of_entries())
 
     @responses.activate
@@ -752,7 +755,7 @@ class TestJembiPostJsonTask(AuthenticatedAPITestCase):
             task_response.get()
         self.assertEqual(cm.exception.response.status_code, 531)
         self.assertEqual(True, self.check_logs(
-            "Metric: u'test.clinic.sum.json_to_jembi_fail' [last] -> 1"))
+            "Metric: u'test.clinic.sum.json_to_jembi_fail' [sum] -> 1"))
         self.assertEqual(1, self.check_logs_number_of_entries())
 
     @responses.activate
@@ -772,7 +775,7 @@ class TestJembiPostJsonTask(AuthenticatedAPITestCase):
             task_response.get()
         self.assertEqual(cm.exception.response.status_code, 404)
         self.assertEqual(True, self.check_logs(
-            "Metric: u'test.clinic.sum.json_to_jembi_fail' [last] -> 1"))
+            "Metric: u'test.clinic.sum.json_to_jembi_fail' [sum] -> 1"))
         self.assertEqual(1, self.check_logs_number_of_entries())
 
 
@@ -806,7 +809,7 @@ class TestJembiPostXmlTask(AuthenticatedAPITestCase):
             task_response.get()
         self.assertEqual(cm.exception.response.status_code, 531)
         self.assertEqual(True, self.check_logs(
-            "Metric: u'test.clinic.sum.doc_to_jembi_fail' [last] -> 1"))
+            "Metric: u'test.clinic.sum.doc_to_jembi_fail' [sum] -> 1"))
         self.assertEqual(1, self.check_logs_number_of_entries())
 
     @responses.activate
@@ -826,7 +829,7 @@ class TestJembiPostXmlTask(AuthenticatedAPITestCase):
             task_response.get()
         self.assertEqual(cm.exception.response.status_code, 404)
         self.assertEqual(True, self.check_logs(
-            "Metric: u'test.clinic.sum.doc_to_jembi_fail' [last] -> 1"))
+            "Metric: u'test.clinic.sum.doc_to_jembi_fail' [sum] -> 1"))
         self.assertEqual(1, self.check_logs_number_of_entries())
 
 
@@ -1050,5 +1053,14 @@ class TestUpdateCreateVumiContactTask(AuthenticatedAPITestCase):
                 "edd": "2013-09-24"
             }
         }
-        subscription = tasks.create_subscription(contact_35)
+        subscription = tasks.create_subscription(contact_35, 'clinic')
         self.assertEqual(subscription.to_addr, "knownaddr")
+
+    def test_create_subscription_fail_fires_metric(self):
+        broken_contact = {
+            "key": "wherestherestoftheinfo"
+        }
+        tasks.create_subscription(broken_contact, 'clinic')
+        self.assertEqual(True, self.check_logs(
+            "Metric: u'test.clinic.sum.subscription_to_protocol_fail' [sum] -> 1"))
+        self.assertEqual(1, self.check_logs_number_of_entries())
