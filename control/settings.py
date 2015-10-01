@@ -225,6 +225,9 @@ CELERY_IMPORTS = (
 # send is happening.
 CELERY_CREATE_MISSING_QUEUES = True
 CELERY_ROUTES = {
+    'celery.backend_cleanup': {
+        'queue': 'mediumpriority',
+    },
     'snappybouncer.tasks.send_helpdesk_response': {
         'queue': 'priority',
     },
