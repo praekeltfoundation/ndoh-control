@@ -225,6 +225,9 @@ CELERY_IMPORTS = (
 # send is happening.
 CELERY_CREATE_MISSING_QUEUES = True
 CELERY_ROUTES = {
+    'celery.backend_cleanup': {
+        'queue': 'mediumpriority',
+    },
     'snappybouncer.tasks.send_helpdesk_response': {
         'queue': 'priority',
     },
@@ -388,6 +391,8 @@ LANG_GROUP_KEYS = {
     "ss": "b1e6bbd5d28b477aabb9cce43de7e9d1",
     "nr": "778479e9ad7c4b00a898b61be6dbcac3"
 }
+
+METRIC_ENV = "replaceme"
 
 try:
     from local_settings import *  # flake8: noqa

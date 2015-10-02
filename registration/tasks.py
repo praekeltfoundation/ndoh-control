@@ -11,6 +11,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from requests.exceptions import HTTPError
 from django.conf import settings
 from go_http.contacts import ContactsApiClient
+from go_http import HttpApiSender
 from .models import Registration
 from djcelery.models import PeriodicTask
 from subscription.models import Subscription, MessageSet
@@ -22,6 +23,15 @@ logger = get_task_logger(__name__)
 def get_client():
     return ContactsApiClient(settings.VUMI_GO_API_TOKEN,
                              api_url=settings.VUMI_GO_BASE_URL)
+
+
+def get_sender():
+    sender = HttpApiSender(
+        account_key=settings.VUMI_GO_ACCOUNT_KEY,
+        conversation_key=settings.VUMI_GO_CONVERSATION_KEY,
+        conversation_token=settings.VUMI_GO_ACCOUNT_TOKEN
+    )
+    return sender
 
 
 def get_today():
@@ -431,7 +441,7 @@ def get_subscription_details(contact):
     return msg_set, sub_rate, seq_start
 
 
-def create_subscription(contact):
+def create_subscription(contact, authority, sender=None):
     """ Create new Control messaging subscription"""
 
     logger.info("Creating new Control messaging subscription")
@@ -451,16 +461,41 @@ def create_subscription(contact):
         subscription.save()
         logger.info("Created subscription for %s" % subscription.to_addr)
 
+        vumi_fire_metric.apply_async(
+            kwargs={
+                "metric": u"%s.sum.subscriptions" % (
+                    settings.METRIC_ENV),
+                "value": 1,
+                "agg": "sum",
+                "sender": sender}
+        )
+        vumi_fire_metric.apply_async(
+            kwargs={
+                "metric": u"%s.%s.sum.subscription_to_protocol_success" % (
+                    settings.METRIC_ENV, authority),
+                "value": 1,
+                "agg": "sum",
+                "sender": sender}
+        )
+
         return subscription
 
     except:
+        vumi_fire_metric.apply_async(
+            kwargs={
+                "metric": u"%s.%s.sum.subscription_to_protocol_fail" % (
+                    settings.METRIC_ENV, authority),
+                "value": 1,
+                "agg": "sum",
+                "sender": sender}
+        )
         logger.error(
             'Error creating Subscription instance',
             exc_info=True)
 
 
 @task(time_limit=10)
-def jembi_post_json(registration_id):
+def jembi_post_json(registration_id, sender=None):
     """ Task to send registrations Json to Jembi"""
 
     logger.info("Compiling Jembi Json data")
@@ -477,11 +512,37 @@ def jembi_post_json(registration_id):
                 verify=False
             )
             result.raise_for_status()
+            vumi_fire_metric.apply_async(
+                kwargs={
+                    "metric": u"%s.%s.sum.json_to_jembi_success" % (
+                        settings.METRIC_ENV, registration.authority),
+                    "value": 1,
+                    "agg": "sum",
+                    "sender": sender}
+            )
         except HTTPError as e:
             # retry message sending if in 500 range (3 default retries)
             if 500 < e.response.status_code < 599:
+                if jembi_post_json.max_retries == \
+                   jembi_post_json.request.retries:
+                    vumi_fire_metric.apply_async(
+                        kwargs={
+                            "metric": u"%s.%s.sum.json_to_jembi_fail" % (
+                                settings.METRIC_ENV, registration.authority),
+                            "value": 1,
+                            "agg": "sum",
+                            "sender": None}
+                    )
                 raise jembi_post_json.retry(exc=e)
             else:
+                vumi_fire_metric.apply_async(
+                    kwargs={
+                        "metric": u"%s.%s.sum.json_to_jembi_fail" % (
+                            settings.METRIC_ENV, registration.authority),
+                        "value": 1,
+                        "agg": "sum",
+                        "sender": None}
+                )
                 raise e
         except:
             logger.error('Problem posting JSON to Jembi', exc_info=True)
@@ -497,7 +558,7 @@ def jembi_post_json(registration_id):
 
 
 @task(time_limit=10)
-def jembi_post_xml(registration_id):
+def jembi_post_xml(registration_id, sender=None):
     """ Task to send clinic & chw registrations XML to Jembi"""
 
     logger.info("Compiling Jembi XML data")
@@ -520,11 +581,37 @@ def jembi_post_xml(registration_id):
             result = requests.post(api_url, headers=headers, data=data,
                                    auth=auth, verify=False)
             result.raise_for_status()
+            vumi_fire_metric.apply_async(
+                kwargs={
+                    "metric": u"%s.%s.sum.doc_to_jembi_success" % (
+                        settings.METRIC_ENV, registration.authority),
+                    "value": 1,
+                    "agg": "sum",
+                    "sender": sender}
+            )
         except HTTPError as e:
             # retry message sending if in 500 range (3 default retries)
             if 500 < e.response.status_code < 599:
+                if jembi_post_xml.max_retries == \
+                   jembi_post_xml.request.retries:
+                    vumi_fire_metric.apply_async(
+                        kwargs={
+                            "metric": u"%s.%s.sum.doc_to_jembi_fail" % (
+                                settings.METRIC_ENV, registration.authority),
+                            "value": 1,
+                            "agg": "sum",
+                            "sender": None}
+                    )
                 raise jembi_post_xml.retry(exc=e)
             else:
+                vumi_fire_metric.apply_async(
+                    kwargs={
+                        "metric": u"%s.%s.sum.doc_to_jembi_fail" % (
+                            settings.METRIC_ENV, registration.authority),
+                        "value": 1,
+                        "agg": "sum",
+                        "sender": None}
+                )
                 raise e
         except:
             logger.error('Problem posting XML to Jembi', exc_info=True)
@@ -540,7 +627,7 @@ def jembi_post_xml(registration_id):
 
 
 @task(time_limit=10)
-def update_create_vumi_contact(registration_id, client=None):
+def update_create_vumi_contact(registration_id, client=None, sender=None):
     """ Task to update or create a Vumi contact when a registration
         is created.
     """
@@ -563,7 +650,8 @@ def update_create_vumi_contact(registration_id, client=None):
                     contact, registration, client)
 
                 # Create new subscription for the contact
-                subscription = create_subscription(updated_contact)
+                subscription = create_subscription(
+                    updated_contact, registration.authority, sender)
 
                 # Update the contact with subscription details
                 updated_contact = update_contact_subscription(
@@ -578,7 +666,8 @@ def update_create_vumi_contact(registration_id, client=None):
                     contact = create_contact(registration, client)
 
                     # Create new subscription for the contact
-                    subscription = create_subscription(contact)
+                    subscription = create_subscription(
+                        contact, registration.authority, sender)
 
                     # Update the contact with subscription details
                     updated_contact = update_contact_subscription(
@@ -600,4 +689,18 @@ def update_create_vumi_contact(registration_id, client=None):
     except SoftTimeLimitExceeded:
         logger.error(
             'Soft time limit exceeded processing Jembi send via Celery.',
+            exc_info=True)
+
+
+@task()
+def vumi_fire_metric(metric, value, agg, sender=None):
+    try:
+        if sender is None:
+            sender = get_sender()
+        sender.fire_metric(metric, value, agg=agg)
+        return sender
+    except SoftTimeLimitExceeded:
+        logger.error(
+            'Soft time limit exceed processing metric fire to Vumi HTTP API '
+            'via Celery',
             exc_info=True)
