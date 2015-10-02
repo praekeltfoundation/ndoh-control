@@ -218,6 +218,23 @@ def subscription_edit(request):
                     "confirmbabyform": confirmbabyform,
                 })
                 context.update(csrf(request))
+    elif request.method == "GET" and 'msisdn' in request.GET:
+        # Confirm before updating the record
+        msisdn = request.GET.get("msisdn")
+
+        cancelform = SubscriptionCancelForm()
+        cancelform.fields["msisdn"].initial = msisdn
+        optoutform = SubscriptionOptOutForm()
+        optoutform.fields["msisdn"].initial = msisdn
+        form = SubscriptionFindForm()
+        form.fields["msisdn"].widget = forms.HiddenInput()
+        form.fields["msisdn"].initial = msisdn
+        context.update({
+            "cancelform": cancelform,
+            "optoutform": optoutform,
+            "form": form
+        })
+        context.update(csrf(request))
     elif request.method == "POST" and \
             request.POST["subaction"] == "confirmcancel":
         # Confirm before update the record
