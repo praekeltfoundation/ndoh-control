@@ -328,7 +328,7 @@ class TestFireSummaryMetrics(TestCase):
 
     def check_logs(self, msg):
         if type(self.handler.logs) != list:
-            [logs] = self.handler.logs
+            logs = [self.handler.logs]
         else:
             logs = self.handler.logs
         for log in logs:
