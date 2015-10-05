@@ -22,6 +22,7 @@ from subscription.forms import (MessageFindForm,
                                 MessageConfirmForm,
                                 SubscriptionFindForm,
                                 SubscriptionConfirmCancelForm,
+                                SubscriptionConfirmOptOutForm,
                                 SubscriptionConfirmBabyForm,
                                 SubscriptionCancelForm,
                                 SubscriptionOptOutForm,
@@ -195,64 +196,78 @@ def subscription_edit(request):
         # Locate the record
         form = SubscriptionFindForm(request.POST)
         if form.is_valid():
+            msisdn = form.cleaned_data['msisdn']
             subscriptions = Subscription.objects.filter(
-                to_addr=form.cleaned_data['msisdn'])
+                to_addr=msisdn)
+
             if subscriptions.count() == 0:
+                confirmoptoutform = SubscriptionConfirmOptOutForm()
+                confirmoptoutform.fields["msisdn"].initial = msisdn
+
                 messages.error(request,
-                               "Subscriber could not be found",
+                               "No subscriptions found for " + msisdn,
                                extra_tags="danger")
-                context.update({"form": form})
+                context.update({"confirmoptoutform": confirmoptoutform})
                 context.update(csrf(request))
             else:
                 confirmcancelform = SubscriptionConfirmCancelForm()
-                confirmcancelform.fields["msisdn"].initial = \
-                    form.cleaned_data['msisdn']
+                confirmcancelform.fields["msisdn"].initial = msisdn
 
-                optoutform = SubscriptionOptOutForm()
-                optoutform.fields["msisdn"].initial = \
-                    form.cleaned_data['msisdn']
+                confirmoptoutform = SubscriptionConfirmOptOutForm()
+                confirmoptoutform.fields["msisdn"].initial = msisdn
 
                 confirmbabyform = SubscriptionConfirmBabyForm()
-                confirmbabyform.fields["msisdn"].initial = \
-                    form.cleaned_data['msisdn']
+                confirmbabyform.fields["msisdn"].initial = msisdn
                 confirmbabyform.fields["existing_id"].initial = \
                     subscriptions[0].id
 
                 context.update({
                     "subscriptions": subscriptions,
                     "confirmcancelform": confirmcancelform,
-                    "optoutform": optoutform,
+                    "confirmoptoutform": confirmoptoutform,
                     "confirmbabyform": confirmbabyform,
                 })
                 context.update(csrf(request))
     elif request.method == "GET" and 'msisdn' in request.GET:
-        # Confirm before updating the record
+        form = SubscriptionFindForm(request.POST)
         msisdn = request.GET.get("msisdn")
+        subscriptions = Subscription.objects.filter(to_addr=msisdn)
 
-        cancelform = SubscriptionCancelForm()
-        cancelform.fields["msisdn"].initial = msisdn
-        optoutform = SubscriptionOptOutForm()
-        optoutform.fields["msisdn"].initial = msisdn
-        form = SubscriptionFindForm()
-        form.fields["msisdn"].widget = forms.HiddenInput()
-        form.fields["msisdn"].initial = msisdn
-        context.update({
-            "cancelform": cancelform,
-            "optoutform": optoutform,
-            "form": form
-        })
-        context.update(csrf(request))
+        if subscriptions.count() == 0:
+            confirmoptoutform = SubscriptionConfirmOptOutForm()
+            confirmoptoutform.fields["msisdn"].initial = msisdn
+
+            messages.error(request,
+                           "No subscriptions found for " + msisdn,
+                           extra_tags="danger")
+            context.update({"confirmoptoutform": confirmoptoutform})
+            context.update(csrf(request))
+        else:
+            confirmcancelform = SubscriptionConfirmCancelForm()
+            confirmcancelform.fields["msisdn"].initial = msisdn
+
+            confirmoptoutform = SubscriptionConfirmOptOutForm()
+            confirmoptoutform.fields["msisdn"].initial = msisdn
+
+            confirmbabyform = SubscriptionConfirmBabyForm()
+            confirmbabyform.fields["msisdn"].initial = msisdn
+            confirmbabyform.fields["existing_id"].initial = \
+                subscriptions[0].id
+
+            context.update({
+                "subscriptions": subscriptions,
+                "confirmcancelform": confirmcancelform,
+                "confirmoptoutform": confirmoptoutform,
+                "confirmbabyform": confirmbabyform,
+            })
+            context.update(csrf(request))
     elif request.method == "POST" and \
             request.POST["subaction"] == "confirmcancel":
         # Confirm before update the record
-
         confirmcancelform = SubscriptionConfirmCancelForm(request.POST)
         if confirmcancelform.is_valid():
             cancelform = SubscriptionCancelForm()
             cancelform.fields["msisdn"].initial = \
-                confirmcancelform.cleaned_data['msisdn']
-            optoutform = SubscriptionOptOutForm()
-            optoutform.fields["msisdn"].initial = \
                 confirmcancelform.cleaned_data['msisdn']
             form = SubscriptionFindForm()
             form.fields["msisdn"].widget = forms.HiddenInput()
@@ -260,6 +275,22 @@ def subscription_edit(request):
                 confirmcancelform.cleaned_data['msisdn']
             context.update({
                 "cancelform": cancelform,
+                "form": form
+            })
+            context.update(csrf(request))
+    elif request.method == "POST" and \
+            request.POST["subaction"] == "confirmoptout":
+        # Confirm before update the record
+        confirmoptoutform = SubscriptionConfirmOptOutForm(request.POST)
+        if confirmoptoutform.is_valid():
+            optoutform = SubscriptionOptOutForm()
+            optoutform.fields["msisdn"].initial = \
+                confirmoptoutform.cleaned_data['msisdn']
+            form = SubscriptionFindForm()
+            form.fields["msisdn"].widget = forms.HiddenInput()
+            form.fields["msisdn"].initial = \
+                confirmoptoutform.cleaned_data['msisdn']
+            context.update({
                 "optoutform": optoutform,
                 "form": form
             })

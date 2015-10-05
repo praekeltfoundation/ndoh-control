@@ -151,7 +151,7 @@ class SubscriptionEditViewTests(TestCase):
 
     def test_subscription_edit_view_not_found(self):
         """
-        If search params, should show list of subs and actions
+        If no subscriptions, should show opt-out option
         """
         self.login()
         searchform = {
@@ -160,7 +160,8 @@ class SubscriptionEditViewTests(TestCase):
         }
         response = self.client.post(
             reverse('controlinterface.views.subscription_edit'), searchform)
-        self.assertContains(response, "Subscriber could not be found")
+        self.assertContains(response, "No subscriptions found for +2788888888")
+        self.assertContains(response, "Full Opt-Out")
 
     def test_subscription_confirm_cancel_view(self):
         """
@@ -174,7 +175,21 @@ class SubscriptionEditViewTests(TestCase):
         response = self.client.post(
             reverse('controlinterface.views.subscription_edit'),
             confirmcancelform)
-        self.assertContains(response, "Cancel Subscriptions")
+        self.assertContains(response, "Cancel All Subscriptions")
+        self.assertContains(response, "No, don't cancel subscriptions")
+
+    def test_subscription_confirm_optout_view(self):
+        """
+        If confirmoptout params, should show confirmation options
+        """
+        self.login()
+        confirmoptoutform = {
+            "subaction": "confirmoptout",
+            "msisdn": "+271112"
+        }
+        response = self.client.post(
+            reverse('controlinterface.views.subscription_edit'),
+            confirmoptoutform)
         self.assertContains(response, "Full Opt-Out")
         self.assertContains(response, "No, don't cancel subscriptions")
 
@@ -187,9 +202,21 @@ class SubscriptionEditViewTests(TestCase):
         response = self.client.get(
             reverse('controlinterface.views.subscription_edit'),
             {'msisdn': '+271112'})
-        self.assertContains(response, "Cancel Subscriptions")
+        self.assertContains(response, "Current Subscriptions")
+        self.assertContains(response, "Cancel All Subscriptions")
         self.assertContains(response, "Full Opt-Out")
-        self.assertContains(response, "No, don't cancel subscriptions")
+        self.assertContains(response, "Switch To Baby")
+
+    def test_subscription_get_msisdn_view_not_found(self):
+        """
+        If no subscriptions, should show opt-out option
+        """
+        self.login()
+        response = self.client.get(
+            reverse('controlinterface.views.subscription_edit'),
+            {'msisdn': '+2788888888'})
+        self.assertContains(response, "No subscriptions found for +2788888888")
+        self.assertContains(response, "Full Opt-Out")
 
     def test_subscription_cancel_all(self):
         """
