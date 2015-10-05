@@ -543,7 +543,7 @@ class TestRegistrationsAPI(AuthenticatedAPITestCase):
         self.assertEqual(Registration.objects.all().count(), 0)
 
         responses.add(responses.POST,
-                      "http://test/v2/json/subscription",
+                      "http://test/v2/subscription",
                       body='jembi_post_json task', status=201,
                       content_type='application/json')
         responses.add(responses.POST,
@@ -573,7 +573,7 @@ class TestRegistrationsAPI(AuthenticatedAPITestCase):
         self.assertEqual(len(responses.calls), 2)
         self.assertEqual(
             responses.calls[0].request.url,
-            "http://test/v2/json/subscription")
+            "http://test/v2/subscription")
         self.assertEqual(
             responses.calls[1].request.url,
             "http://test/v2/registration/net.ihe/DocumentDossier")
@@ -725,7 +725,7 @@ class TestJembiPostJsonTask(AuthenticatedAPITestCase):
             post_data=TEST_REG_DATA["clinic_self"])
 
         responses.add(responses.POST,
-                      "http://test/v2/json/subscription",
+                      "http://test/v2/subscription",
                       body='jembi_post_json task', status=201,
                       content_type='application/json')
 
@@ -744,7 +744,7 @@ class TestJembiPostJsonTask(AuthenticatedAPITestCase):
             post_data=TEST_REG_DATA["clinic_self"])
 
         responses.add(responses.POST,
-                      "http://test/v2/json/subscription",
+                      "http://test/v2/subscription",
                       body='{"error": "jembi json problems"}', status=531,
                       content_type='application/json')
 
@@ -764,7 +764,7 @@ class TestJembiPostJsonTask(AuthenticatedAPITestCase):
             post_data=TEST_REG_DATA["clinic_self"])
 
         responses.add(responses.POST,
-                      "http://test/v2/json/subscription",
+                      "http://test/v2/subscription",
                       body='{"error": "jembi json problems"}', status=404,
                       content_type='application/json')
 

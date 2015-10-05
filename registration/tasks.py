@@ -505,7 +505,7 @@ def jembi_post_json(registration_id, sender=None):
 
         try:
             result = requests.post(
-                "%s/json/subscription" % settings.JEMBI_BASE_URL,  # url
+                "%s/subscription" % settings.JEMBI_BASE_URL,  # url
                 headers={'Content-Type': 'application/json'},
                 data=json.dumps(json_doc),
                 auth=(settings.JEMBI_USERNAME, settings.JEMBI_PASSWORD),
