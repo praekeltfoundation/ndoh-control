@@ -52,6 +52,13 @@
           {{ confirmcancelform|bootstrap }}<input type="submit" class="btn btn-primary" value="Cancel All Subscriptions" />
           </form></p>
           <p>
+            <form id="subscription-edit-form" method="post" method="POST" action=".">
+            {% csrf_token %}
+            {{ optoutform|bootstrap }}
+              <input type="submit" class="btn btn-success" value="Full Opt-Out" />
+            </form>
+          </p>
+          <p>
           <form id="subscription-edit-form" method="post" method="POST" action=".">
           {% csrf_token %}
           {{ confirmbabyform|bootstrap }}<input type="submit" class="btn btn-primary" value="Switch To Baby" />
@@ -71,7 +78,7 @@
             <form id="subscription-edit-form" method="post" method="POST" action=".">
             {% csrf_token %}
             {{ optoutform|bootstrap }}
-              <input type="submit" class="btn btn-success" value="Cancel Subscriptions and Opt Out" />
+              <input type="submit" class="btn btn-success" value="Full Opt-Out" />
             </form>
           </p>
           <p>

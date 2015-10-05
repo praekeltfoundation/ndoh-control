@@ -146,6 +146,7 @@ class SubscriptionEditViewTests(TestCase):
             reverse('controlinterface.views.subscription_edit'), searchform)
         self.assertContains(response, "Current Subscriptions")
         self.assertContains(response, "Cancel All Subscriptions")
+        self.assertContains(response, "Full Opt-Out")
         self.assertContains(response, "Switch To Baby")
 
     def test_subscription_edit_view_not_found(self):
@@ -174,7 +175,7 @@ class SubscriptionEditViewTests(TestCase):
             reverse('controlinterface.views.subscription_edit'),
             confirmcancelform)
         self.assertContains(response, "Cancel Subscriptions")
-        self.assertContains(response, "Cancel Subscriptions and Opt Out")
+        self.assertContains(response, "Full Opt-Out")
         self.assertContains(response, "No, don't cancel subscriptions")
 
     def test_subscription_get_msisdn_view(self):
@@ -187,7 +188,7 @@ class SubscriptionEditViewTests(TestCase):
             reverse('controlinterface.views.subscription_edit'),
             {'msisdn': '+271112'})
         self.assertContains(response, "Cancel Subscriptions")
-        self.assertContains(response, "Cancel Subscriptions and Opt Out")
+        self.assertContains(response, "Full Opt-Out")
         self.assertContains(response, "No, don't cancel subscriptions")
 
     def test_subscription_cancel_all(self):

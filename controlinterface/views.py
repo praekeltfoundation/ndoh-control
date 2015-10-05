@@ -205,16 +205,23 @@ def subscription_edit(request):
                 context.update(csrf(request))
             else:
                 confirmcancelform = SubscriptionConfirmCancelForm()
-                confirmcancelform.fields[
-                    "msisdn"].initial = form.cleaned_data['msisdn']
+                confirmcancelform.fields["msisdn"].initial = \
+                    form.cleaned_data['msisdn']
+
+                optoutform = SubscriptionOptOutForm()
+                optoutform.fields["msisdn"].initial = \
+                    form.cleaned_data['msisdn']
+
                 confirmbabyform = SubscriptionConfirmBabyForm()
                 confirmbabyform.fields["msisdn"].initial = \
                     form.cleaned_data['msisdn']
                 confirmbabyform.fields["existing_id"].initial = \
                     subscriptions[0].id
+
                 context.update({
                     "subscriptions": subscriptions,
                     "confirmcancelform": confirmcancelform,
+                    "optoutform": optoutform,
                     "confirmbabyform": confirmbabyform,
                 })
                 context.update(csrf(request))
