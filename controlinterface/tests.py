@@ -191,7 +191,7 @@ class SubscriptionEditViewTests(TestCase):
             reverse('controlinterface.views.subscription_edit'),
             confirmoptoutform)
         self.assertContains(response, "Full Opt-Out")
-        self.assertContains(response, "No, don't cancel subscriptions")
+        self.assertContains(response, "No, don't fully opt-out")
 
     def test_subscription_get_msisdn_view(self):
         """
