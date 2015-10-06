@@ -2,6 +2,7 @@ from celery import task
 from celery.utils.log import get_task_logger
 import requests
 import json
+import urllib
 
 from go_http.send import HttpApiSender
 from go_http.contacts import ContactsApiClient
@@ -112,19 +113,24 @@ def update_snappy_ticket_with_extras(snappy_api, nonce, contact_key, subject):
     contact = contacts_api.get_contact(contact_key)
     extra_info = ""
     for extra in settings.SNAPPY_EXTRAS:
+        # Add available contact extras
         if extra in contact["extra"]:
             extra_info += extra + ": " + contact["extra"][extra] + "\n"
-    if extra_info != "":
-        # Send private note
-        snappy_api.create_note(
-            mailbox_id=settings.SNAPPY_MAILBOX_ID,
-            subject=subject,
-            message=extra_info,
-            to_addr=[{
-                "name": "Internal Information",
-                "address": settings.SNAPPY_EMAIL}],
-            ticket_id=nonce,
-            scope="private",
-            staff_id=settings.SNAPPY_STAFF_ID
-        )
+    # Add opt-out link
+    optout_url = settings.SITE_DOMAIN_URL + \
+        "/controlinterface/subscription/?msisdn=" + \
+        urllib.quote_plus(contact["msisdn"])
+    extra_info += "Opt this user out: " + optout_url + "\n"
+    # Send private note
+    snappy_api.create_note(
+        mailbox_id=settings.SNAPPY_MAILBOX_ID,
+        subject=subject,
+        message=extra_info,
+        to_addr=[{
+            "name": "Internal Information",
+            "address": settings.SNAPPY_EMAIL}],
+        ticket_id=nonce,
+        scope="private",
+        staff_id=settings.SNAPPY_STAFF_ID
+    )
     return True
