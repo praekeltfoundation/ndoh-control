@@ -1,3 +1,4 @@
+from django.contrib.sites.models import Site
 from celery import task
 from celery.utils.log import get_task_logger
 import requests
@@ -112,8 +113,15 @@ def update_snappy_ticket_with_extras(snappy_api, nonce, contact_key, subject):
     contact = contacts_api.get_contact(contact_key)
     extra_info = ""
     for extra in settings.SNAPPY_EXTRAS:
+        # Add available contact extras
         if extra in contact["extra"]:
             extra_info += extra + ": " + contact["extra"][extra] + "\n"
+        # Add opt-out link
+        if extra == "controlinterface_optout_link":
+            optout_url = str(Site.objects.get_current().domain) + \
+                "/controlinterface/subscription/?msisdn=" + \
+                contact["msisdn"].replace("+", "%2B")
+            extra_info += extra + ": " + optout_url + "\n"
     if extra_info != "":
         # Send private note
         snappy_api.create_note(

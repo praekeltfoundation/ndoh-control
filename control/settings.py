@@ -359,7 +359,7 @@ SNAPPY_BASE_URL = "https://app.besnappy.com/api/v1"
 SNAPPY_API_KEY = "replaceme"
 SNAPPY_MAILBOX_ID = 1
 SNAPPY_EMAIL = "replaceme@example.org"
-SNAPPY_EXTRAS = []
+SNAPPY_EXTRAS = ["controlinterface_optout_link"]
 
 BROKER_URL = 'redis://localhost:6379/0'
 

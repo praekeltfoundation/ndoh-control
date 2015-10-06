@@ -146,6 +146,9 @@ class SnappyBouncerResourceTest(ResourceTestCase):
 
     @responses.activate
     def test_post_ticket_two_good(self):
+        # Tests that if two duplicate tickets are posted, the duplicate is
+        # ignored.
+
         # restore the post_save hook just for this test
         post_save.connect(fire_snappy_if_new, sender=Ticket)
 
