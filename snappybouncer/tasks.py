@@ -2,6 +2,7 @@ from celery import task
 from celery.utils.log import get_task_logger
 import requests
 import json
+import urllib
 
 from go_http.send import HttpApiSender
 from go_http.contacts import ContactsApiClient
@@ -118,7 +119,7 @@ def update_snappy_ticket_with_extras(snappy_api, nonce, contact_key, subject):
     # Add opt-out link
     optout_url = settings.SITE_DOMAIN_URL + \
         "/controlinterface/subscription/?msisdn=" + \
-        contact["msisdn"].replace("+", "%2B")
+        urllib.quote_plus(contact["msisdn"])
     extra_info += "Opt this user out: " + optout_url + "\n"
     # Send private note
     snappy_api.create_note(
