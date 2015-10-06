@@ -60,7 +60,7 @@ def process_message_queue(schedule, sender=None):
     return total_sent
 
 
-@task(bind=True, time_limit=10)
+@task(bind=True, time_limit=10, ignore_result=True)
 def send_message(self, subscriber, sender):
     try:
         # send message to subscriber
@@ -97,7 +97,7 @@ def send_message(self, subscriber, sender):
 
 
 @task()
-def processes_message(subscriber, sender):
+def processes_message(subscriber, sender, ignore_result=True):
     try:
         # Process moving to next message, next set or finished
         try:
