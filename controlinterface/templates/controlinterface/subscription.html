@@ -19,7 +19,7 @@
     {% endif %}
 
 
-    {% if confirmcancelform %}
+    {% if confirmcancelform and confirmoptoutform %}
           <h3>Current Subscriptions</h3>
           <table class="table table-striped">
             <thead>
@@ -47,29 +47,73 @@
             </tbody>
         </table>
           <h4>Actions:</h4>
+          <p>
+            Cancel All Subscriptions will mean that the user will no longer receive any <i>scheduled</i> messages from MomConnect.  Full Opt-Out will Cancel All Subscriptions, and also ensures that the user will not receive <i>any</i> further communication from MomConnect, like service rating reminders and ad-hoc messages.
+          </p>
           <p><form id="subscription-edit-form" method="post" method="POST" action=".">
           {% csrf_token %}
           {{ confirmcancelform|bootstrap }}<input type="submit" class="btn btn-primary" value="Cancel All Subscriptions" />
           </form></p>
+          <p><form id="subscription-edit-form" method="post" method="POST" action=".">
+          {% csrf_token %}
+          {{ confirmoptoutform|bootstrap }}<input type="submit" class="btn btn-primary" value="Full Opt-Out" />
+          </form>
+          </p>
           <p>
           <form id="subscription-edit-form" method="post" method="POST" action=".">
           {% csrf_token %}
           {{ confirmbabyform|bootstrap }}<input type="submit" class="btn btn-primary" value="Switch To Baby" />
           </form></p>
 
+    {% elif confirmoptoutform %}
+          <p>
+            Although no subscriptions could be found for this user, in rare cases it may be necessary to opt the user out. This will ensure that the user will not receive <i>any</i> communication from MomConnect. Please double-check the msisdn before proceeding.
+          </p>
+          <p><form id="subscription-edit-form" method="post" method="POST" action=".">
+          {% csrf_token %}
+          {{ confirmoptoutform|bootstrap }}<input type="submit" class="btn btn-primary" value="Full Opt-Out" />
+          </form>
+          </p>
+
     {% elif cancelform %}
           <h3>Confirm Subscription Cancel</h3>
-          <p><form id="subscription-edit-form" method="post" method="POST" action=".">
-            Cancelling all subscriptions will mean that the user will no longer receive any messages from MomConnect. Please confirm that you want to cancel all subscriptions for this user:<br><br>
-          {% csrf_token %}
-          {{ cancelform|bootstrap }}
-          <input type="submit" class="btn btn-success" value="Cancel Subscriptions" />
-          </form></p>
           <p>
-          <form id="subscription-edit-form" method="post" method="POST" action=".">
-          {% csrf_token %}
-          {{ form|bootstrap }}<input type="submit" class="btn btn-danger" value="No, don't cancel subscriptions" />
-          </form></p>
+            Please confirm that you want to cancel all scheduled messages to the user.
+          </p>
+          <p>
+            <form id="subscription-edit-form" method="post" method="POST" action=".">
+            {% csrf_token %}
+            {{ cancelform|bootstrap }}
+              <input type="submit" class="btn btn-success" value="Cancel All Subscriptions" />
+            </form>
+          </p>
+          <p>
+            <form id="subscription-edit-form" method="post" method="POST" action=".">
+            {% csrf_token %}
+            {{ form|bootstrap }}
+              <input type="submit" class="btn btn-danger" value="No, don't cancel subscriptions" />
+            </form>
+          </p>
+
+    {% elif optoutform %}
+          <h3>Confirm Full Opt-Out</h3>
+          <p>
+            Please confirm that you want to cancel all future communication with the user.
+          </p>
+          <p>
+            <form id="subscription-edit-form" method="post" method="POST" action=".">
+            {% csrf_token %}
+            {{ optoutform|bootstrap }}
+              <input type="submit" class="btn btn-success" value="Full Opt-Out" />
+            </form>
+          </p>
+          <p>
+            <form id="subscription-edit-form" method="post" method="POST" action=".">
+            {% csrf_token %}
+            {{ form|bootstrap }}
+              <input type="submit" class="btn btn-danger" value="No, don't fully opt-out" />
+            </form>
+          </p>
 
     {% elif babyform %}
           <h3>Confirm Baby Switch</h3>

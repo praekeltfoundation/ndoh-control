@@ -80,6 +80,18 @@ class SubscriptionCancelForm(forms.Form):
     msisdn = forms.CharField(widget=forms.HiddenInput())
 
 
+class SubscriptionConfirmOptOutForm(forms.Form):
+    subaction = forms.CharField(
+        widget=forms.HiddenInput(), initial="confirmoptout")
+    msisdn = forms.CharField(widget=forms.HiddenInput())
+
+
+class SubscriptionOptOutForm(forms.Form):
+    subaction = forms.CharField(
+        widget=forms.HiddenInput(), initial="optout")
+    msisdn = forms.CharField(widget=forms.HiddenInput())
+
+
 class SubscriptionBabyForm(forms.Form):
     subaction = forms.CharField(
         widget=forms.HiddenInput(), initial="baby")
