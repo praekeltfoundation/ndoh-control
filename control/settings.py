@@ -355,11 +355,13 @@ VUMI_GO_ACCOUNT_TOKEN = "replaceme"
 VUMI_GO_METRICS_PREFIX = "prd"
 VUMI_GO_API_TOKEN = "replaceme"
 
+SITE_DOMAIN_URL = "https://momconnect.co.za"
+
 SNAPPY_BASE_URL = "https://app.besnappy.com/api/v1"
 SNAPPY_API_KEY = "replaceme"
 SNAPPY_MAILBOX_ID = 1
 SNAPPY_EMAIL = "replaceme@example.org"
-SNAPPY_EXTRAS = ["controlinterface_optout_link"]
+SNAPPY_EXTRAS = []
 
 BROKER_URL = 'redis://localhost:6379/0'
 
