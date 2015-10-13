@@ -86,7 +86,7 @@ TEST_REG_DATA = {
         "clinic_code": None,
         "authority": "chw"
     },
-    "personal": {
+    "personal_detailed": {
         "hcw_msisdn": None,
         "mom_msisdn": "+27003",
         "mom_id_type": "passport",
@@ -98,7 +98,7 @@ TEST_REG_DATA = {
         "clinic_code": None,
         "authority": "personal"
     },
-    "personal_no_id": {
+    "personal_simple": {
         "hcw_msisdn": None,
         "mom_msisdn": "+27004",
         "mom_id_type": "none",
@@ -681,9 +681,9 @@ class TestJembiPostJsonTask(AuthenticatedAPITestCase):
         payload = tasks.build_jembi_json(reg)
         self.assertEqual(expected_json_chw_hcw, payload)
 
-    def test_build_jembi_json_personal(self):
+    def test_build_jembi_json_personal_detailed(self):
         registration_personal = self.make_registration(
-            post_data=TEST_REG_DATA["personal"])
+            post_data=TEST_REG_DATA["personal_detailed"])
         reg = Registration.objects.get(pk=registration_personal.data["id"])
         expected_json_personal = {
             'id': '5552222^^^MZ^PPN',
@@ -700,9 +700,9 @@ class TestJembiPostJsonTask(AuthenticatedAPITestCase):
         payload = tasks.build_jembi_json(reg)
         self.assertEqual(expected_json_personal, payload)
 
-    def test_build_jembi_json_personal_no_id(self):
+    def test_build_jembi_json_personal_simple(self):
         registration_personal = self.make_registration(
-            post_data=TEST_REG_DATA["personal_no_id"])
+            post_data=TEST_REG_DATA["personal_simple"])
         reg = Registration.objects.get(pk=registration_personal.data["id"])
         expected_json_personal = {
             'id': '27004^^^ZAF^TEL',
@@ -1042,10 +1042,10 @@ class TestUpdateCreateVumiContactTask(AuthenticatedAPITestCase):
             "subscription_seq_start": "1"
         })
 
-    def test_create_vumi_contact_personal(self):
-        # make registration for contact with msisdn +27001
+    def test_create_vumi_contact_personal_detailed(self):
+        # make registration for contact with msisdn +27003
         registration = self.make_registration(
-            post_data=TEST_REG_DATA["personal"])
+            post_data=TEST_REG_DATA["personal_detailed"])
         client = self.make_client()
         # make completely seperate existing contact
         self.make_existing_contact({
@@ -1062,18 +1062,6 @@ class TestUpdateCreateVumiContactTask(AuthenticatedAPITestCase):
         self.assertEqual(result["msisdn"], "+27003")
         self.assertEqual(result["groups"],
                          [u"f4738d01b4f74e41b9a6e804fc7eda56"])
-        self.assertEqual(result["extra"]["is_registered"], "true")
-        self.assertEqual(result["extra"]["is_registered_by"], "personal")
-        self.assertEqual(result["extra"]["language_choice"], "st")
-        self.assertEqual(result["extra"]["source_name"], "Test Source")
-        self.assertEqual(result["extra"]["passport_no"], "5552222")
-        self.assertEqual(result["extra"]["passport_origin"], "mz")
-        self.assertEqual(result["extra"]["subscription_type"], "9")
-        self.assertEqual(result["extra"]["subscription_rate"], "3")
-        self.assertEqual(result["extra"]["subscription_seq_start"], "1")
-
-        self.assertEqual(len(result["extra"]), 9)
-
         self.assertEqual(result["extra"], {
             "is_registered": "true",
             "is_registered_by": "personal",
@@ -1081,6 +1069,36 @@ class TestUpdateCreateVumiContactTask(AuthenticatedAPITestCase):
             "source_name": "Test Source",
             "passport_no": "5552222",
             "passport_origin": "mz",
+            "subscription_type": "9",
+            "subscription_rate": "3",
+            "subscription_seq_start": "1"
+        })
+
+    def test_create_vumi_contact_personal_simple(self):
+        # make registration for contact with msisdn +27004
+        registration = self.make_registration(
+            post_data=TEST_REG_DATA["personal_simple"])
+        client = self.make_client()
+        # make completely seperate existing contact
+        self.make_existing_contact({
+            u"key": u"knownuuid",
+            u"msisdn": u"+27005",
+            u"user_account": u"knownaccount",
+            u"extra": {}
+        })
+
+        contact = tasks.update_create_vumi_contact.apply_async(
+            kwargs={"registration_id": registration.data["id"],
+                    "client": client})
+        result = contact.get()
+        self.assertEqual(result["msisdn"], "+27004")
+        self.assertEqual(result["groups"],
+                         [u"b1e6bbd5d28b477aabb9cce43de7e9d1"])
+        self.assertEqual(result["extra"], {
+            "is_registered": "true",
+            "is_registered_by": "personal",
+            "language_choice": "ss",
+            "source_name": "Test Source",
             "subscription_type": "9",
             "subscription_rate": "3",
             "subscription_seq_start": "1"

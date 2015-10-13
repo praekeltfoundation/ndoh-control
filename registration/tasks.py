@@ -337,7 +337,8 @@ def define_extras_registration(_extras, registration):
         _extras[u"due_date_year"] = registration.mom_edd.strftime("%Y")
         _extras[u"due_date_month"] = registration.mom_edd.strftime("%m")
         _extras[u"due_date_day"] = registration.mom_edd.strftime("%d")
-    if registration.mom_id_type != 'passport':
+    if (registration.mom_id_type != 'passport' and
+            registration.mom_dob is not None):
         _extras[u"dob"] = registration.mom_dob.strftime("%Y-%m-%d")
 
     return _extras
