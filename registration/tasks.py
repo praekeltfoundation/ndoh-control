@@ -21,8 +21,7 @@ logger = get_task_logger(__name__)
 
 
 def get_client():
-    return ContactsApiClient(settings.VUMI_GO_API_TOKEN,
-                             api_url=settings.VUMI_GO_BASE_URL)
+    return ContactsApiClient(auth_token=settings.VUMI_GO_API_TOKEN)
 
 
 def get_sender():
