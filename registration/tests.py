@@ -927,7 +927,7 @@ class TestUpdateCreateVumiContactTask(AuthenticatedAPITestCase):
         sub_details = tasks.get_subscription_details(contact_03)
         self.assertEqual(sub_details, ("standard", "two_per_week", 1))
 
-    def test_update_vumi_contact(self):
+    def test_update_vumi_contact_clinic_self(self):
         registration = self.make_registration(
             post_data=TEST_REG_DATA["clinic_self"])
 
@@ -970,7 +970,7 @@ class TestUpdateCreateVumiContactTask(AuthenticatedAPITestCase):
             "subscription_seq_start": "1"
         })
 
-    def test_create_vumi_contact_1(self):
+    def test_create_vumi_contact_chw_self(self):
         # make registration for contact with msisdn +27002
         registration = self.make_registration(
             post_data=TEST_REG_DATA["chw_self"])
@@ -1001,7 +1001,7 @@ class TestUpdateCreateVumiContactTask(AuthenticatedAPITestCase):
             "subscription_seq_start": "1"
         })
 
-    def test_create_vumi_contact_2(self):
+    def test_create_vumi_contact_clinic_hcw(self):
         # make registration for contact with msisdn +27001
         registration = self.make_registration(
             post_data=TEST_REG_DATA["clinic_hcw"])
@@ -1038,6 +1038,50 @@ class TestUpdateCreateVumiContactTask(AuthenticatedAPITestCase):
             "due_date_month": "09",
             "due_date_day": "01",
             "subscription_type": "1",
+            "subscription_rate": "3",
+            "subscription_seq_start": "1"
+        })
+
+    def test_create_vumi_contact_personal(self):
+        # make registration for contact with msisdn +27001
+        registration = self.make_registration(
+            post_data=TEST_REG_DATA["personal"])
+        client = self.make_client()
+        # make completely seperate existing contact
+        self.make_existing_contact({
+            u"key": u"knownuuid",
+            u"msisdn": u"+27005",
+            u"user_account": u"knownaccount",
+            u"extra": {}
+        })
+
+        contact = tasks.update_create_vumi_contact.apply_async(
+            kwargs={"registration_id": registration.data["id"],
+                    "client": client})
+        result = contact.get()
+        self.assertEqual(result["msisdn"], "+27003")
+        self.assertEqual(result["groups"],
+                         [u"f4738d01b4f74e41b9a6e804fc7eda56"])
+        self.assertEqual(result["extra"]["is_registered"], "true")
+        self.assertEqual(result["extra"]["is_registered_by"], "personal")
+        self.assertEqual(result["extra"]["language_choice"], "st")
+        self.assertEqual(result["extra"]["source_name"], "Test Source")
+        self.assertEqual(result["extra"]["passport_no"], "5552222")
+        self.assertEqual(result["extra"]["passport_origin"], "mz")
+        self.assertEqual(result["extra"]["subscription_type"], "9")
+        self.assertEqual(result["extra"]["subscription_rate"], "3")
+        self.assertEqual(result["extra"]["subscription_seq_start"], "1")
+
+        self.assertEqual(len(result["extra"]), 9)
+
+        self.assertEqual(result["extra"], {
+            "is_registered": "true",
+            "is_registered_by": "personal",
+            "language_choice": "st",
+            "source_name": "Test Source",
+            "passport_no": "5552222",
+            "passport_origin": "mz",
+            "subscription_type": "9",
             "subscription_rate": "3",
             "subscription_seq_start": "1"
         })
