@@ -2,7 +2,7 @@ import requests
 import json
 import uuid
 import hashlib
-from datetime import datetime
+from datetime import datetime, timedelta
 from celery import task
 from lxml import etree
 from celery.utils.log import get_task_logger
@@ -35,6 +35,11 @@ def get_sender():
 
 def get_today():
     return datetime.today()
+
+
+def get_tomorrow():
+    return (get_today() + timedelta(days=1)
+            ).strftime("%Y-%m-%d")
 
 
 def get_timestamp():
@@ -308,11 +313,6 @@ def build_json_body(cda, registration):
     oid = get_oid()
     eid = get_uuid()
     return json.dumps(build_metadata(cda, patient_id, oid, eid))
-
-
-def get_tomorrow():
-    return (datetime.date.today() + datetime.timedelta(days=1)
-            ).strftime("%Y%m%d")
 
 
 def define_extras_registration(_extras, registration):
