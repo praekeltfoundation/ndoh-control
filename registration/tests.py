@@ -32,11 +32,6 @@ def override_get_sender():
     return LoggingSender('go_http.test')
 
 
-tasks.get_today = override_get_today
-tasks.get_tomorrow = override_get_tomorrow
-tasks.get_sender = override_get_sender
-
-
 TEST_REG_DATA = {
     "clinic_self": {
         "hcw_msisdn": None,
@@ -238,6 +233,10 @@ class APITestCase(TestCase):
         logger.setLevel(logging.INFO)
         logger.addHandler(self.handler)
 
+        tasks.get_today = override_get_today
+        tasks.get_tomorrow = override_get_tomorrow
+        tasks.get_sender = override_get_sender
+
 
 class FakeContactsApiAdapter(HTTPAdapter):
 
@@ -265,6 +264,13 @@ class FakeContactsApiAdapter(HTTPAdapter):
         return r
 
 make_contact_dict = FakeContactsApi.make_contact_dict
+
+
+class TestRegistrationHelperFunctions(TestCase):
+
+    def test_get_tomorrow(self):
+        tasks.get_today = override_get_today
+        self.assertEqual(tasks.get_tomorrow(), '2013-08-20')
 
 
 class AuthenticatedAPITestCase(APITestCase):
@@ -372,13 +378,6 @@ class AuthenticatedAPITestCase(APITestCase):
         else:
             logs = self.handler.logs
         return len(logs)
-
-
-class TestRegistrationHelperFunctions(AuthenticatedAPITestCase):
-
-    def test_get_tomorrow(self):
-        from .tasks import get_tomorrow
-        self.assertEqual(get_tomorrow(), '2013-08-20')
 
 
 class TestContactsAPI(AuthenticatedAPITestCase):

@@ -2,7 +2,7 @@ import requests
 import json
 import uuid
 import hashlib
-from datetime import datetime
+from datetime import datetime, timedelta
 from celery import task
 from lxml import etree
 from celery.utils.log import get_task_logger
@@ -38,8 +38,8 @@ def get_today():
 
 
 def get_tomorrow():
-    return (get_today() + datetime.timedelta(days=1)
-            ).strftime("%Y%m%d")
+    return (get_today() + timedelta(days=1)
+            ).strftime("%Y-%m-%d")
 
 
 def get_timestamp():
