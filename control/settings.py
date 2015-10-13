@@ -394,7 +394,7 @@ LANG_GROUP_KEYS = {
     "nr": "778479e9ad7c4b00a898b61be6dbcac3"
 }
 
-METRIC_ENV = "replaceme"
+METRIC_ENV = "prd"
 
 try:
     from local_settings import *  # flake8: noqa
