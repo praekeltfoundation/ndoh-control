@@ -374,6 +374,13 @@ class AuthenticatedAPITestCase(APITestCase):
         return len(logs)
 
 
+class TestRegistrationHelperFunctions(AuthenticatedAPITestCase):
+
+    def test_get_tomorrow(self):
+        from .tasks import get_tomorrow
+        self.assertEqual(get_tomorrow(), '2013-08-20')
+
+
 class TestContactsAPI(AuthenticatedAPITestCase):
 
     def test_get_contact_by_key(self):

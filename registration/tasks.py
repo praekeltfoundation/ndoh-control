@@ -37,6 +37,11 @@ def get_today():
     return datetime.today()
 
 
+def get_tomorrow():
+    return (get_today() + datetime.timedelta(days=1)
+            ).strftime("%Y%m%d")
+
+
 def get_timestamp():
     return get_today().strftime("%Y%m%d%H%M%S")
 
@@ -308,11 +313,6 @@ def build_json_body(cda, registration):
     oid = get_oid()
     eid = get_uuid()
     return json.dumps(build_metadata(cda, patient_id, oid, eid))
-
-
-def get_tomorrow():
-    return (datetime.date.today() + datetime.timedelta(days=1)
-            ).strftime("%Y%m%d")
 
 
 def define_extras_registration(_extras, registration):
