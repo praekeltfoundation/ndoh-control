@@ -305,6 +305,9 @@ CELERY_ROUTES = {
     },
     'registration.tasks.update_create_vumi_contact': {
         'queue': 'priority',
+    },
+    'registration.tasks.vumi_fire_metric': {
+        'queue': 'priority',
     }
 }
 
