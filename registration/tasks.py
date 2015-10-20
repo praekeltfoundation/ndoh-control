@@ -91,6 +91,9 @@ def build_jembi_json(registration):
     if registration.authority == 'clinic':
         json_template["edd"] = registration.mom_edd.strftime("%Y%m%d")
 
+    if registration.authority == 'personal':
+        json_template["dmsisdn"] = registration.mom_msisdn
+
     return json_template
 
 
