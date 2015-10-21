@@ -88,11 +88,12 @@ def build_jembi_json(registration):
         "dob": get_dob(registration.mom_dob)
     }
 
+    # Self registrations on all lines should use cmsisdn as dmsisdn too
+    if registration.hcw_msisdn is None:
+        json_template["dmsisdn"] = registration.mom_msisdn
+
     if registration.authority == 'clinic':
         json_template["edd"] = registration.mom_edd.strftime("%Y%m%d")
-
-    if registration.authority == 'personal':
-        json_template["dmsisdn"] = registration.mom_msisdn
 
     return json_template
 
