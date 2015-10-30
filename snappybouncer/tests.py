@@ -115,7 +115,10 @@ class SnappyBouncerResourceTest(ResourceTestCase):
             "contact_key": "dummycontactkey2",
             "conversation": "/api/v1/snappybouncer/conversation/1/",
             "msisdn": "+271234",
-            "message": "New item to send to snappy"
+            "message": "New item to send to snappy",
+            "tag": "testtag",
+            "operator": 111,
+            "faccode": 123456
         }
 
         response = self.api_client.post(

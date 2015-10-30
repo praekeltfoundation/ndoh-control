@@ -34,7 +34,10 @@
             "conversation": 1,
             "message": "Posted and bounced, not responded",
             "contact_key": "dummycontactkey",
-            "response": ""
+            "response": "",
+            "tag": null,
+            "operator": null,
+            "faccode": null
         }
     },
     {
@@ -49,7 +52,10 @@
             "conversation": 1,
             "message": "Posted, not bounced",
             "contact_key": "dummycontact1",
-            "response": ""
+            "response": "",
+            "tag": null,
+            "operator": null,
+            "faccode": null
         }
     },
     {
@@ -64,7 +70,10 @@
             "conversation": 1,
             "message": "Posted, bounced and responded",
             "contact_key": "dummycontact1",
-            "response": "Message back from FAQ"
+            "response": "Message back from FAQ",
+            "tag": null,
+            "operator": null,
+            "faccode": null
         }
     },
     {
@@ -79,7 +88,10 @@
             "conversation": 1,
             "message": "Faulty - no nonce 1",
             "contact_key": "dummycontact1",
-            "response": ""
+            "response": "",
+            "tag": null,
+            "operator": null,
+            "faccode": null
         }
     },
     {
@@ -94,7 +106,10 @@
             "conversation": 1,
             "message": "Faulty - no nonce 2",
             "contact_key": "dummycontact1",
-            "response": ""
+            "response": "",
+            "tag": null,
+            "operator": null,
+            "faccode": null
         }
     }
 ]
