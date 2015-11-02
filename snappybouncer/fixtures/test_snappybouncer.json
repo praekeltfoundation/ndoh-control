@@ -72,7 +72,7 @@
             "contact_key": "dummycontact1",
             "response": "Message back from FAQ",
             "tag": null,
-            "operator": null,
+            "operator": 2,
             "faccode": null
         }
     },
@@ -82,7 +82,7 @@
         "fields": {
             "msisdn": "+27001",
             "created_at": "2014-07-26T20:30:49Z",
-            "support_id": null,
+            "support_id": 123444,
             "updated_at": "2014-07-26T20:32:24.396Z",
             "support_nonce": null,
             "conversation": 1,
@@ -90,7 +90,7 @@
             "contact_key": "dummycontact1",
             "response": "",
             "tag": null,
-            "operator": null,
+            "operator": 1,
             "faccode": null
         }
     },
@@ -100,16 +100,16 @@
         "fields": {
             "msisdn": "+27001",
             "created_at": "2014-07-26T20:30:49Z",
-            "support_id": null,
+            "support_id": 123555,
             "updated_at": "2014-07-26T20:32:24.396Z",
             "support_nonce": null,
             "conversation": 1,
             "message": "Faulty - no nonce 2",
             "contact_key": "dummycontact1",
             "response": "",
-            "tag": null,
-            "operator": null,
-            "faccode": null
+            "tag": "coffee",
+            "operator": 1,
+            "faccode": 123456
         }
     }
 ]
