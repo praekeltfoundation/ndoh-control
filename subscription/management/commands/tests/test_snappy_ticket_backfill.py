@@ -67,7 +67,9 @@ class TestSnappyTicketBackfillCommand(TestCase):
 
         self.assertEqual('\n'.join([
             'Finding tickets with support ids...',
-            'Tickets with support ids found: 3'
+            'Tickets with support ids found: 3',
+            'Finding subset tickets without operators...',
+            'Subset tickets found: 2'
         ]), command.stdout.getvalue().strip())
 
         tickets = Ticket.objects.all()

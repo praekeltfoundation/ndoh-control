@@ -15,14 +15,18 @@ class Command(BaseCommand):
 
         self.stdout.write('Finding tickets with support ids...\n')
         tickets_with_support_id = Ticket.objects.exclude(support_id=None)
-        counter = tickets_with_support_id.count()
-        self.stdout.write('Tickets with support ids found: %s\n' % counter)
+        counter1 = tickets_with_support_id.count()
+        self.stdout.write('Tickets with support ids found: %s\n' % counter1)
 
-        # tickets = tickets_with_support_id.exclude(operator=None)
+        self.stdout.write('Finding subset tickets without operators...\n')
+        tickets = tickets_with_support_id.exclude(operator=None)
+        counter2 = tickets.count()
+        self.stdout.write('Subset tickets found: %s\n' % counter2)
 
         if not options["dry_run"]:
             # tickets_with_support_id.delete()
             # self.stdout.write('Deleted %s tickets' % counter)
             pass
         else:
-            self.stdout.write('%s tickets would be deleted' % counter)
+            # self.stdout.write('%s tickets would be deleted' % counter)
+            pass

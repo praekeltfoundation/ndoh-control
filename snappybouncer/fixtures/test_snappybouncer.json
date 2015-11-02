@@ -90,7 +90,7 @@
             "contact_key": "dummycontact1",
             "response": "",
             "tag": null,
-            "operator": 1,
+            "operator": null,
             "faccode": null
         }
     },
