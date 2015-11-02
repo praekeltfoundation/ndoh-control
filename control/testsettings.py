@@ -11,3 +11,4 @@ BROKER_BACKEND = 'memory'
 CELERY_RESULT_BACKEND = 'djcelery.backends.database:DatabaseBackend'
 RAVEN_CONFIG = {'dsn': None}
 METRIC_ENV = "test"
+CELERY_EAGER_PROPAGATES_EXCEPTIONS = False
