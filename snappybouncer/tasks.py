@@ -31,24 +31,7 @@ def jembi_format_date(date):
     return date.strftime("%Y%m%d%H%M%S")
 
 
-def extract_class_from_tags(tags):
-    # ["@person", "#coffee", "#payment"] -> "coffee"
-    for tag in tags:
-        if tag[0] == "#":
-            return tag[1::]
-    return None
-
-
-def get_ticket_faccode(contact_key):
-    # Gets contact's clinic code if they have one
-    contacts_api = ContactsApiClient(auth_token=settings.VUMI_GO_API_TOKEN)
-    contact = contacts_api.get_contact(contact_key)
-    if "clinic_code" in contact["extra"]:
-        return contact["extra"]["clinic_code"]
-    return None
-
-
-def build_jembi_helpdesk_json(ticket, tags, operator_num):
+def build_jembi_helpdesk_json(ticket):
     json_template = {
         "encdate": jembi_format_date(ticket.created_at),
         "repdate": jembi_format_date(ticket.updated_at),
@@ -56,21 +39,21 @@ def build_jembi_helpdesk_json(ticket, tags, operator_num):
         "swt": 2,  # 1 ussd, 2 sms
         "cmsisdn": ticket.msisdn,
         "dmsisdn": ticket.msisdn,
-        "faccode": get_ticket_faccode(ticket.contact_key),
+        "faccode": str(ticket.faccode),
         "data": {
             "question": ticket.message,
             "answer": ticket.response
         },
-        "class": extract_class_from_tags(tags),
+        "class": ticket.tag,
         "type": 7,  # 7 helpdesk
-        "op": str(operator_num)
+        "op": str(ticket.operator)
     }
     return json_template
 
 
 @task()
-def send_helpdesk_response_jembi(ticket, tags, operator_num):
-    data = build_jembi_helpdesk_json(ticket, tags, operator_num)
+def send_helpdesk_response_jembi(ticket):
+    data = build_jembi_helpdesk_json(ticket)
     api_url = ("%s/helpdesk" % settings.JEMBI_BASE_URL)
     headers = {
         'Content-Type': 'application/json'
