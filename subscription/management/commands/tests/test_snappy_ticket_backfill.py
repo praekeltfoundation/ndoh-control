@@ -60,7 +60,7 @@ class TestSnappyTicketBackfillCommand(TestCase):
         self.assertEqual(tickets_with_support_id.count(), 3)
 
     @override_settings(VUMI_GO_API_TOKEN='token')
-    def test_support_id_less_tickets_deleted(self):
+    def test_tickets_backfilled(self):
         command = self.mk_command()
         options = {"dry_run": None}
         command.handle(None, **options)
@@ -78,7 +78,7 @@ class TestSnappyTicketBackfillCommand(TestCase):
         self.assertEqual(tickets.count(), 5)
 
     @override_settings(VUMI_GO_API_TOKEN='token')
-    def test_support_id_less_tickets_deleted_dryrun(self):
+    def test_tickets_backfilled_dryrun(self):
         command = self.mk_command()
         options = {"dry_run": True}
         command.handle(None, **options)
