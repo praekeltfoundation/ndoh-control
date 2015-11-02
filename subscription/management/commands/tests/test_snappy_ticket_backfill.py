@@ -69,7 +69,26 @@ class TestSnappyTicketBackfillCommand(TestCase):
             'Finding tickets with support ids...',
             'Tickets with support ids found: 3',
             'Finding subset tickets without operators...',
-            'Subset tickets found: 2'
+            'Subset tickets found: 2',
+            'Queueing 2 tickets for backfilling',
+            'Queued 2 tickets for backfilling'
+        ]), command.stdout.getvalue().strip())
+
+        tickets = Ticket.objects.all()
+        self.assertEqual(tickets.count(), 5)
+
+    @override_settings(VUMI_GO_API_TOKEN='token')
+    def test_support_id_less_tickets_deleted_dryrun(self):
+        command = self.mk_command()
+        options = {"dry_run": True}
+        command.handle(None, **options)
+
+        self.assertEqual('\n'.join([
+            'Finding tickets with support ids...',
+            'Tickets with support ids found: 3',
+            'Finding subset tickets without operators...',
+            'Subset tickets found: 2',
+            '2 tickets would be backfilled'
         ]), command.stdout.getvalue().strip())
 
         tickets = Ticket.objects.all()

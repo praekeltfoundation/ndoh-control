@@ -117,3 +117,11 @@ def update_snappy_ticket_with_extras(snappy_api, nonce, contact_key, subject):
         staff_id=settings.SNAPPY_STAFF_ID
     )
     return True
+
+
+@task()
+def backfill_ticket(ticket_id):
+    """
+    Does stuff!
+    """
+    return True

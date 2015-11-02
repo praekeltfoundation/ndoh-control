@@ -1,6 +1,7 @@
 from django.core.management.base import BaseCommand
 from optparse import make_option
 from snappybouncer.models import Ticket
+from snappybouncer.tasks import backfill_ticket
 
 
 class Command(BaseCommand):
@@ -19,14 +20,17 @@ class Command(BaseCommand):
         self.stdout.write('Tickets with support ids found: %s\n' % counter1)
 
         self.stdout.write('Finding subset tickets without operators...\n')
-        tickets = tickets_with_support_id.exclude(operator=None)
+        tickets = tickets_with_support_id.filter(operator=None)
         counter2 = tickets.count()
         self.stdout.write('Subset tickets found: %s\n' % counter2)
 
         if not options["dry_run"]:
             # tickets_with_support_id.delete()
-            # self.stdout.write('Deleted %s tickets' % counter)
-            pass
+            self.stdout.write(
+                'Queueing %s tickets for backfilling\n' % counter2)
+            for ticket in tickets:
+                # Fire task that backfills tickets
+                backfill_ticket.delay(ticket.id)
+            self.stdout.write('Queued %s tickets for backfilling' % counter2)
         else:
-            # self.stdout.write('%s tickets would be deleted' % counter)
-            pass
+            self.stdout.write('%s tickets would be backfilled' % counter2)

@@ -108,7 +108,7 @@
             "contact_key": "dummycontact1",
             "response": "",
             "tag": "coffee",
-            "operator": 1,
+            "operator": null,
             "faccode": 123456
         }
     }
