@@ -1,5 +1,7 @@
 from django.core.management.base import BaseCommand
+from django.conf import settings
 from optparse import make_option
+from besnappy import SnappyApiSender
 from snappybouncer.models import Ticket
 from snappybouncer.tasks import backfill_ticket
 
@@ -13,6 +15,19 @@ class Command(BaseCommand):
     )
 
     def handle(self, *args, **options):
+        self.stdout.write('Looking up Snappy operators (staff)...\n')
+        # Make a session to Snappy
+        snappy_api = SnappyApiSender(
+            api_key=settings.SNAPPY_API_KEY,
+            api_url=settings.SNAPPY_BASE_URL
+        )
+        # Get the snappy account id
+        accounts = snappy_api.get_accounts()
+        staff = snappy_api.get_staff(accounts[0]["id"])
+        operators = dict()
+        for staff_member in staff:
+            operators[staff_member["username"]] = staff_member["id"]
+        self.stdout.write('Staff members compiled.\n')
 
         self.stdout.write('Finding tickets with support ids...\n')
         tickets_with_support_id = Ticket.objects.exclude(support_id=None)
@@ -30,7 +45,7 @@ class Command(BaseCommand):
                 'Queueing %s tickets for backfilling\n' % counter2)
             for ticket in tickets:
                 # Fire task that backfills tickets
-                backfill_ticket.delay(ticket.id)
+                backfill_ticket.delay(ticket.id, operators)
             self.stdout.write('Queued %s tickets for backfilling' % counter2)
         else:
             self.stdout.write('%s tickets would be backfilled' % counter2)

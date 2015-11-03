@@ -3,6 +3,8 @@ from django.test.utils import override_settings
 from django.core import management
 from django.db.models.signals import post_save
 from StringIO import StringIO
+import responses
+import json
 from snappybouncer.models import (UserAccount, Conversation, Ticket,
                                   fire_snappy_if_new)
 from subscription.management.commands import snappy_ticket_backfill
@@ -60,12 +62,34 @@ class TestSnappyTicketBackfillCommand(TestCase):
         self.assertEqual(tickets_with_support_id.count(), 3)
 
     @override_settings(VUMI_GO_API_TOKEN='token')
+    @responses.activate
     def test_tickets_backfilled(self):
+        # Setup
+        expected_accounts = [
+            {"id": 77777}
+        ]
+        responses.add(responses.GET,
+                      "https://app.besnappy.com/api/v1/accounts",
+                      json.dumps(expected_accounts),
+                      status=200, content_type='application/json')
+        expected_staff = [
+            {"id": 112, "username": "barry"},
+            {"id": 111, "username": "mike"}
+        ]
+        responses.add(responses.GET,
+                      "https://app.besnappy.com/api/v1/account/77777/staff",
+                      json.dumps(expected_staff),
+                      status=200, content_type='application/json')
+
         command = self.mk_command()
         options = {"dry_run": None}
+        # Execute
         command.handle(None, **options)
 
+        # Check
         self.assertEqual('\n'.join([
+            'Looking up Snappy operators (staff)...',
+            'Staff members compiled.',
             'Finding tickets with support ids...',
             'Tickets with support ids found: 3',
             'Finding subset tickets without operators...',
@@ -78,12 +102,34 @@ class TestSnappyTicketBackfillCommand(TestCase):
         self.assertEqual(tickets.count(), 5)
 
     @override_settings(VUMI_GO_API_TOKEN='token')
+    @responses.activate
     def test_tickets_backfilled_dryrun(self):
+        # Setup
+        expected_accounts = [
+            {"id": 77777}
+        ]
+        responses.add(responses.GET,
+                      "https://app.besnappy.com/api/v1/accounts",
+                      json.dumps(expected_accounts),
+                      status=200, content_type='application/json')
+        expected_staff = [
+            {"id": 112, "username": "barry"},
+            {"id": 111, "username": "mike"}
+        ]
+        responses.add(responses.GET,
+                      "https://app.besnappy.com/api/v1/account/77777/staff",
+                      json.dumps(expected_staff),
+                      status=200, content_type='application/json')
+
         command = self.mk_command()
         options = {"dry_run": True}
+        # Execute
         command.handle(None, **options)
 
+        # Check
         self.assertEqual('\n'.join([
+            'Looking up Snappy operators (staff)...',
+            'Staff members compiled.',
             'Finding tickets with support ids...',
             'Tickets with support ids found: 3',
             'Finding subset tickets without operators...',
