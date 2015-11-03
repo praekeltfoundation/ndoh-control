@@ -121,16 +121,25 @@ def update_snappy_ticket_with_extras(snappy_api, nonce, contact_key, subject):
     return True
 
 
-def extract_tag(hashtags):
-    # ["@person", "#coffee", "#payment"] -> "coffee"
-    for hashtag in hashtags:
-        if hashtag[0] == "#":
-            return hashtag[1::]
+def extract_tag(tags):
+    """
+    Takes a list of tags and extracts the first hastagged item
+    in the list, returning it as a string without the hashtag.
+    eg. ["@person", "#coffee", "#payment"] -> "coffee"
+    """
+    for tag in tags:
+        if tag[0] == "#":
+            return tag[1::]
     return None
 
 
 def extract_operator(tags, operators):
-    # ["@barry", "#question"] -> "barry"
+    """
+    Takes a list of tags and a dict of operator names mapped to their
+    numbers and returns the operator number of the operator name in
+    the list of tags.
+    eg. ["@barry", "#question"] -> barry's operator number
+    """
     for tag in tags:
         if tag[0] == "@":
             return operators[tag[1::]]
