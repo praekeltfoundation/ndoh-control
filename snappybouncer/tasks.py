@@ -10,6 +10,8 @@ from besnappy import SnappyApiSender
 
 from django.conf import settings
 
+from snappybouncer.models import Ticket
+
 logger = get_task_logger(__name__)
 
 
@@ -119,9 +121,46 @@ def update_snappy_ticket_with_extras(snappy_api, nonce, contact_key, subject):
     return True
 
 
+def extract_tag(hashtags):
+    # ["@person", "#coffee", "#payment"] -> "coffee"
+    for hashtag in hashtags:
+        if hashtag[0] == "#":
+            return hashtag[1::]
+    return None
+
+
+def extract_operator(tags, operators):
+    print tags
+    # ["@barry", "#question"] -> "barry"
+    for tag in tags:
+        if tag[0] == "@":
+            return operators[tag[1::]]
+    return None
+
+
 @task()
-def backfill_ticket(ticket_id):
+def backfill_ticket(ticket_id, operators):
     """
     Does stuff!
     """
-    return True
+    # Make a session to Snappy
+    snappy_api = SnappyApiSender(
+        api_key=settings.SNAPPY_API_KEY,
+        api_url=settings.SNAPPY_BASE_URL
+    )
+    # Get the ticket object
+    ticket = Ticket.objects.get(id=ticket_id)
+    # Look up the ticket on Snappy (get request)
+    response = snappy_api._api_request(
+        'GET', 'ticket/%s/' % ticket.support_id).json()
+    # Save the operator, tag, faccode to model
+    # print(ticket)
+    ticket.tag = extract_tag(response["tags"])
+    ticket.operator = extract_operator(response["tags"], operators)
+    ticket.save()
+
+    # Fire off a task to look up the facility_code on the contact
+    # backfill_ticket_faccode.delay(ticket_id)
+
+    # ticket.faccode = response["faccode"]
+    return "Ticket %s backfilled" % ticket.support_id
