@@ -130,7 +130,6 @@ def extract_tag(hashtags):
 
 
 def extract_operator(tags, operators):
-    print tags
     # ["@barry", "#question"] -> "barry"
     for tag in tags:
         if tag[0] == "@":
@@ -141,7 +140,9 @@ def extract_operator(tags, operators):
 @task()
 def backfill_ticket(ticket_id, operators):
     """
-    Does stuff!
+    Looks up the Ticket's operator number and first tag and saves it
+    to the ticket, then fires a follow-up task that saves the faccode
+    to the ticket if available.
     """
     # Make a session to Snappy
     snappy_api = SnappyApiSender(
@@ -153,14 +154,37 @@ def backfill_ticket(ticket_id, operators):
     # Look up the ticket on Snappy (get request)
     response = snappy_api._api_request(
         'GET', 'ticket/%s/' % ticket.support_id).json()
-    # Save the operator, tag, faccode to model
-    # print(ticket)
+    # Save the operator & tag to the Ticket
     ticket.tag = extract_tag(response["tags"])
     ticket.operator = extract_operator(response["tags"], operators)
     ticket.save()
-
     # Fire off a task to look up the facility_code on the contact
-    # backfill_ticket_faccode.delay(ticket_id)
+    backfill_ticket_faccode.delay(ticket_id)
 
-    # ticket.faccode = response["faccode"]
     return "Ticket %s backfilled" % ticket.support_id
+
+
+def get_ticket_faccode(contact_key):
+    """
+    Looks up and returns a contact's clinic code extra if they have one.
+    """
+    contacts_api = ContactsApiClient(auth_token=settings.VUMI_GO_API_TOKEN)
+    contact = contacts_api.get_contact(contact_key)
+    print(contact)
+    if "clinic_code" in contact["extra"]:
+        return contact["extra"]["clinic_code"]
+    return None
+
+
+@task()
+def backfill_ticket_faccode(ticket_id):
+    """
+    Looks up a Ticket contact's clinic code and stores it in the ticket
+    """
+    # Get the ticket object
+    ticket = Ticket.objects.get(id=ticket_id)
+    # Get and save the faccode
+    ticket.faccode = get_ticket_faccode(ticket.contact_key)
+    ticket.save()
+
+    return "Ticket %s faccode backfilled" % ticket.support_id

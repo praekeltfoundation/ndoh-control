@@ -11,7 +11,7 @@ from snappybouncer.models import (
     Conversation, UserAccount, Ticket, fire_snappy_if_new)
 from snappybouncer.tasks import (send_helpdesk_response_jembi,
                                  build_jembi_helpdesk_json,
-                                 backfill_ticket)
+                                 backfill_ticket, backfill_ticket_faccode)
 from snappybouncer.api import WebhookResource
 import json
 import responses
@@ -393,6 +393,7 @@ class BackfillTicketTest(TestCase):
         ticket = self.mk_ticket("supportnonce1", 101,
                                 "In Message Send", "Out Response Send",
                                 None, None, None)
+        # response for snappy ticket request
         expected_response = {
             "tags": ["#testtag", "@barry"]
         }
@@ -401,14 +402,41 @@ class BackfillTicketTest(TestCase):
                       json.dumps(expected_response),
                       status=200, content_type='application/json')
 
+        # response for vumi contact request
+        responses.add(responses.GET,
+                      "http://go.vumi.org/api/v1/go/contacts/fakekey",
+                      json.dumps({"extra": {"clinic_code": "123457"}}),
+                      status=200, content_type='application/json')
+
         # Execute
         resp = backfill_ticket.delay(ticket.id, operators)
 
         # Check
         self.assertEqual(resp.get(), "Ticket 101 backfilled")
-        self.assertEqual(len(responses.calls), 1)
+        self.assertEqual(len(responses.calls), 2)
 
         d = Ticket.objects.get(id=ticket.id)
         self.assertEqual(d.operator, 112)
-        # self.assertEqual(d.faccode, 123457)
         self.assertEqual(d.tag, "testtag")
+        self.assertEqual(d.faccode, 123457)
+
+    @responses.activate
+    def test_backfill_ticket_faccode(self):
+        # Setup
+        ticket = self.mk_ticket("supportnonce1", 101,
+                                "In Message Send", "Out Response Send",
+                                None, 112, "testtag")
+        # response for vumi contact request
+        responses.add(responses.GET,
+                      "http://go.vumi.org/api/v1/go/contacts/fakekey",
+                      json.dumps({"extra": {"clinic_code": "123458"}}),
+                      status=200, content_type='application/json')
+        # Execute
+        resp = backfill_ticket_faccode.delay(ticket.id)
+
+        # Check
+        self.assertEqual(resp.get(), "Ticket 101 faccode backfilled")
+        self.assertEqual(len(responses.calls), 1)
+
+        d = Ticket.objects.get(id=ticket.id)
+        self.assertEqual(d.faccode, 123458)
