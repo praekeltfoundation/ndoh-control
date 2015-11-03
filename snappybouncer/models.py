@@ -71,6 +71,9 @@ class Ticket(models.Model):
         verbose_name=u'Outbound Response', null=True, blank=True)
     contact_key = models.CharField(max_length=43)
     msisdn = models.CharField(max_length=100)
+    tag = models.CharField(max_length=30, null=True, blank=True)
+    operator = models.IntegerField(null=True, blank=True)
+    faccode = models.IntegerField(null=True, blank=True)
     created_at = AutoNewDateTimeField(blank=True)
     updated_at = AutoDateTimeField(blank=True)
 

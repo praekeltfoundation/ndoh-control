@@ -11,6 +11,7 @@ from snappybouncer.models import (
     Conversation, UserAccount, Ticket, fire_snappy_if_new)
 from snappybouncer.tasks import (send_helpdesk_response_jembi,
                                  build_jembi_helpdesk_json)
+from snappybouncer.api import WebhookResource
 import json
 import responses
 
@@ -115,7 +116,10 @@ class SnappyBouncerResourceTest(ResourceTestCase):
             "contact_key": "dummycontactkey2",
             "conversation": "/api/v1/snappybouncer/conversation/1/",
             "msisdn": "+271234",
-            "message": "New item to send to snappy"
+            "message": "New item to send to snappy",
+            "tag": "testtag",
+            "operator": 111,
+            "faccode": 123456
         }
 
         response = self.api_client.post(
@@ -234,7 +238,8 @@ class JembiSubmissionTest(TestCase):
         convo.save()
         return convo
 
-    def mk_ticket(self, support_nonce, support_id, message, response):
+    def mk_ticket(self, support_nonce, support_id, message, response,
+                  faccode, operator, tag):
         ticket = Ticket()
         ticket.conversation = self.conversation
         ticket.support_nonce = support_nonce
@@ -243,40 +248,54 @@ class JembiSubmissionTest(TestCase):
         ticket.response = response
         ticket.contact_key = "fakekey"
         ticket.msisdn = "+27123"
+        ticket.faccode = faccode
+        ticket.operator = operator
+        ticket.tag = tag
         ticket.save()
         return ticket
 
     def tearDown(self):
         self._restore_post_save_hooks()
 
-    @responses.activate
+    def test_extract_tag(self):
+        # Setup
+        hashtags = ["@person", "#coffee", "#payment"]
+        # Execute
+        tag = WebhookResource().extract_tag(hashtags)
+        # Check
+        self.assertEqual(tag, "coffee")
+        # Setup
+        hashtags = ["#payment"]
+        # Execute
+        tag = WebhookResource().extract_tag(hashtags)
+        # Check
+        self.assertEqual(tag, "payment")
+        # Setup
+        hashtags = ["coffee"]
+        # Execute
+        tag = WebhookResource().extract_tag(hashtags)
+        # Check
+        self.assertEqual(tag, None)
+
     def test_generate_jembi_json(self):
         ticket = self.mk_ticket("supportnonce", 100,
-                                "Inbound Message", "Outbound Response")
-        tags = ["@tester", "#compliment"]
-        responses.add(responses.GET,
-                      "http://go.vumi.org/api/v1/go/contacts/fakekey",
-                      json.dumps({"extra": {"clinic_code": "123456"}}),
-                      status=200, content_type='application/json')
+                                "Inbound Message", "Outbound Response",
+                                123456, 2, "test_tag")
 
-        jembi_post = build_jembi_helpdesk_json(ticket, tags, 2)
-        self.assertEqual(jembi_post["dmsisdn"], "+27123")
-        self.assertEqual(jembi_post["cmsisdn"], "+27123")
-        self.assertEqual(jembi_post["data"]["question"], "Inbound Message")
-        self.assertEqual(jembi_post["data"]["answer"], "Outbound Response")
-        self.assertEqual(jembi_post["class"], "compliment")
-        self.assertEqual(jembi_post["op"], "2")
-        self.assertEqual(jembi_post["faccode"], "123456")
-        self.assertEqual(len(responses.calls), 1)
-        self.assertEqual(responses.calls[
-            0].request.url,
-            "http://go.vumi.org/api/v1/go/contacts/fakekey")
+        jembi_data = build_jembi_helpdesk_json(ticket)
+        self.assertEqual(jembi_data["dmsisdn"], "+27123")
+        self.assertEqual(jembi_data["cmsisdn"], "+27123")
+        self.assertEqual(jembi_data["data"]["question"], "Inbound Message")
+        self.assertEqual(jembi_data["data"]["answer"], "Outbound Response")
+        self.assertEqual(jembi_data["class"], "test_tag")
+        self.assertEqual(jembi_data["op"], "2")
+        self.assertEqual(jembi_data["faccode"], "123456")
 
     @responses.activate
     def test_generate_jembi_post(self):
         ticket = self.mk_ticket("supportnonce1", 101,
-                                "In Message Send", "Out Response Send")
-        tags = ["@tester", "#compliment"]
+                                "In Message Send", "Out Response Send",
+                                123457, 2, "test_tag")
 
         responses.add(responses.POST,
                       "http://test/v2/helpdesk",
@@ -287,13 +306,13 @@ class JembiSubmissionTest(TestCase):
                       json.dumps({"extra": {"clinic_code": "123456"}}),
                       status=200, content_type='application/json')
 
-        resp = send_helpdesk_response_jembi.delay(ticket, tags, 2)
+        resp = send_helpdesk_response_jembi.delay(ticket)
 
         self.assertEqual(resp.get(), "Request added to queue")
 
-        self.assertEqual(len(responses.calls), 2)
+        self.assertEqual(len(responses.calls), 1)
         self.assertEqual(
-            responses.calls[1].request.url,
+            responses.calls[0].request.url,
             'http://test/v2/helpdesk')
-        self.assertEqual(responses.calls[1].response.text,
+        self.assertEqual(responses.calls[0].response.text,
                          'Request added to queue')

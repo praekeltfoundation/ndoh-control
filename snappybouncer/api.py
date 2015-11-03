@@ -165,6 +165,13 @@ class WebhookResource(Resource):
 
         return kwargs
 
+    def extract_tag(self, hashtags):
+        # ["@person", "#coffee", "#payment"] -> "coffee"
+        for hashtag in hashtags:
+            if hashtag[0] == "#":
+                return hashtag[1::]
+        return None
+
     def obj_create(self, bundle, **kwargs):
         bundle.obj = WebhookObject(initial=kwargs)
         bundle = self.full_hydrate(bundle)
@@ -179,19 +186,20 @@ class WebhookResource(Resource):
                 ticket = Ticket.objects.get(
                     support_nonce=bundle.obj.data["note"]["ticket"]["nonce"])
                 try:
+                    # Save the snappy ticket data
                     ticket.response = strip_tags(
                         bundle.obj.data["note"]["content"])
                     ticket.support_id = int(
                         bundle.obj.data["note"]["ticket"]["id"])
+                    ticket.operator = bundle.obj.data[
+                        "note"]["created_by_staff_id"]
+                    ticket.tag = self.extract_tag(
+                        bundle.obj.data["note"]["ticket"]["tags"])
                     ticket.save()
                     # Send the message out to user via Vumi via Celery
                     send_helpdesk_response.delay(ticket)
                     # Post the ticket info to Jembi
-                    helpdesk_tags = bundle.obj.data["note"]["ticket"]["tags"]
-                    helpdesk_op = bundle.obj.data[
-                        "note"]["created_by_staff_id"]
-                    send_helpdesk_response_jembi.delay(ticket, helpdesk_tags,
-                                                       helpdesk_op)
+                    send_helpdesk_response_jembi.delay(ticket)
                 except ObjectDoesNotExist:
                     logger.error(
                         'Webhook received for unrecognised support ticket',
