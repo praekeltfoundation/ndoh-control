@@ -97,9 +97,19 @@ class TestSnappyTicketBackfillCommand(TestCase):
             'Queueing 2 tickets for backfilling',
             'Queued 2 tickets for backfilling'
         ]), command.stdout.getvalue().strip())
-
-        tickets = Ticket.objects.all()
-        self.assertEqual(tickets.count(), 5)
+        self.assertEqual(len(responses.calls), 4)
+        self.assertEqual(
+            responses.calls[0].request.url,
+            'https://app.besnappy.com/api/v1/accounts')
+        self.assertEqual(
+            responses.calls[1].request.url,
+            'https://app.besnappy.com/api/v1/account/77777/staff')
+        self.assertEqual(
+            responses.calls[2].request.url,
+            'https://app.besnappy.com/api/v1/ticket/123444/')
+        self.assertEqual(
+            responses.calls[3].request.url,
+            'https://app.besnappy.com/api/v1/ticket/123555/')
 
     @override_settings(VUMI_GO_API_TOKEN='token')
     @responses.activate
@@ -136,6 +146,10 @@ class TestSnappyTicketBackfillCommand(TestCase):
             'Subset tickets found: 2',
             '2 tickets would be backfilled'
         ]), command.stdout.getvalue().strip())
-
-        tickets = Ticket.objects.all()
-        self.assertEqual(tickets.count(), 5)
+        self.assertEqual(len(responses.calls), 2)
+        self.assertEqual(
+            responses.calls[0].request.url,
+            'https://app.besnappy.com/api/v1/accounts')
+        self.assertEqual(
+            responses.calls[1].request.url,
+            'https://app.besnappy.com/api/v1/account/77777/staff')
