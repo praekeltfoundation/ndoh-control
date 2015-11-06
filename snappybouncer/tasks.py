@@ -179,7 +179,6 @@ def get_ticket_faccode(contact_key):
     """
     contacts_api = ContactsApiClient(auth_token=settings.VUMI_GO_API_TOKEN)
     contact = contacts_api.get_contact(contact_key)
-    print(contact)
     if "clinic_code" in contact["extra"]:
         return contact["extra"]["clinic_code"]
     return None
