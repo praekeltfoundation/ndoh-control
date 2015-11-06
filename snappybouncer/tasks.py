@@ -10,6 +10,8 @@ from besnappy import SnappyApiSender
 
 from django.conf import settings
 
+from snappybouncer.models import Ticket
+
 logger = get_task_logger(__name__)
 
 
@@ -117,3 +119,80 @@ def update_snappy_ticket_with_extras(snappy_api, nonce, contact_key, subject):
         staff_id=settings.SNAPPY_STAFF_ID
     )
     return True
+
+
+def extract_tag(tags):
+    """
+    Takes a list of tags and extracts the first hastagged item
+    in the list, returning it as a string without the hashtag.
+    eg. ["@person", "#coffee", "#payment"] -> "coffee"
+    """
+    for tag in tags:
+        if tag[0] == "#":
+            return tag[1::]
+    return None
+
+
+def extract_operator(tags, operators):
+    """
+    Takes a list of tags and a dict of operator names mapped to their
+    numbers and returns the operator number of the operator name in
+    the list of tags.
+    eg. ["@barry", "#question"] -> barry's operator number
+    """
+    for tag in tags:
+        if tag[0] == "@":
+            return operators[tag[1::]]
+    return None
+
+
+@task()
+def backfill_ticket(ticket_id, operators):
+    """
+    Looks up the Ticket's operator number and first tag and saves it
+    to the ticket, then fires a follow-up task that saves the faccode
+    to the ticket if available.
+    """
+    # Make a session to Snappy
+    snappy_api = SnappyApiSender(
+        api_key=settings.SNAPPY_API_KEY,
+        api_url=settings.SNAPPY_BASE_URL
+    )
+    # Get the ticket object
+    ticket = Ticket.objects.get(id=ticket_id)
+    # Look up the ticket on Snappy (get request)
+    response = snappy_api._api_request(
+        'GET', 'ticket/%s/' % ticket.support_id).json()
+    # Save the operator & tag to the Ticket
+    ticket.tag = extract_tag(response["tags"])
+    ticket.operator = extract_operator(response["tags"], operators)
+    ticket.save()
+    # Fire off a task to look up the facility_code on the contact
+    backfill_ticket_faccode.delay(ticket_id)
+
+    return "Ticket %s backfilled" % ticket.support_id
+
+
+def get_ticket_faccode(contact_key):
+    """
+    Looks up and returns a contact's clinic code extra if they have one.
+    """
+    contacts_api = ContactsApiClient(auth_token=settings.VUMI_GO_API_TOKEN)
+    contact = contacts_api.get_contact(contact_key)
+    if "clinic_code" in contact["extra"]:
+        return contact["extra"]["clinic_code"]
+    return None
+
+
+@task()
+def backfill_ticket_faccode(ticket_id):
+    """
+    Looks up a Ticket contact's clinic code and stores it in the ticket
+    """
+    # Get the ticket object
+    ticket = Ticket.objects.get(id=ticket_id)
+    # Get and save the faccode
+    ticket.faccode = get_ticket_faccode(ticket.contact_key)
+    ticket.save()
+
+    return "Ticket %s faccode backfilled" % ticket.support_id
