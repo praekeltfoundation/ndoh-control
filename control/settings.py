@@ -240,6 +240,12 @@ CELERY_ROUTES = {
     'snappybouncer.tasks.update_snappy_ticket_with_extras': {
         'queue': 'priority',
     },
+    'snappybouncer.tasks.backfill_ticket': {
+        'queue': 'lowpriority',
+    },
+    'snappybouncer.tasks.backfill_ticket_faccode': {
+        'queue': 'lowpriority',
+    },
     'subscription.tasks.fire_metrics_active_subscriptions': {
         'queue': 'priority',
     },
