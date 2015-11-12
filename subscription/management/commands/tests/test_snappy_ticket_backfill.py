@@ -65,13 +65,6 @@ class TestSnappyTicketBackfillCommand(TestCase):
     @responses.activate
     def test_tickets_backfilled(self):
         # Setup
-        expected_accounts = [
-            {"id": 77777}
-        ]
-        responses.add(responses.GET,
-                      "https://app.besnappy.com/api/v1/accounts",
-                      json.dumps(expected_accounts),
-                      status=200, content_type='application/json')
         expected_staff = [
             {"id": 112, "username": "barry"},
             {"id": 111, "username": "mike"}
@@ -97,31 +90,21 @@ class TestSnappyTicketBackfillCommand(TestCase):
             'Queueing 2 tickets for backfilling',
             'Queued 2 tickets for backfilling'
         ]), command.stdout.getvalue().strip())
-        self.assertEqual(len(responses.calls), 4)
+        self.assertEqual(len(responses.calls), 3)
         self.assertEqual(
             responses.calls[0].request.url,
-            'https://app.besnappy.com/api/v1/accounts')
-        self.assertEqual(
-            responses.calls[1].request.url,
             'https://app.besnappy.com/api/v1/account/77777/staff')
         self.assertEqual(
-            responses.calls[2].request.url,
+            responses.calls[1].request.url,
             'https://app.besnappy.com/api/v1/ticket/123444/')
         self.assertEqual(
-            responses.calls[3].request.url,
+            responses.calls[2].request.url,
             'https://app.besnappy.com/api/v1/ticket/123555/')
 
     @override_settings(VUMI_GO_API_TOKEN='token')
     @responses.activate
     def test_tickets_backfilled_dryrun(self):
         # Setup
-        expected_accounts = [
-            {"id": 77777}
-        ]
-        responses.add(responses.GET,
-                      "https://app.besnappy.com/api/v1/accounts",
-                      json.dumps(expected_accounts),
-                      status=200, content_type='application/json')
         expected_staff = [
             {"id": 112, "username": "barry"},
             {"id": 111, "username": "mike"}
@@ -146,10 +129,7 @@ class TestSnappyTicketBackfillCommand(TestCase):
             'Subset tickets found: 2',
             '2 tickets would be backfilled'
         ]), command.stdout.getvalue().strip())
-        self.assertEqual(len(responses.calls), 2)
+        self.assertEqual(len(responses.calls), 1)
         self.assertEqual(
             responses.calls[0].request.url,
-            'https://app.besnappy.com/api/v1/accounts')
-        self.assertEqual(
-            responses.calls[1].request.url,
             'https://app.besnappy.com/api/v1/account/77777/staff')

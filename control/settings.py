@@ -371,6 +371,7 @@ SNAPPY_API_KEY = "replaceme"
 SNAPPY_MAILBOX_ID = 1
 SNAPPY_EMAIL = "replaceme@example.org"
 SNAPPY_EXTRAS = []
+SNAPPY_ACCOUNT_ID = None
 
 BROKER_URL = 'redis://localhost:6379/0'
 

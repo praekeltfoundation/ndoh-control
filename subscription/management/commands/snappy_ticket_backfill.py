@@ -21,9 +21,8 @@ class Command(BaseCommand):
             api_key=settings.SNAPPY_API_KEY,
             api_url=settings.SNAPPY_BASE_URL
         )
-        # Get the snappy account id
-        accounts = snappy_api.get_accounts()
-        staff = snappy_api.get_staff(accounts[0]["id"])
+        # Get the snappy staff
+        staff = snappy_api.get_staff(settings.SNAPPY_ACCOUNT_ID)
         operators = dict()
         for staff_member in staff:
             operators[staff_member["username"]] = staff_member["id"]
