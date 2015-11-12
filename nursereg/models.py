@@ -94,7 +94,7 @@ class NurseReg(models.Model):
 
 from django.db.models.signals import post_save
 from django.dispatch import receiver
-from .tasks import jembi_post_json, update_create_vumi_contact
+from .tasks import update_create_vumi_contact
 
 
 @receiver(post_save, sender=NurseReg)
@@ -105,8 +105,8 @@ def fire_jembi_post(sender, instance, created, **kwargs):
     """
     if created:
         # Fire Jembi send tasks
-        jembi_post_json.apply_async(
-            kwargs={"registration_id": instance.id})
+        # jembi_post_json.apply_async(
+        #     kwargs={"registration_id": instance.id})
 
         # Fire Contact update create tasks
         update_create_vumi_contact.apply_async(
