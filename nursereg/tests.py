@@ -11,11 +11,11 @@ from rest_framework.authtoken.models import Token
 from rest_framework import status
 from requests.adapters import HTTPAdapter
 from requests_testadapter import TestSession, Resp
-from requests.exceptions import HTTPError
+# from requests.exceptions import HTTPError
 from go_http.contacts import ContactsApiClient
 from go_http.send import LoggingSender
 from fake_go_contacts import Request, FakeContactsApi
-from .models import NurseReg, NurseSource, fire_jembi_post
+from .models import NurseReg, NurseSource, nursereg_postsave
 from subscription.models import Subscription
 from nursereg import tasks
 
@@ -38,75 +38,16 @@ TEST_REG_DATA = {
         "faccode": "123456",
         "id_type": "sa_id",
         "id_no": "8009151234001",
-        "dob": "1980-09-15",
-        # "passport_origin": None,
-        # "nurse_source": None,
-        # "persal_no": 12345678,
-        # "opted_out": None,
-        # "optout_reason": None,
-        # "optout_count": None,
-        # "sanc_reg_no": None,
+        "dob": "1980-09-15"
     },
-    # "clinic_hcw": {
-    #     "hcw_msisdn": "+27820010001",
-    #     "mom_msisdn": "+27001",
-    #     "mom_id_type": "passport",
-    #     "mom_passport_origin": "zw",
-    #     "mom_lang": "af",
-    #     "mom_edd": "2015-09-01",
-    #     "mom_id_no": "5551111",
-    #     "mom_dob": None,
-    #     "clinic_code": "12345",
-    #     "authority": "clinic"
-    # },
-    # "chw_self": {
-    #     "hcw_msisdn": None,
-    #     "mom_msisdn": "+27002",
-    #     "mom_id_type": "none",
-    #     "mom_passport_origin": None,
-    #     "mom_lang": "xh",
-    #     "mom_edd": None,
-    #     "mom_id_no": None,
-    #     "mom_dob": "1980-10-15",
-    #     "clinic_code": None,
-    #     "authority": "chw"
-    # },
-    # "chw_hcw": {
-    #     "hcw_msisdn": "+27820020002",
-    #     "mom_msisdn": "+27002",
-    #     "mom_id_type": "sa_id",
-    #     "mom_passport_origin": None,
-    #     "mom_lang": "zu",
-    #     "mom_edd": None,
-    #     "mom_id_no": "8011151234001",
-    #     "mom_dob": "1980-11-15",
-    #     "clinic_code": None,
-    #     "authority": "chw"
-    # },
-    # "personal_detailed": {
-    #     "hcw_msisdn": None,
-    #     "mom_msisdn": "+27003",
-    #     "mom_id_type": "passport",
-    #     "mom_passport_origin": "mz",
-    #     "mom_lang": "st",
-    #     "mom_edd": None,
-    #     "mom_id_no": "5552222",
-    #     "mom_dob": None,
-    #     "clinic_code": None,
-    #     "authority": "personal"
-    # },
-    # "personal_simple": {
-    #     "hcw_msisdn": None,
-    #     "mom_msisdn": "+27004",
-    #     "mom_id_type": "none",
-    #     "mom_passport_origin": None,
-    #     "mom_lang": "ss",
-    #     "mom_edd": None,
-    #     "mom_id_no": None,
-    #     "mom_dob": None,
-    #     "clinic_code": None,
-    #     "authority": "personal"
-    # }
+    "passport": {
+        "msisdn": "+27002",
+        "faccode": "123456",
+        "id_type": "passport",
+        "id_no": "Cub1234",
+        "dob": "1980-09-15",
+        "passport_origin": "cu"
+    }
 }
 TEST_NURSE_SOURCE_DATA = {
     "name": "Test Nurse Source"
@@ -148,13 +89,9 @@ TEST_REG_DATA_BROKEN = {
         "id_type": "sa_id",
         "id_no": "8009151234001",
         "dob": "1980-09-15",
-        # "passport_origin": None,
-        # "nurse_source": None,
-        # "persal_no": 12345678,
         "opted_out": True,
         "optout_reason": None,
         "optout_count": 1,
-        # "sanc_reg_no": None,
     },
     "zero_optout_count": {
         "msisdn": "+27001",
@@ -162,13 +99,9 @@ TEST_REG_DATA_BROKEN = {
         "id_type": "sa_id",
         "id_no": "8009151234001",
         "dob": "1980-09-15",
-        # "passport_origin": None,
-        # "nurse_source": None,
-        # "persal_no": 12345678,
         "opted_out": True,
         "optout_reason": "job_change",
         "optout_count": 0,
-        # "sanc_reg_no": None,
     },
 }
 TEST_CONTACT_DATA = {
@@ -238,13 +171,6 @@ class FakeContactsApiAdapter(HTTPAdapter):
 make_contact_dict = FakeContactsApi.make_contact_dict
 
 
-class TestNurseRegHelperFunctions(TestCase):
-
-    def test_get_tomorrow(self):
-        tasks.get_today = override_get_today
-        self.assertEqual(tasks.get_tomorrow(), '2013-08-20')
-
-
 class AuthenticatedAPITestCase(APITestCase):
 
     def _replace_post_save_hooks(self):
@@ -252,7 +178,7 @@ class AuthenticatedAPITestCase(APITestCase):
         assert has_listeners(), (
             "NurseReg model has no post_save listeners. Make sure"
             " helpers cleaned up properly in earlier tests.")
-        post_save.disconnect(fire_jembi_post, sender=NurseReg)
+        post_save.disconnect(nursereg_postsave, sender=NurseReg)
         assert not has_listeners(), (
             "NurseReg model still has post_save listeners. Make sure"
             " helpers cleaned up properly in earlier tests.")
@@ -262,7 +188,7 @@ class AuthenticatedAPITestCase(APITestCase):
         assert not has_listeners(), (
             "NurseReg model still has post_save listeners. Make sure"
             " helpers removed them properly in earlier tests.")
-        post_save.connect(fire_jembi_post, sender=NurseReg)
+        post_save.connect(nursereg_postsave, sender=NurseReg)
 
     def make_nursesource(self, post_data=TEST_NURSE_SOURCE_DATA):
         # Make source for the normal user who submits data but using admin user
@@ -532,82 +458,80 @@ class TestNurseRegAPI(AuthenticatedAPITestCase):
                          self.check_logs("Metric: 'test.metric' [sum] -> 1"))
         self.assertEqual(1, self.check_logs_number_of_entries())
 
-#     @responses.activate
-#     def test_create_registration_fires_tasks(self):
-#         # restore the post_save hooks just for this test
-#         post_save.connect(fire_jembi_post, sender=Registration)
+    @responses.activate
+    def test_create_registration_fires_tasks(self):
+        # restore the post_save hooks just for this test
+        post_save.connect(nursereg_postsave, sender=NurseReg)
 
-#         # Check number of subscriptions before task fire
-#         self.assertEqual(Subscription.objects.all().count(), 1)
+        # Check number of subscriptions before task fire
+        self.assertEqual(Subscription.objects.all().count(), 1)
 
-#         # Check there are no pre-existing registration objects
-#         self.assertEqual(Registration.objects.all().count(), 0)
+        # Check there are no pre-existing registration objects
+        self.assertEqual(NurseReg.objects.all().count(), 0)
 
-#         responses.add(responses.POST,
-#                       "http://test/v2/subscription",
-#                       body='jembi_post_json task', status=201,
-#                       content_type='application/json')
-#         responses.add(responses.POST,
-#                       "http://test/v2/registration/net.ihe/DocumentDossier",
-#                       body="Request added to queue", status=202,
-#                       content_type='application/json')
+        # responses.add(responses.POST,
+        #               "http://test/v2/subscription",
+        #               body='jembi_post_json task', status=201,
+        #               content_type='application/json')
+        # responses.add(responses.POST,
+        #               "http://test/v2/registration/net.ihe/DocumentDossier",
+        #               body="Request added to queue", status=202,
+        #               content_type='application/json')
 
-#         # Set up the client
-#         tasks.get_client = self.override_get_client
+        # Set up the client
+        tasks.get_client = self.override_get_client
 
-#         # Make a new registration
-#         reg_response = self.make_nursereg(
-#             post_data=TEST_REG_DATA["clinic_self"])
+        # Make a new registration
+        reg_response = self.make_nursereg(
+            post_data=TEST_REG_DATA["sa_id"])
 
-#         # Test registration object has been created successfully
-#         self.assertEqual(reg_response.status_code, status.HTTP_201_CREATED)
+        # Test registration object has been created successfully
+        self.assertEqual(reg_response.status_code, status.HTTP_201_CREATED)
 
-#         # Test there is now a registration object in the database
-#         d = Registration.objects.all()
-#         self.assertEqual(Registration.objects.all().count(), 1)
+        # Test there is now a registration object in the database
+        d = NurseReg.objects.all()
+        self.assertEqual(NurseReg.objects.all().count(), 1)
 
-#         # Test the registration object is the one you added
-#         d = Registration.objects.last()
-#         self.assertEqual(d.mom_id_type, 'sa_id')
+        # Test the registration object is the one you added
+        d = NurseReg.objects.last()
+        self.assertEqual(d.id_type, 'sa_id')
 
-#         # Test post requests has been made to Jembi
-#         self.assertEqual(len(responses.calls), 2)
-#         self.assertEqual(
-#             responses.calls[0].request.url,
-#             "http://test/v2/subscription")
-#         self.assertEqual(
-#             responses.calls[1].request.url,
-#             "http://test/v2/registration/net.ihe/DocumentDossier")
+        # Test post requests has been made to Jembi
+        self.assertEqual(len(responses.calls), 0)
+        # self.assertEqual(
+        #     responses.calls[0].request.url,
+        #     "http://test/v2/subscription")
+        # self.assertEqual(
+        #     responses.calls[1].request.url,
+        #     "http://test/v2/registration/net.ihe/DocumentDossier")
 
-#         # Test number of subscriptions after task fire
-#         self.assertEqual(Subscription.objects.all().count(), 2)
+        # Test number of subscriptions after task fire
+        self.assertEqual(Subscription.objects.all().count(), 2)
 
-#         # Test subscription object is the one you added
-#         d = Subscription.objects.last()
-#         self.assertEqual(d.to_addr, "+27001")
+        # Test subscription object is the one you added
+        d = Subscription.objects.last()
+        self.assertEqual(d.to_addr, "+27001")
 
-#         # Test metrics have fired
-#         self.assertEqual(True, self.check_logs(
-#             "Metric: u'test.clinic.sum.json_to_jembi_success' [sum] -> 1"))
-#         self.assertEqual(True, self.check_logs(
-#             "Metric: u'test.clinic.sum.doc_to_jembi_success' [sum] -> 1"))
-#         self.assertEqual(True, self.check_logs(
-#             "Metric: u'test.sum.subscriptions' [sum] -> 1"))
-#         self.assertEqual(True, self.check_logs(
-#             "Metric: u'test.clinic.sum.subscription_to_protocol_success' " +
-#             "[sum] -> 1"))
-#         self.assertEqual(4, self.check_logs_number_of_entries())
+        # Test metrics have fired
+        # self.assertEqual(True, self.check_logs(
+        #     "Metric: u'test.clinic.sum.json_to_jembi_success' [sum] -> 1"))
+        self.assertEqual(True, self.check_logs(
+            "Metric: u'test.sum.nc_subscriptions' [sum] -> 1"))
+        self.assertEqual(True, self.check_logs(
+            "Metric: u'test.nurseconnect.sum.nc_subscription_to_protocol_" +
+            "success' [sum] -> 1"))
+        self.assertEqual(2, self.check_logs_number_of_entries())
 
-#         # remove post_save hooks to prevent teardown errors
-#         post_save.disconnect(fire_jembi_post, sender=Registration)
+        # remove post_save hooks to prevent teardown errors
+        post_save.disconnect(nursereg_postsave, sender=NurseReg)
 
 
 # class TestJembiPostJsonTask(AuthenticatedAPITestCase):
 
 #     def test_build_jembi_json_clinic_self(self):
-#         registration_clinic_self = self.make_nursereg(
+#         registration_sa_id = self.make_nursereg(
 #             post_data=TEST_REG_DATA["clinic_self"])
-#         reg = Registration.objects.get(pk=registration_clinic_self.data["id"])
+#         reg = Registration.objects.get(pk=registration_sa_id.data["id"])
 #         expected_json_clinic_self = {
 #             'edd': '20150801',
 #             'id': '8009151234001^^^ZAF^NI',
@@ -780,298 +704,104 @@ class TestNurseRegAPI(AuthenticatedAPITestCase):
 #         self.assertEqual(1, self.check_logs_number_of_entries())
 
 
+class TestUpdateCreateVumiContactTask(AuthenticatedAPITestCase):
 
-# class TestUpdateCreateVumiContactTask(AuthenticatedAPITestCase):
+    def test_sub_details(self):
+        # Setup
+        # Execute
+        sub_details = tasks.get_subscription_details()
+        # Check
+        self.assertEqual(sub_details, ("nurseconnect", "three_per_week", 1))
 
-#     def test_week_calc(self):
-#         weeks = tasks.get_pregnancy_week(datetime(2014, 7, 13), "2014-07-14")
-#         self.assertEqual(weeks, 40)
-#         weeks = tasks.get_pregnancy_week(datetime(2014, 7, 6), "2014-07-14")
-#         self.assertEqual(weeks, 39)
-#         weeks = tasks.get_pregnancy_week(datetime(2014, 6, 29), "2014-07-14")
-#         self.assertEqual(weeks, 38)
-#         weeks = tasks.get_pregnancy_week(datetime(2014, 1, 1), "2014-09-21")
-#         self.assertEqual(weeks, 3)
-#         weeks = tasks.get_pregnancy_week(datetime(2014, 1, 1), "2014-10-03")
-#         self.assertEqual(weeks, 2)
+    def test_update_vumi_contact_sa_id(self):
+        # Test mocks a JS nurse registration - existing Vumi contact
+        # Setup
+        # make existing contact with msisdn 27001
+        self.make_existing_contact({
+            u"key": u"knownuuid",
+            u"msisdn": u"+27001",
+            u"groups": [u"672442947cdf4a2aae0f96ccb688df05"],
+            u"user_account": u"knownaccount",
+            u"extra": {}
+        })
+        # nurse registration for contact 27001
+        nursereg = self.make_nursereg(
+            post_data=TEST_REG_DATA["sa_id"])
+        client = self.make_client()
+        # Execute
+        contact = tasks.update_create_vumi_contact.apply_async(
+            kwargs={"nursereg_id": nursereg.data["id"],
+                    "client": client})
+        result = contact.get()
+        # Check
+        self.assertEqual(result["msisdn"], "+27001")
+        self.assertEqual(result["groups"],
+                         [u"672442947cdf4a2aae0f96ccb688df05"])
+        self.assertEqual(result["key"], "knownuuid")
+        self.assertEqual(result["user_account"], "knownaccount")
+        self.assertEqual(result["extra"], {
+            "nc_dob": "1980-09-15",
+            "nc_sa_id_no": "8009151234001",
+            "nc_is_registered": "true",
+            "nc_id_type": "sa_id",
+            "nc_faccode": "123456",
+            "nc_source_name": "Test Nurse Source",
+            "nc_subscription_type": "11",
+            "nc_subscription_rate": "4",
+            "nc_subscription_seq_start": "1"
+        })
 
-#         weeks = tasks.get_pregnancy_week(datetime(2013, 8, 19), "2013-08-20")
-#         self.assertEqual(weeks, 40)
-#         weeks = tasks.get_pregnancy_week(datetime(2013, 8, 19), "2013-08-27")
-#         self.assertEqual(weeks, 39)
-#         weeks = tasks.get_pregnancy_week(datetime(2013, 8, 19), "2013-09-03")
-#         self.assertEqual(weeks, 38)
-#         weeks = tasks.get_pregnancy_week(datetime(2013, 8, 19), "2013-09-10")
-#         self.assertEqual(weeks, 37)
-#         weeks = tasks.get_pregnancy_week(datetime(2013, 8, 19), "2013-09-17")
-#         self.assertEqual(weeks, 36)
-#         weeks = tasks.get_pregnancy_week(datetime(2013, 8, 19), "2013-09-24")
-#         self.assertEqual(weeks, 35)
-#         weeks = tasks.get_pregnancy_week(datetime(2013, 8, 19), "2013-10-15")
-#         self.assertEqual(weeks, 32)
-#         weeks = tasks.get_pregnancy_week(datetime(2013, 8, 19), "2013-10-22")
-#         self.assertEqual(weeks, 31)
-#         weeks = tasks.get_pregnancy_week(datetime(2013, 8, 19), "2014-04-24")
-#         self.assertEqual(weeks, 5)
-#         weeks = tasks.get_pregnancy_week(datetime(2013, 8, 19), "2014-05-07")
-#         self.assertEqual(weeks, 3)
+    def test_create_vumi_contact_passport(self):
+        # Test mocks an external registration - no existing Vumi contact
+        # Setup
+        # make existing contact with msisdn 27001
+        self.make_existing_contact({
+            u"key": u"knownuuid",
+            u"msisdn": u"+27001",
+            u"user_account": u"knownaccount",
+            u"extra": {}
+        })
+        # nurse registration for contact 27002
+        nursereg = self.make_nursereg(
+            post_data=TEST_REG_DATA["passport"])
+        client = self.make_client()
+        # Execute
+        contact = tasks.update_create_vumi_contact.apply_async(
+            kwargs={"nursereg_id": nursereg.data["id"],
+                    "client": client})
+        result = contact.get()
+        # Check
+        self.assertEqual(result["msisdn"], "+27002")
+        self.assertEqual(result["groups"], [])
+        self.assertEqual(result["extra"], {
+            "nc_dob": "1980-09-15",
+            "nc_passport_num": "Cub1234",
+            "nc_passport_country": "cu",
+            "nc_is_registered": "true",
+            "nc_id_type": "passport",
+            "nc_faccode": "123456",
+            "nc_source_name": "Test Nurse Source",
+            "nc_subscription_type": "11",
+            "nc_subscription_rate": "4",
+            "nc_subscription_seq_start": "1"
+        })
 
-#     def test_sub_details(self):
-#         contact = {"extra": {"is_registered_by": "personal"}}
-#         sub_details = tasks.get_subscription_details(contact)
-#         self.assertEqual(sub_details, ("subscription", "two_per_week", 1))
+    def test_create_subscription(self):
+        contact = {
+            "key": "knownkey",
+            "msisdn": "knownaddr",
+            "user_account": "knownaccount",
+            "extra": {}
+        }
+        subscription = tasks.create_subscription(contact)
+        self.assertEqual(subscription.to_addr, "knownaddr")
 
-#         contact = {"extra": {"is_registered_by": "chw"}}
-#         sub_details = tasks.get_subscription_details(contact)
-#         self.assertEqual(sub_details, ("chw", "two_per_week", 1))
-
-#         contact_40 = {"extra": {"is_registered_by": "clinic",
-#                                 "edd": "2013-08-20"}}
-#         sub_details = tasks.get_subscription_details(contact_40)
-#         self.assertEqual(sub_details, ("accelerated", "daily", 1))
-
-#         contact_39 = {"extra": {"is_registered_by": "clinic",
-#                                 "edd": "2013-08-27"}}
-#         sub_details = tasks.get_subscription_details(contact_39)
-#         self.assertEqual(sub_details, ("accelerated", "daily", 1))
-
-#         contact_38 = {"extra": {"is_registered_by": "clinic",
-#                                 "edd": "2013-09-03"}}
-#         sub_details = tasks.get_subscription_details(contact_38)
-#         self.assertEqual(sub_details, ("accelerated", "five_per_week", 1))
-
-#         contact_37 = {"extra": {"is_registered_by": "clinic",
-#                                 "edd": "2013-09-10"}}
-#         sub_details = tasks.get_subscription_details(contact_37)
-#         self.assertEqual(sub_details, ("accelerated", "four_per_week", 1))
-
-#         contact_36 = {"extra": {"is_registered_by": "clinic",
-#                                 "edd": "2013-09-17"}}
-#         sub_details = tasks.get_subscription_details(contact_36)
-#         self.assertEqual(sub_details, ("accelerated", "three_per_week", 1))
-
-#         contact_35 = {"extra": {"is_registered_by": "clinic",
-#                                 "edd": "2013-09-24"}}
-#         sub_details = tasks.get_subscription_details(contact_35)
-#         self.assertEqual(sub_details, ("later", "three_per_week", 13))
-
-#         contact_32 = {"extra": {"is_registered_by": "clinic",
-#                                 "edd": "2013-10-15"}}
-#         sub_details = tasks.get_subscription_details(contact_32)
-#         self.assertEqual(sub_details, ("later", "three_per_week", 4))
-
-#         contact_31 = {"extra": {"is_registered_by": "clinic",
-#                                 "edd": "2013-10-22"}}
-#         sub_details = tasks.get_subscription_details(contact_31)
-#         self.assertEqual(sub_details, ("standard", "two_per_week", 53))
-
-#         contact_05 = {"extra": {"is_registered_by": "clinic",
-#                                 "edd": "2014-04-24"}}
-#         sub_details = tasks.get_subscription_details(contact_05)
-#         self.assertEqual(sub_details, ("standard", "two_per_week", 1))
-
-#         contact_03 = {"extra": {"is_registered_by": "clinic",
-#                                 "edd": "2014-05-07"}}
-#         sub_details = tasks.get_subscription_details(contact_03)
-#         self.assertEqual(sub_details, ("standard", "two_per_week", 1))
-
-#     def test_update_vumi_contact_clinic_self(self):
-#         registration = self.make_nursereg(
-#             post_data=TEST_REG_DATA["clinic_self"])
-
-#         client = self.make_client()
-#         self.make_existing_contact({
-#             u"key": u"knownuuid",
-#             u"msisdn": u"+27001",
-#             u"groups": [u"672442947cdf4a2aae0f96ccb688df05"],
-#             u"user_account": u"knownaccount",
-#             u"extra": {}
-#         })
-
-#         contact = tasks.update_create_vumi_contact.apply_async(
-#             kwargs={"registration_id": registration.data["id"],
-#                     "client": client})
-#         result = contact.get()
-#         self.assertEqual(result["msisdn"], "+27001")
-#         self.assertEqual(result["groups"],
-#                          [u"672442947cdf4a2aae0f96ccb688df05",
-#                           u"ee47385f0c954fc6b614ec3961dbf30b"])
-#         self.assertEqual(result["key"], "knownuuid")
-#         self.assertEqual(result["user_account"], "knownaccount")
-#         self.assertEqual(result["extra"], {
-#             "is_registered": "true",
-#             "is_registered_by": "clinic",
-#             "language_choice": "en",
-#             "source_name": "Test Source",
-#             "sa_id": "8009151234001",
-#             "clinic_code": "12345",
-#             "dob": "1980-09-15",
-#             "last_service_rating": "never",
-#             "service_rating_reminders": "0",
-#             "service_rating_reminder": "2013-08-20",
-#             "edd": "2015-08-01",
-#             "due_date_year": "2015",
-#             "due_date_month": "08",
-#             "due_date_day": "01",
-#             "subscription_type": "1",
-#             "subscription_rate": "3",
-#             "subscription_seq_start": "1"
-#         })
-
-#     def test_create_vumi_contact_chw_self(self):
-#         # make registration for contact with msisdn +27002
-#         registration = self.make_nursereg(
-#             post_data=TEST_REG_DATA["chw_self"])
-#         client = self.make_client()
-#         # make different existing contact
-#         self.make_existing_contact({
-#             u"key": u"knownuuid",
-#             u"msisdn": u"+27001",
-#             u"user_account": u"knownaccount",
-#             u"extra": {}
-#         })
-
-#         contact = tasks.update_create_vumi_contact.apply_async(
-#             kwargs={"registration_id": registration.data["id"],
-#                     "client": client})
-#         result = contact.get()
-#         self.assertEqual(result["msisdn"], "+27002")
-#         self.assertEqual(result["groups"],
-#                          [u"13140076f49f4e84a752a5d5ab961091"])
-#         self.assertEqual(result["extra"], {
-#             "is_registered": "true",
-#             "is_registered_by": "chw",
-#             "language_choice": "xh",
-#             "source_name": "Test Source",
-#             "dob": "1980-10-15",
-#             "subscription_type": "10",
-#             "subscription_rate": "3",
-#             "subscription_seq_start": "1"
-#         })
-
-#     def test_create_vumi_contact_clinic_hcw(self):
-#         # make registration for contact with msisdn +27001
-#         registration = self.make_nursereg(
-#             post_data=TEST_REG_DATA["clinic_hcw"])
-#         client = self.make_client()
-#         # make different existing contact
-#         self.make_existing_contact({
-#             u"key": u"knownuuid",
-#             u"msisdn": u"+27005",
-#             u"user_account": u"knownaccount",
-#             u"extra": {}
-#         })
-
-#         contact = tasks.update_create_vumi_contact.apply_async(
-#             kwargs={"registration_id": registration.data["id"],
-#                     "client": client})
-#         result = contact.get()
-#         self.assertEqual(result["msisdn"], "+27001")
-#         self.assertEqual(result["groups"],
-#                          [u"672442947cdf4a2aae0f96ccb688df05"])
-#         self.assertEqual(result["extra"], {
-#             "is_registered": "true",
-#             "is_registered_by": "clinic",
-#             "language_choice": "af",
-#             "source_name": "Test Source",
-#             "passport_no": "5551111",
-#             "passport_origin": "zw",
-#             "clinic_code": "12345",
-#             "last_service_rating": "never",
-#             "service_rating_reminders": "0",
-#             "service_rating_reminder": "2013-08-20",
-#             "registered_by": "+27820010001",
-#             "edd": "2015-09-01",
-#             "due_date_year": "2015",
-#             "due_date_month": "09",
-#             "due_date_day": "01",
-#             "subscription_type": "1",
-#             "subscription_rate": "3",
-#             "subscription_seq_start": "1"
-#         })
-
-#     def test_create_vumi_contact_personal_detailed(self):
-#         # make registration for contact with msisdn +27003
-#         registration = self.make_nursereg(
-#             post_data=TEST_REG_DATA["personal_detailed"])
-#         client = self.make_client()
-#         # make completely seperate existing contact
-#         self.make_existing_contact({
-#             u"key": u"knownuuid",
-#             u"msisdn": u"+27005",
-#             u"user_account": u"knownaccount",
-#             u"extra": {}
-#         })
-
-#         contact = tasks.update_create_vumi_contact.apply_async(
-#             kwargs={"registration_id": registration.data["id"],
-#                     "client": client})
-#         result = contact.get()
-#         self.assertEqual(result["msisdn"], "+27003")
-#         self.assertEqual(result["groups"],
-#                          [u"f4738d01b4f74e41b9a6e804fc7eda56"])
-#         self.assertEqual(result["extra"], {
-#             "is_registered": "true",
-#             "is_registered_by": "personal",
-#             "language_choice": "st",
-#             "source_name": "Test Source",
-#             "passport_no": "5552222",
-#             "passport_origin": "mz",
-#             "subscription_type": "9",
-#             "subscription_rate": "3",
-#             "subscription_seq_start": "1"
-#         })
-
-#     def test_create_vumi_contact_personal_simple(self):
-#         # make registration for contact with msisdn +27004
-#         registration = self.make_nursereg(
-#             post_data=TEST_REG_DATA["personal_simple"])
-#         client = self.make_client()
-#         # make completely seperate existing contact
-#         self.make_existing_contact({
-#             u"key": u"knownuuid",
-#             u"msisdn": u"+27005",
-#             u"user_account": u"knownaccount",
-#             u"extra": {}
-#         })
-
-#         contact = tasks.update_create_vumi_contact.apply_async(
-#             kwargs={"registration_id": registration.data["id"],
-#                     "client": client})
-#         result = contact.get()
-#         self.assertEqual(result["msisdn"], "+27004")
-#         self.assertEqual(result["groups"],
-#                          [u"b1e6bbd5d28b477aabb9cce43de7e9d1"])
-#         self.assertEqual(result["extra"], {
-#             "is_registered": "true",
-#             "is_registered_by": "personal",
-#             "language_choice": "ss",
-#             "source_name": "Test Source",
-#             "subscription_type": "9",
-#             "subscription_rate": "3",
-#             "subscription_seq_start": "1"
-#         })
-
-#     def test_create_subscription(self):
-#         contact_35 = {
-#             "key": "knownkey",
-#             "msisdn": "knownaddr",
-#             "user_account": "knownaccount",
-#             "extra": {
-#                 "language_choice": "en",
-#                 "is_registered_by": "clinic",
-#                 "edd": "2013-09-24"
-#             }
-#         }
-#         subscription = tasks.create_subscription(contact_35, 'clinic')
-#         self.assertEqual(subscription.to_addr, "knownaddr")
-
-#     def test_create_subscription_fail_fires_metric(self):
-#         broken_contact = {
-#             "key": "wherestherestoftheinfo"
-#         }
-#         tasks.create_subscription(broken_contact, 'clinic')
-#         self.assertEqual(True, self.check_logs(
-#             "Metric: u'test.clinic.sum.subscription_to_protocol_fail' " +
-#             "[sum] -> 1"))
-#         self.assertEqual(1, self.check_logs_number_of_entries())
+    def test_create_subscription_fail_fires_metric(self):
+        broken_contact = {
+            "key": "wherestherestoftheinfo"
+        }
+        tasks.create_subscription(broken_contact)
+        self.assertEqual(True, self.check_logs(
+            "Metric: u'test.nurseconnect.sum.nc_subscription_to_protocol_" +
+            "fail' [sum] -> 1"))
+        self.assertEqual(1, self.check_logs_number_of_entries())

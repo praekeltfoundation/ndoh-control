@@ -30,12 +30,12 @@ class NurseReg(models.Model):
         ('passport', 'Passport'),
     )
     COUNTRY_CHOICES = (
-        ('namibia', 'Namibia'),
-        ('botswana', 'Botswana'),
-        ('mozambique', 'Mozambique'),
-        ('swaziland', 'Swaziland'),
-        ('lesotho', 'Lesotho'),
-        ('cuba', 'Cuba'),
+        ('na', 'Namibia'),
+        ('bw', 'Botswana'),
+        ('mz', 'Mozambique'),
+        ('sz', 'Swaziland'),
+        ('ls', 'Lesotho'),
+        ('cu', 'Cuba'),
         ('other', 'Other'),
     )
     OPTOUT_REASON_CHOICES = (
@@ -98,7 +98,7 @@ from .tasks import update_create_vumi_contact
 
 
 @receiver(post_save, sender=NurseReg)
-def fire_jembi_post(sender, instance, created, **kwargs):
+def nursereg_postsave(sender, instance, created, **kwargs):
     """ Send the registration info to Jembi, then create or
         update the Vumi contact. Contact editing contains
         the code for creating a new subscription.
@@ -106,8 +106,8 @@ def fire_jembi_post(sender, instance, created, **kwargs):
     if created:
         # Fire Jembi send tasks
         # jembi_post_json.apply_async(
-        #     kwargs={"registration_id": instance.id})
+        #     kwargs={"nursereg_id": instance.id})
 
         # Fire Contact update create tasks
         update_create_vumi_contact.apply_async(
-            kwargs={"registration_id": instance.id})
+            kwargs={"nursereg_id": instance.id})
