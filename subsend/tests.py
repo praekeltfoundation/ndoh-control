@@ -38,7 +38,7 @@ class TestMessageQueueProcessor(TestCase):
 
     def test_data_loaded(self):
         messagesets = MessageSet.objects.all()
-        self.assertEqual(len(messagesets), 10)
+        self.assertEqual(len(messagesets), 11)
         subscriptions = Subscription.objects.all()
         self.assertEqual(len(subscriptions), 6)
         schedules = PeriodicTask.objects.all()
@@ -173,7 +173,7 @@ class TestMessageFailure(TestCase):
 
     def test_data_loaded(self):
         messagesets = MessageSet.objects.all()
-        self.assertEqual(len(messagesets), 10)
+        self.assertEqual(len(messagesets), 11)
         subscriptions = Subscription.objects.all()
         self.assertEqual(len(subscriptions), 6)
         schedules = PeriodicTask.objects.all()
