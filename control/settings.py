@@ -169,7 +169,8 @@ INSTALLED_APPS = (
     'subsend',
     'servicerating',
     'snappybouncer',
-    'controlinterface'
+    'controlinterface',
+    'nursereg',
 )
 
 # A sample logging configuration. The only tangible logging
@@ -214,7 +215,8 @@ CELERY_IMPORTS = (
     'subsend.tasks',
     'subscription.tasks',
     'snappybouncer.tasks',
-    'registration.tasks'
+    'registration.tasks',
+    'nursereg.tasks',
 )
 
 # Enabling priority routing for snappy bouncer tasks to allow those to
@@ -314,7 +316,16 @@ CELERY_ROUTES = {
     },
     'registration.tasks.vumi_fire_metric': {
         'queue': 'priority',
-    }
+    },
+    'nursereg.tasks.jembi_post_json': {
+        'queue': 'priority',
+    },
+    'nursereg.tasks.update_create_vumi_contact': {
+        'queue': 'priority',
+    },
+    'nursereg.tasks.vumi_fire_metric': {
+        'queue': 'priority',
+    },
 }
 
 
