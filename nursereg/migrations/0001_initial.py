@@ -22,7 +22,7 @@ class Migration(SchemaMigration):
         db.create_table(u'nursereg_nursereg', (
             (u'id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
             ('cmsisdn', self.gf('django.db.models.fields.CharField')(max_length=255)),
-            ('dmsisdn', self.gf('django.db.models.fields.CharField')(max_length=255)),
+            ('dmsisdn', self.gf('django.db.models.fields.CharField')(max_length=255, null=True, blank=True)),
             ('rmsisdn', self.gf('django.db.models.fields.CharField')(max_length=255, null=True, blank=True)),
             ('faccode', self.gf('django.db.models.fields.CharField')(max_length=100)),
             ('id_type', self.gf('django.db.models.fields.CharField')(max_length=8)),
@@ -90,7 +90,7 @@ class Migration(SchemaMigration):
             'Meta': {'object_name': 'NurseReg'},
             'cmsisdn': ('django.db.models.fields.CharField', [], {'max_length': '255'}),
             'created_at': ('django.db.models.fields.DateTimeField', [], {'auto_now_add': 'True', 'blank': 'True'}),
-            'dmsisdn': ('django.db.models.fields.CharField', [], {'max_length': '255'}),
+            'dmsisdn': ('django.db.models.fields.CharField', [], {'max_length': '255', 'null': 'True', 'blank': 'True'}),
             'dob': ('django.db.models.fields.DateField', [], {}),
             'faccode': ('django.db.models.fields.CharField', [], {'max_length': '100'}),
             u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),

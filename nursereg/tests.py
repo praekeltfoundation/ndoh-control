@@ -35,7 +35,6 @@ def override_get_sender():
 TEST_REG_DATA = {
     "sa_id": {
         "cmsisdn": "+27001",
-        "dmsisdn": "+27001",
         "faccode": "123456",
         "id_type": "sa_id",
         "id_no": "8009151234001",
@@ -381,6 +380,7 @@ class TestNurseRegAPI(AuthenticatedAPITestCase):
         self.assertEqual(reg_response.status_code, status.HTTP_201_CREATED)
         d = NurseReg.objects.last()
         self.assertEqual(d.cmsisdn, '+27001')
+        self.assertEqual(d.dmsisdn, '+27001')
         self.assertEqual(d.faccode, '123456')
         self.assertEqual(d.id_type, 'sa_id')
         self.assertEqual(d.id_no, '8009151234001')

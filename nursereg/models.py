@@ -45,7 +45,7 @@ class NurseReg(models.Model):
         ('other', 'Other'),
     )
     cmsisdn = models.CharField(max_length=255)
-    dmsisdn = models.CharField(max_length=255)
+    dmsisdn = models.CharField(max_length=255, null=True, blank=True)
     rmsisdn = models.CharField(max_length=255, null=True, blank=True)
     faccode = models.CharField(max_length=100)
     id_type = models.CharField(max_length=8, choices=ID_TYPE_CHOICES)
@@ -68,8 +68,6 @@ class NurseReg(models.Model):
         return u"Nurse Registration for %s" % self.cmsisdn
 
     def clean(self):
-        if self.dmsisdn is None:
-            self.dmsisdn = self.cmsisdn
         if self.id_type == 'sa_id' and self.id_no is None:
             raise ValidationError(
                 _("Provide an id number in the id_no field."))
@@ -93,6 +91,8 @@ class NurseReg(models.Model):
 
     def save(self, *args, **kwargs):
         self.clean()
+        if self.dmsisdn is None:
+            self.dmsisdn = self.cmsisdn
         super(NurseReg, self).save(*args, **kwargs)
 
 
