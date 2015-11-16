@@ -12,3 +12,4 @@ CELERY_RESULT_BACKEND = 'djcelery.backends.database:DatabaseBackend'
 RAVEN_CONFIG = {'dsn': None}
 METRIC_ENV = "test"
 CELERY_EAGER_PROPAGATES_EXCEPTIONS = False
+SNAPPY_ACCOUNT_ID = 77777

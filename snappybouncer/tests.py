@@ -1,5 +1,5 @@
 """
-Tests for Service Rating Application
+Tests for Snappy Bouncer Application
 """
 from tastypie.test import ResourceTestCase
 from django.test import TestCase
@@ -10,7 +10,8 @@ from django.core import management
 from snappybouncer.models import (
     Conversation, UserAccount, Ticket, fire_snappy_if_new)
 from snappybouncer.tasks import (send_helpdesk_response_jembi,
-                                 build_jembi_helpdesk_json)
+                                 build_jembi_helpdesk_json,
+                                 backfill_ticket, backfill_ticket_faccode)
 from snappybouncer.api import WebhookResource
 import json
 import responses
@@ -316,3 +317,126 @@ class JembiSubmissionTest(TestCase):
             'http://test/v2/helpdesk')
         self.assertEqual(responses.calls[0].response.text,
                          'Request added to queue')
+
+
+class BackfillTicketTest(TestCase):
+
+    def _replace_post_save_hooks(self):
+        has_listeners = lambda: post_save.has_listeners(Ticket)
+        assert has_listeners(), (
+            "Ticket model has no post_save listeners. Make sure"
+            " helpers cleaned up properly in earlier tests.")
+        post_save.disconnect(fire_snappy_if_new,
+                             sender=Ticket)
+        assert not has_listeners(), (
+            "Ticket model still has post_save listeners. Make sure"
+            " helpers cleaned up properly in earlier tests.")
+
+    def _restore_post_save_hooks(self):
+        has_listeners = lambda: post_save.has_listeners(Ticket)
+        assert not has_listeners(), (
+            "Ticket model still has post_save listeners. Make sure"
+            " helpers removed them properly in earlier tests.")
+        post_save.connect(
+            fire_snappy_if_new,
+            sender=Ticket)
+
+    @override_settings(CELERY_EAGER_PROPAGATES_EXCEPTIONS=True,
+                       CELERY_ALWAYS_EAGER=True,
+                       BROKER_BACKEND='memory',)
+    def setUp(self):
+        super(BackfillTicketTest, self).setUp()
+        self._replace_post_save_hooks()
+        self.conversation = self.mk_convo()
+
+    def mk_user_account(self):
+        ua = UserAccount()
+        ua.key = "fakeuakey"
+        ua.name = "Fake UserAccount"
+        ua.save()
+        return ua
+
+    def mk_convo(self):
+        convo = Conversation()
+        convo.user_account = self.mk_user_account()
+        convo.key = "fakeconvokey"
+        convo.name = "Fake Conversation"
+        convo.save()
+        return convo
+
+    def mk_ticket(self, support_nonce, support_id, message, response,
+                  faccode, operator, tag):
+        ticket = Ticket()
+        ticket.conversation = self.conversation
+        ticket.support_nonce = support_nonce
+        ticket.support_id = support_id
+        ticket.message = message
+        ticket.response = response
+        ticket.contact_key = "fakekey"
+        ticket.msisdn = "+27123"
+        ticket.faccode = faccode
+        ticket.operator = operator
+        ticket.tag = tag
+        ticket.save()
+        return ticket
+
+    def tearDown(self):
+        self._restore_post_save_hooks()
+
+    @responses.activate
+    def test_backfill_ticket(self):
+        # Setup
+        operators = {
+            "barry": 112,
+            "mike": 111
+        }
+        ticket = self.mk_ticket("supportnonce1", 101,
+                                "In Message Send", "Out Response Send",
+                                None, None, None)
+        # response for snappy ticket request
+        expected_response = {
+            "tags": ["#testtag", "@barry"]
+        }
+        responses.add(responses.GET,
+                      "https://app.besnappy.com/api/v1/ticket/101/",
+                      json.dumps(expected_response),
+                      status=200, content_type='application/json')
+
+        # response for vumi contact request
+        responses.add(responses.GET,
+                      "http://go.vumi.org/api/v1/go/contacts/fakekey",
+                      json.dumps({"extra": {"clinic_code": "123457"}}),
+                      status=200, content_type='application/json')
+
+        # Execute
+        resp = backfill_ticket.delay(ticket.id, operators)
+
+        # Check
+        self.assertEqual(resp.get(), "Ticket 101 backfilled")
+        self.assertEqual(len(responses.calls), 2)
+
+        d = Ticket.objects.get(id=ticket.id)
+        self.assertEqual(d.operator, 112)
+        self.assertEqual(d.tag, "testtag")
+        self.assertEqual(d.faccode, 123457)
+
+    @responses.activate
+    def test_backfill_ticket_faccode(self):
+        # Setup
+        ticket = self.mk_ticket("supportnonce1", 101,
+                                "In Message Send", "Out Response Send",
+                                None, 112, "testtag")
+        # response for vumi contact request
+        responses.add(responses.GET,
+                      "http://go.vumi.org/api/v1/go/contacts/fakekey",
+                      json.dumps({"extra": {"clinic_code": "123458"}}),
+                      status=200, content_type='application/json')
+        # Execute
+        resp = backfill_ticket_faccode.delay(ticket.id)
+
+        # Check
+        self.assertEqual(resp.get(), "Ticket 101 faccode backfilled")
+        self.assertEqual(len(responses.calls), 1)
+
+        d = Ticket.objects.get(id=ticket.id)
+        self.assertEqual(d.faccode, 123458)

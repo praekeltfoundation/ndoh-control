@@ -2,7 +2,6 @@ from django.db import models
 from django.utils import timezone
 from datetime import timedelta
 from django.db.models import DateTimeField
-from snappybouncer.tasks import create_snappy_ticket
 
 
 # Modelled on https://github.com/jamesmarlowe/django-AutoDateTimeFields
@@ -87,6 +86,7 @@ from django.dispatch import receiver
 
 @receiver(post_save, sender=Ticket)
 def fire_snappy_if_new(sender, instance, created, **kwargs):
+    from snappybouncer.tasks import create_snappy_ticket
     last_30_secs = timezone.now() - timedelta(seconds=30)
     recent = Ticket.objects.filter(contact_key=instance.contact_key,
                                    created_at__gte=last_30_secs).count()

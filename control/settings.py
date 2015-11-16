@@ -242,6 +242,12 @@ CELERY_ROUTES = {
     'snappybouncer.tasks.update_snappy_ticket_with_extras': {
         'queue': 'priority',
     },
+    'snappybouncer.tasks.backfill_ticket': {
+        'queue': 'lowpriority',
+    },
+    'snappybouncer.tasks.backfill_ticket_faccode': {
+        'queue': 'lowpriority',
+    },
     'subscription.tasks.fire_metrics_active_subscriptions': {
         'queue': 'priority',
     },
@@ -376,6 +382,7 @@ SNAPPY_API_KEY = "replaceme"
 SNAPPY_MAILBOX_ID = 1
 SNAPPY_EMAIL = "replaceme@example.org"
 SNAPPY_EXTRAS = []
+SNAPPY_ACCOUNT_ID = None
 
 BROKER_URL = 'redis://localhost:6379/0'
 
