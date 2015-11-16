@@ -174,6 +174,8 @@ def define_extras_registration(_extras, nursereg):
     elif nursereg.id_type == "passport":
         _extras[u"nc_passport_num"] = nursereg.id_no
         _extras[u"nc_passport_country"] = nursereg.passport_origin
+    if nursereg.cmsisdn != nursereg.dmsisdn:
+        _extras[u"nc_registered_by"] = nursereg.dmsisdn
 
     return _extras
 

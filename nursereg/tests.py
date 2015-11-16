@@ -786,6 +786,7 @@ class TestUpdateCreateVumiContactTask(AuthenticatedAPITestCase):
             "nc_id_type": "passport",
             "nc_faccode": "123456",
             "nc_source_name": "Test Nurse Source",
+            "nc_registered_by": "+27003",
             "nc_subscription_type": "11",
             "nc_subscription_rate": "4",
             "nc_subscription_seq_start": "1"
