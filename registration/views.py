@@ -1,29 +1,7 @@
 from rest_framework import viewsets, generics, mixins
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
-from django.contrib.auth.models import User, Group
 from .models import Source, Registration
-from .serializers import (UserSerializer, GroupSerializer, SourceSerializer,
-                          RegistrationSerializer)
-
-
-class UserViewSet(viewsets.ModelViewSet):
-
-    """
-    API endpoint that allows users to be viewed or edited.
-    """
-    permission_classes = (IsAdminUser,)
-    queryset = User.objects.all()
-    serializer_class = UserSerializer
-
-
-class GroupViewSet(viewsets.ModelViewSet):
-
-    """
-    API endpoint that allows groups to be viewed or edited.
-    """
-    permission_classes = (IsAdminUser,)
-    queryset = Group.objects.all()
-    serializer_class = GroupSerializer
+from .serializers import (SourceSerializer, RegistrationSerializer)
 
 
 class SourceViewSet(viewsets.ModelViewSet):
