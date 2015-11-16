@@ -34,14 +34,16 @@ def override_get_sender():
 
 TEST_REG_DATA = {
     "sa_id": {
-        "msisdn": "+27001",
+        "cmsisdn": "+27001",
+        "dmsisdn": "+27001",
         "faccode": "123456",
         "id_type": "sa_id",
         "id_no": "8009151234001",
         "dob": "1980-09-15"
     },
     "passport": {
-        "msisdn": "+27002",
+        "cmsisdn": "+27002",
+        "dmsisdn": "+27003",
         "faccode": "123456",
         "id_type": "passport",
         "id_no": "Cub1234",
@@ -55,7 +57,8 @@ TEST_NURSE_SOURCE_DATA = {
 TEST_REG_DATA_BROKEN = {
     # single field null-violation test
     "no_msisdn": {
-        "msisdn": None,
+        "cmsisdn": None,
+        "dmsisdn": None,
         "faccode": "123456",
         "id_type": "sa_id",
         "id_no": "8009151234001",
@@ -63,28 +66,32 @@ TEST_REG_DATA_BROKEN = {
     },
     # data below is for combination validation testing
     "sa_id_no_id_no": {
-        "msisdn": "+27001",
+        "cmsisdn": "+27001",
+        "dmsisdn": "+27001",
         "faccode": "123456",
         "id_type": "sa_id",
         "id_no": None,
         "dob": "1980-09-15"
     },
     "passport_no_id_no": {
-        "msisdn": "+27001",
+        "cmsisdn": "+27001",
+        "dmsisdn": "+27001",
         "faccode": "123456",
         "id_type": "passport",
         "id_no": None,
         "dob": "1980-09-15"
     },
     "no_passport_origin": {
-        "msisdn": "+27001",
+        "cmsisdn": "+27001",
+        "dmsisdn": "+27001",
         "faccode": "123456",
         "id_type": "passport",
         "id_no": "SA12345",
         "dob": "1980-09-15"
     },
     "no_optout_reason": {
-        "msisdn": "+27001",
+        "cmsisdn": "+27001",
+        "dmsisdn": "+27001",
         "faccode": "123456",
         "id_type": "sa_id",
         "id_no": "8009151234001",
@@ -94,7 +101,8 @@ TEST_REG_DATA_BROKEN = {
         "optout_count": 1,
     },
     "zero_optout_count": {
-        "msisdn": "+27001",
+        "cmsisdn": "+27001",
+        "dmsisdn": "+27001",
         "faccode": "123456",
         "id_type": "sa_id",
         "id_no": "8009151234001",
@@ -193,12 +201,9 @@ class AuthenticatedAPITestCase(APITestCase):
     def make_nursesource(self, post_data=TEST_NURSE_SOURCE_DATA):
         # Make source for the normal user who submits data but using admin user
         user = User.objects.get(username='testnormaluser')
-        post_data["user"] = "/api/v2/users/%s/" % user.id
-
-        response = self.adminclient.post('/api/v2/nursesources/',
-                                         json.dumps(post_data),
-                                         content_type='application/json')
-        return response
+        post_data["user"] = user
+        nurse_source = NurseSource.objects.create(**post_data)
+        return nurse_source
 
     def make_nursereg(self, post_data):
         response = self.normalclient.post('/api/v2/nurseregs/',
@@ -375,7 +380,7 @@ class TestNurseRegAPI(AuthenticatedAPITestCase):
         # Check
         self.assertEqual(reg_response.status_code, status.HTTP_201_CREATED)
         d = NurseReg.objects.last()
-        self.assertEqual(d.msisdn, '+27001')
+        self.assertEqual(d.cmsisdn, '+27001')
         self.assertEqual(d.faccode, '123456')
         self.assertEqual(d.id_type, 'sa_id')
         self.assertEqual(d.id_no, '8009151234001')

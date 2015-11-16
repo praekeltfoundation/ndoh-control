@@ -15,7 +15,7 @@ from requests.exceptions import HTTPError
 from go_http.contacts import ContactsApiClient
 from go_http.send import LoggingSender
 from fake_go_contacts import Request, FakeContactsApi
-from .models import Registration, fire_jembi_post
+from .models import Registration, Source, fire_jembi_post
 from subscription.models import Subscription
 from registration import tasks
 
@@ -295,12 +295,9 @@ class AuthenticatedAPITestCase(APITestCase):
     def make_source(self, post_data=TEST_SOURCE_DATA):
         # Make source for the normal user who submits data but using admin user
         user = User.objects.get(username='testnormaluser')
-        post_data["user"] = "/api/v2/users/%s/" % user.id
-
-        response = self.adminclient.post('/api/v2/sources/',
-                                         json.dumps(post_data),
-                                         content_type='application/json')
-        return response
+        post_data["user"] = user
+        source = Source.objects.create(**post_data)
+        return source
 
     def make_registration(self, post_data):
         response = self.normalclient.post('/api/v2/registrations/',
