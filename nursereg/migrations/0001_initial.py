@@ -21,7 +21,9 @@ class Migration(SchemaMigration):
         # Adding model 'NurseReg'
         db.create_table(u'nursereg_nursereg', (
             (u'id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
-            ('msisdn', self.gf('django.db.models.fields.CharField')(max_length=255)),
+            ('cmsisdn', self.gf('django.db.models.fields.CharField')(max_length=255)),
+            ('dmsisdn', self.gf('django.db.models.fields.CharField')(max_length=255)),
+            ('rmsisdn', self.gf('django.db.models.fields.CharField')(max_length=255, null=True, blank=True)),
             ('faccode', self.gf('django.db.models.fields.CharField')(max_length=100)),
             ('id_type', self.gf('django.db.models.fields.CharField')(max_length=8)),
             ('id_no', self.gf('django.db.models.fields.CharField')(max_length=100, null=True, blank=True)),
@@ -86,19 +88,21 @@ class Migration(SchemaMigration):
         },
         u'nursereg.nursereg': {
             'Meta': {'object_name': 'NurseReg'},
+            'cmsisdn': ('django.db.models.fields.CharField', [], {'max_length': '255'}),
             'created_at': ('django.db.models.fields.DateTimeField', [], {'auto_now_add': 'True', 'blank': 'True'}),
+            'dmsisdn': ('django.db.models.fields.CharField', [], {'max_length': '255'}),
             'dob': ('django.db.models.fields.DateField', [], {}),
             'faccode': ('django.db.models.fields.CharField', [], {'max_length': '100'}),
             u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
             'id_no': ('django.db.models.fields.CharField', [], {'max_length': '100', 'null': 'True', 'blank': 'True'}),
             'id_type': ('django.db.models.fields.CharField', [], {'max_length': '8'}),
-            'msisdn': ('django.db.models.fields.CharField', [], {'max_length': '255'}),
             'nurse_source': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'nurseregs'", 'to': u"orm['nursereg.NurseSource']"}),
             'opted_out': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
             'optout_count': ('django.db.models.fields.IntegerField', [], {'default': '0'}),
             'optout_reason': ('django.db.models.fields.CharField', [], {'max_length': '100', 'null': 'True', 'blank': 'True'}),
             'passport_origin': ('django.db.models.fields.CharField', [], {'max_length': '100', 'null': 'True', 'blank': 'True'}),
             'persal_no': ('django.db.models.fields.IntegerField', [], {'null': 'True', 'blank': 'True'}),
+            'rmsisdn': ('django.db.models.fields.CharField', [], {'max_length': '255', 'null': 'True', 'blank': 'True'}),
             'sanc_reg_no': ('django.db.models.fields.IntegerField', [], {'null': 'True', 'blank': 'True'}),
             'updated_at': ('django.db.models.fields.DateTimeField', [], {'auto_now': 'True', 'blank': 'True'})
         },

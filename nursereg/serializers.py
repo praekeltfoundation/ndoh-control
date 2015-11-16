@@ -13,6 +13,7 @@ class NurseRegSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = NurseReg
-        fields = ('id', 'msisdn', 'faccode', 'id_type', 'id_no',
-                  'passport_origin', 'dob', 'nurse_source', 'persal_no',
-                  'opted_out', 'optout_reason', 'optout_count', 'sanc_reg_no',)
+        fields = ('id', 'cmsisdn', 'dmsisdn', 'rmsisdn', 'faccode', 'id_type',
+                  'id_no', 'passport_origin', 'dob', 'nurse_source',
+                  'persal_no', 'opted_out', 'optout_reason', 'optout_count',
+                  'sanc_reg_no',)

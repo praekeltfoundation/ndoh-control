@@ -44,7 +44,9 @@ class NurseReg(models.Model):
         ('not_useful', 'Messages not useful'),
         ('other', 'Other'),
     )
-    msisdn = models.CharField(max_length=255)
+    cmsisdn = models.CharField(max_length=255)
+    dmsisdn = models.CharField(max_length=255)
+    rmsisdn = models.CharField(max_length=255, null=True, blank=True)
     faccode = models.CharField(max_length=100)
     id_type = models.CharField(max_length=8, choices=ID_TYPE_CHOICES)
     id_no = models.CharField(max_length=100, null=True, blank=True)
@@ -63,9 +65,11 @@ class NurseReg(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     def __unicode__(self):
-        return u"Nurse Registration for %s" % self.msisdn
+        return u"Nurse Registration for %s" % self.cmsisdn
 
     def clean(self):
+        if self.dmsisdn is None:
+            self.dmsisdn = self.cmsisdn
         if self.id_type == 'sa_id' and self.id_no is None:
             raise ValidationError(
                 _("Provide an id number in the id_no field."))

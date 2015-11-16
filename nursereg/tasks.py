@@ -255,7 +255,7 @@ def create_subscription(contact, sender=None):
 
 def create_contact(nursereg, client):
     contact_data = {
-        u"msisdn": nursereg.msisdn
+        u"msisdn": nursereg.cmsisdn
     }
     _extras = define_extras_registration({}, nursereg)
     contact_data[u"extra"] = _extras
@@ -280,7 +280,7 @@ def update_create_vumi_contact(nursereg_id, client=None, sender=None):
             try:
                 # Get and update the contact if it exists
                 contact = client.get_contact(
-                    msisdn=nursereg.msisdn)
+                    msisdn=nursereg.cmsisdn)
 
                 logger.info("Contact exists - updating contact")
                 updated_contact = update_contact_registration(
@@ -303,7 +303,6 @@ def update_create_vumi_contact(nursereg_id, client=None, sender=None):
 
                     # Create new subscription for the contact
                     subscription = create_subscription(contact, sender)
-
                     # Update the contact with subscription details
                     updated_contact = update_contact_subscription(
                         contact, subscription, client)
