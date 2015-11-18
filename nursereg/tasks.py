@@ -259,6 +259,32 @@ def create_subscription(contact, sender=None):
             exc_info=True)
 
 
+def transfer_subscription(contact, rm_active_nr_subs):
+    for sub in rm_active_nr_subs:
+        # activate the same subscriptions on the new msisdn
+        subscription = Subscription(
+            contact_key=contact["key"],
+            to_addr=contact["msisdn"],
+            user_account=contact["user_account"],
+            lang="en",
+            message_set=sub.message_set,
+            schedule=sub.schedule,
+            next_sequence_number=sub.next_sequence_number)
+        subscription.save()
+
+        # deactivate active subscriptions for rmsisdn
+        sub.active = False
+        sub.save()
+
+    # TODO #123: Clear extras for old contact for external change requests
+
+    # return the last created subscription
+    cm_active_nr_subs = Subscription.objects.filter(
+        to_addr=contact["msisdn"], active=True,
+        message_set__short_name="nurseconnect")
+    return cm_active_nr_subs.order_by('-created_at')[0]
+
+
 def create_contact(nursereg, client):
     contact_data = {
         u"msisdn": nursereg.cmsisdn
@@ -308,17 +334,19 @@ def update_create_vumi_contact(nursereg_id, client=None, sender=None):
             except:
                 logger.error('Problem contacting http_api', exc_info=True)
 
-            cm_active_subs = Subscription.objects.filter(
-                to_addr=nursereg.cmsisdn, active=True)
-            if cm_active_subs.count() > 0:
+            cm_active_nr_subs = Subscription.objects.filter(
+                to_addr=nursereg.cmsisdn, active=True,
+                message_set__short_name="nurseconnect")
+            if cm_active_nr_subs.count() > 0:
                 # Do nothing if the cmsisdn has an active subscription
                 return contact
             else:
-                rm_active_subs = Subscription.objects.filter(
-                    to_addr=nursereg.rmsisdn, active=True)
-                if rm_active_subs.count() > 0:
-                    # subscription = transfer_subscription()
-                    pass
+                rm_active_nr_subs = Subscription.objects.filter(
+                    to_addr=nursereg.rmsisdn, active=True,
+                    message_set__short_name="nurseconnect")
+                if rm_active_nr_subs.count() > 0:
+                    subscription = transfer_subscription(contact,
+                                                         rm_active_nr_subs)
                 else:
                     # Create new subscription for the contact
                     subscription = create_subscription(contact, sender)
