@@ -55,6 +55,36 @@ TEST_REG_DATA = {
         "passport_origin": "cu",
         "sanc_reg_no": None,
         "persal_no": None
+    },
+    "change_faccode": {
+        "cmsisdn": "+27821237777",
+        "dmsisdn": "+27821237777",
+        "faccode": "234567",
+        "id_type": "sa_id",
+        "id_no": "5101025009086",
+        "dob": "1951-01-02",
+        "sanc_reg_no": None,
+        "persal_no": None
+    },
+    "change_sanc": {
+        "cmsisdn": "+27821237777",
+        "dmsisdn": "+27821237777",
+        "faccode": "123456",
+        "id_type": "sa_id",
+        "id_no": "5101025009086",
+        "dob": "1951-01-02",
+        "sanc_reg_no": "34567890",
+        "persal_no": None
+    },
+    "change_persal": {
+        "cmsisdn": "+27821237777",
+        "dmsisdn": "+27821237777",
+        "faccode": "123456",
+        "id_type": "sa_id",
+        "id_no": "5101025009086",
+        "dob": "1951-01-02",
+        "sanc_reg_no": None,
+        "persal_no": "11114444"
     }
 }
 TEST_NURSE_SOURCE_DATA = {
@@ -142,6 +172,8 @@ class RecordingHandler(logging.Handler):
 
 
 class APITestCase(TestCase):
+
+    fixtures = ["nursereg_test.json"]
 
     def setUp(self):
         self.adminclient = APIClient()
@@ -476,7 +508,7 @@ class TestNurseRegAPI(AuthenticatedAPITestCase):
         post_save.connect(nursereg_postsave, sender=NurseReg)
 
         # Check number of subscriptions before task fire
-        self.assertEqual(Subscription.objects.all().count(), 1)
+        self.assertEqual(Subscription.objects.all().count(), 2)
 
         # Check there are no pre-existing registration objects
         self.assertEqual(NurseReg.objects.all().count(), 0)
@@ -518,7 +550,7 @@ class TestNurseRegAPI(AuthenticatedAPITestCase):
         #     "http://test/v2/registration/net.ihe/DocumentDossier")
 
         # Test number of subscriptions after task fire
-        self.assertEqual(Subscription.objects.all().count(), 2)
+        self.assertEqual(Subscription.objects.all().count(), 3)
 
         # Test subscription object is the one you added
         d = Subscription.objects.last()
@@ -740,6 +772,7 @@ class TestUpdateCreateVumiContactTask(AuthenticatedAPITestCase):
         nursereg = self.make_nursereg(
             post_data=TEST_REG_DATA["sa_id"])
         client = self.make_client()
+        presubs = Subscription.objects.all().count()
         # Execute
         contact = tasks.update_create_vumi_contact.apply_async(
             kwargs={"nursereg_id": nursereg.data["id"],
@@ -762,6 +795,8 @@ class TestUpdateCreateVumiContactTask(AuthenticatedAPITestCase):
             "nc_subscription_rate": "4",
             "nc_subscription_seq_start": "1",
         })
+        postsubs = Subscription.objects.all().count()
+        self.assertEqual(postsubs, presubs+1)
 
     def test_create_vumi_contact_passport(self):
         # Test mocks an external registration - no existing Vumi contact
@@ -777,6 +812,7 @@ class TestUpdateCreateVumiContactTask(AuthenticatedAPITestCase):
         nursereg = self.make_nursereg(
             post_data=TEST_REG_DATA["passport"])
         client = self.make_client()
+        presubs = Subscription.objects.all().count()
         # Execute
         contact = tasks.update_create_vumi_contact.apply_async(
             kwargs={"nursereg_id": nursereg.data["id"],
@@ -798,6 +834,161 @@ class TestUpdateCreateVumiContactTask(AuthenticatedAPITestCase):
             "nc_subscription_rate": "4",
             "nc_subscription_seq_start": "1"
         })
+        postsubs = Subscription.objects.all().count()
+        self.assertEqual(postsubs, presubs+1)
+
+    def test_create_vumi_contact_change_faccode(self):
+        # Test mocks an external registration - no existing Vumi contact
+        # Setup
+        # make existing contact with msisdn 27821237777
+        self.make_existing_contact({
+            u"key": u"knownuuid",
+            u"msisdn": u"+27821237777",
+            u"user_account": u"knownaccount",
+            u"extra": {
+                "nc_dob": "1951-01-02",
+                "nc_sa_id_no": "5101025009086",
+                "nc_is_registered": "true",
+                "nc_id_type": "sa_id",
+                "nc_faccode": "123456",
+                "nc_source_name": "Test Nurse Source",
+                "nc_subscription_type": "11",
+                "nc_subscription_rate": "4",
+                "nc_subscription_seq_start": "1",
+            }
+        })
+        # make existing subscription for 27821237777
+        # nurse registration for contact 27821237777 -change faccode
+        nursereg = self.make_nursereg(
+            post_data=TEST_REG_DATA["change_faccode"])
+        client = self.make_client()
+        presubs = Subscription.objects.all().count()
+        # Execute
+        contact = tasks.update_create_vumi_contact.apply_async(
+            kwargs={"nursereg_id": nursereg.data["id"],
+                    "client": client})
+        result = contact.get()
+        # Check
+        self.assertEqual(result["msisdn"], "+27821237777")
+        self.assertEqual(result["groups"], [])
+        self.assertEqual(result["extra"], {
+            "nc_dob": "1951-01-02",
+            "nc_sa_id_no": "5101025009086",
+            "nc_is_registered": "true",
+            "nc_id_type": "sa_id",
+            "nc_faccode": "234567",
+            "nc_source_name": "Test Nurse Source",
+            "nc_subscription_type": "11",
+            "nc_subscription_rate": "4",
+            "nc_subscription_seq_start": "1",
+        })
+        postsubs = Subscription.objects.all().count()
+        # check no additional subscription created
+        self.assertEqual(postsubs, presubs)
+
+    def test_create_vumi_contact_change_sanc(self):
+        # Test mocks an external registration - no existing Vumi contact
+        # Setup
+        # make existing contact with msisdn 27821237777
+        self.make_existing_contact({
+            u"key": u"knownuuid",
+            u"msisdn": u"+27821237777",
+            u"user_account": u"knownaccount",
+            u"extra": {
+                "nc_dob": "1951-01-02",
+                "nc_sa_id_no": "5101025009086",
+                "nc_is_registered": "true",
+                "nc_id_type": "sa_id",
+                "nc_faccode": "123456",
+                "nc_source_name": "Test Nurse Source",
+                "nc_subscription_type": "11",
+                "nc_subscription_rate": "4",
+                "nc_subscription_seq_start": "1",
+            }
+        })
+        # make existing subscription for 27821237777
+        # nurse registration for contact 27821237777 -change faccode
+        nursereg = self.make_nursereg(
+            post_data=TEST_REG_DATA["change_sanc"])
+        client = self.make_client()
+        presubs = Subscription.objects.all().count()
+        # Execute
+        contact = tasks.update_create_vumi_contact.apply_async(
+            kwargs={"nursereg_id": nursereg.data["id"],
+                    "client": client})
+        result = contact.get()
+        # Check
+        self.assertEqual(result["msisdn"], "+27821237777")
+        self.assertEqual(result["groups"], [])
+        import pprint
+        pprint.pprint(result["extra"])
+        self.assertEqual(result["extra"], {
+            "nc_dob": "1951-01-02",
+            "nc_sa_id_no": "5101025009086",
+            "nc_is_registered": "true",
+            "nc_id_type": "sa_id",
+            "nc_faccode": "123456",
+            "nc_source_name": "Test Nurse Source",
+            "nc_sanc": "34567890",
+            "nc_subscription_type": "11",
+            "nc_subscription_rate": "4",
+            "nc_subscription_seq_start": "1",
+        })
+        postsubs = Subscription.objects.all().count()
+        # check no additional subscription created
+        self.assertEqual(postsubs, presubs)
+
+    def test_create_vumi_contact_change_persal(self):
+        # Test mocks an external registration - no existing Vumi contact
+        # Setup
+        # make existing contact with msisdn 27821237777
+        self.make_existing_contact({
+            u"key": u"knownuuid",
+            u"msisdn": u"+27821237777",
+            u"user_account": u"knownaccount",
+            u"extra": {
+                "nc_dob": "1951-01-02",
+                "nc_sa_id_no": "5101025009086",
+                "nc_is_registered": "true",
+                "nc_id_type": "sa_id",
+                "nc_faccode": "123456",
+                "nc_source_name": "Test Nurse Source",
+                "nc_subscription_type": "11",
+                "nc_subscription_rate": "4",
+                "nc_subscription_seq_start": "1",
+            }
+        })
+        # make existing subscription for 27821237777
+        # nurse registration for contact 27821237777 -change faccode
+        nursereg = self.make_nursereg(
+            post_data=TEST_REG_DATA["change_persal"])
+        client = self.make_client()
+        presubs = Subscription.objects.all().count()
+        # Execute
+        contact = tasks.update_create_vumi_contact.apply_async(
+            kwargs={"nursereg_id": nursereg.data["id"],
+                    "client": client})
+        result = contact.get()
+        # Check
+        self.assertEqual(result["msisdn"], "+27821237777")
+        self.assertEqual(result["groups"], [])
+        import pprint
+        pprint.pprint(result["extra"])
+        self.assertEqual(result["extra"], {
+            "nc_dob": "1951-01-02",
+            "nc_sa_id_no": "5101025009086",
+            "nc_is_registered": "true",
+            "nc_id_type": "sa_id",
+            "nc_faccode": "123456",
+            "nc_source_name": "Test Nurse Source",
+            "nc_persal": "11114444",
+            "nc_subscription_type": "11",
+            "nc_subscription_rate": "4",
+            "nc_subscription_seq_start": "1",
+        })
+        postsubs = Subscription.objects.all().count()
+        # check no additional subscription created
+        self.assertEqual(postsubs, presubs)
 
     def test_create_subscription(self):
         contact = {
