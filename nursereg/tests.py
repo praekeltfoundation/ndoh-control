@@ -519,7 +519,7 @@ class TestNurseRegAPI(AuthenticatedAPITestCase):
         post_save.connect(nursereg_postsave, sender=NurseReg)
 
         # Check number of subscriptions before task fire
-        self.assertEqual(Subscription.objects.all().count(), 3)
+        self.assertEqual(Subscription.objects.all().count(), 4)
 
         # Check there are no pre-existing registration objects
         self.assertEqual(NurseReg.objects.all().count(), 0)
@@ -561,7 +561,7 @@ class TestNurseRegAPI(AuthenticatedAPITestCase):
         #     "http://test/v2/registration/net.ihe/DocumentDossier")
 
         # Test number of subscriptions after task fire
-        self.assertEqual(Subscription.objects.all().count(), 4)
+        self.assertEqual(Subscription.objects.all().count(), 5)
 
         # Test subscription object is the one you added
         d = Subscription.objects.last()
@@ -1014,7 +1014,7 @@ class TestUpdateCreateVumiContactTask(AuthenticatedAPITestCase):
                 "nc_source_name": "Test Nurse Source",
                 "nc_subscription_type": "11",
                 "nc_subscription_rate": "4",
-                "nc_subscription_seq_start": "1",
+                "nc_subscription_seq_start": "13",
             }
         })
         # make existing subscription for 27821237777
