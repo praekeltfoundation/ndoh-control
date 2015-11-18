@@ -176,6 +176,10 @@ def define_extras_registration(_extras, nursereg):
         _extras[u"nc_passport_country"] = nursereg.passport_origin
     if nursereg.cmsisdn != nursereg.dmsisdn:
         _extras[u"nc_registered_by"] = nursereg.dmsisdn
+    if nursereg.persal_no:
+        _extras[u"nc_persal"] = nursereg.persal_no
+    if nursereg.sanc_reg_no:
+        _extras[u"nc_sanc"] = nursereg.sanc_reg_no
 
     return _extras
 

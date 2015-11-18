@@ -35,21 +35,26 @@ def override_get_sender():
 TEST_REG_DATA = {
     # SA ID self registration
     "sa_id": {
-        "cmsisdn": "+27001",
+        "cmsisdn": "+27821234444",
+        "dmsisdn": "+27821234444",
         "faccode": "123456",
         "id_type": "sa_id",
-        "id_no": "8009151234001",
-        "dob": "1980-09-15"
+        "id_no": "5101025009086",
+        "dob": "1951-01-02",
+        "sanc_reg_no": None,
+        "persal_no": None
     },
     # Passport other registration
     "passport": {
-        "cmsisdn": "+27002",
-        "dmsisdn": "+27003",
+        "cmsisdn": "+27821235555",
+        "dmsisdn": "+27821234444",
         "faccode": "123456",
         "id_type": "passport",
         "id_no": "Cub1234",
-        "dob": "1980-09-15",
-        "passport_origin": "cu"
+        "dob": "1976-03-07",
+        "passport_origin": "cu",
+        "sanc_reg_no": None,
+        "persal_no": None
     }
 }
 TEST_NURSE_SOURCE_DATA = {
@@ -381,12 +386,12 @@ class TestNurseRegAPI(AuthenticatedAPITestCase):
         # Check
         self.assertEqual(reg_response.status_code, status.HTTP_201_CREATED)
         d = NurseReg.objects.last()
-        self.assertEqual(d.cmsisdn, '+27001')
-        self.assertEqual(d.dmsisdn, '+27001')
+        self.assertEqual(d.cmsisdn, '+27821234444')
+        self.assertEqual(d.dmsisdn, '+27821234444')
         self.assertEqual(d.faccode, '123456')
         self.assertEqual(d.id_type, 'sa_id')
-        self.assertEqual(d.id_no, '8009151234001')
-        self.assertEqual(d.dob.strftime("%Y-%m-%d"), "1980-09-15")
+        self.assertEqual(d.id_no, '5101025009086')
+        self.assertEqual(d.dob.strftime("%Y-%m-%d"), "1951-01-02")
         self.assertEqual(d.nurse_source, last_nurse_source)
         self.assertEqual(d.passport_origin, None)
         self.assertEqual(d.persal_no, None)
@@ -517,7 +522,7 @@ class TestNurseRegAPI(AuthenticatedAPITestCase):
 
         # Test subscription object is the one you added
         d = Subscription.objects.last()
-        self.assertEqual(d.to_addr, "+27001")
+        self.assertEqual(d.to_addr, "+27821234444")
 
         # Test metrics have fired
         # self.assertEqual(True, self.check_logs(
@@ -723,10 +728,10 @@ class TestUpdateCreateVumiContactTask(AuthenticatedAPITestCase):
     def test_update_vumi_contact_sa_id(self):
         # Test mocks a JS nurse registration - existing Vumi contact
         # Setup
-        # make existing contact with msisdn 27001
+        # make existing contact with msisdn 27821234444
         self.make_existing_contact({
             u"key": u"knownuuid",
-            u"msisdn": u"+27001",
+            u"msisdn": u"+27821234444",
             u"groups": [u"672442947cdf4a2aae0f96ccb688df05"],
             u"user_account": u"knownaccount",
             u"extra": {}
@@ -741,21 +746,21 @@ class TestUpdateCreateVumiContactTask(AuthenticatedAPITestCase):
                     "client": client})
         result = contact.get()
         # Check
-        self.assertEqual(result["msisdn"], "+27001")
+        self.assertEqual(result["msisdn"], "+27821234444")
         self.assertEqual(result["groups"],
                          [u"672442947cdf4a2aae0f96ccb688df05"])
         self.assertEqual(result["key"], "knownuuid")
         self.assertEqual(result["user_account"], "knownaccount")
         self.assertEqual(result["extra"], {
-            "nc_dob": "1980-09-15",
-            "nc_sa_id_no": "8009151234001",
+            "nc_dob": "1951-01-02",
+            "nc_sa_id_no": "5101025009086",
             "nc_is_registered": "true",
             "nc_id_type": "sa_id",
             "nc_faccode": "123456",
             "nc_source_name": "Test Nurse Source",
             "nc_subscription_type": "11",
             "nc_subscription_rate": "4",
-            "nc_subscription_seq_start": "1"
+            "nc_subscription_seq_start": "1",
         })
 
     def test_create_vumi_contact_passport(self):
@@ -768,7 +773,7 @@ class TestUpdateCreateVumiContactTask(AuthenticatedAPITestCase):
             u"user_account": u"knownaccount",
             u"extra": {}
         })
-        # nurse registration for contact 27002
+        # nurse registration for contact 27821235555
         nursereg = self.make_nursereg(
             post_data=TEST_REG_DATA["passport"])
         client = self.make_client()
@@ -778,17 +783,17 @@ class TestUpdateCreateVumiContactTask(AuthenticatedAPITestCase):
                     "client": client})
         result = contact.get()
         # Check
-        self.assertEqual(result["msisdn"], "+27002")
+        self.assertEqual(result["msisdn"], "+27821235555")
         self.assertEqual(result["groups"], [])
         self.assertEqual(result["extra"], {
-            "nc_dob": "1980-09-15",
+            "nc_dob": "1976-03-07",
             "nc_passport_num": "Cub1234",
             "nc_passport_country": "cu",
             "nc_is_registered": "true",
             "nc_id_type": "passport",
             "nc_faccode": "123456",
             "nc_source_name": "Test Nurse Source",
-            "nc_registered_by": "+27003",
+            "nc_registered_by": "+27821234444",
             "nc_subscription_type": "11",
             "nc_subscription_rate": "4",
             "nc_subscription_seq_start": "1"
