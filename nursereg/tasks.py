@@ -304,14 +304,25 @@ def update_create_vumi_contact(nursereg_id, client=None, sender=None):
             except:
                 logger.error('Problem contacting http_api', exc_info=True)
 
-            # Create new subscription for the contact
-            subscription = create_subscription(contact, sender)
+            cm_active_subs = Subscription.objects.filter(
+                to_addr=nursereg.cmsisdn, active=True)
+            if cm_active_subs.count() > 0:
+                # Do nothing if the cmsisdn has an active subscription
+                return contact
+            else:
+                rm_active_subs = Subscription.objects.filter(
+                    to_addr=nursereg.rmsisdn, active=True)
+                if rm_active_subs.count() > 0:
+                    # subscription = transfer_subscription()
+                    pass
+                else:
+                    # Create new subscription for the contact
+                    subscription = create_subscription(contact, sender)
 
-            # Update the contact with subscription details
-            updated_contact = update_contact_subscription(
-                contact, subscription, client)
-
-            return updated_contact
+                # Update the contact with subscription details
+                updated_contact = update_contact_subscription(
+                    contact, subscription, client)
+                return updated_contact
 
         except ObjectDoesNotExist:
             logger.error('Missing NurseReg object', exc_info=True)

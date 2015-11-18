@@ -33,6 +33,7 @@ def override_get_sender():
 
 
 TEST_REG_DATA = {
+    # SA ID self registration
     "sa_id": {
         "cmsisdn": "+27001",
         "faccode": "123456",
@@ -40,6 +41,7 @@ TEST_REG_DATA = {
         "id_no": "8009151234001",
         "dob": "1980-09-15"
     },
+    # Passport other registration
     "passport": {
         "cmsisdn": "+27002",
         "dmsisdn": "+27003",
