@@ -285,15 +285,8 @@ def update_create_vumi_contact(nursereg_id, client=None, sender=None):
                     msisdn=nursereg.cmsisdn)
 
                 logger.info("Contact exists - updating contact")
-                updated_contact = update_contact_registration(
+                contact = update_contact_registration(
                     contact, nursereg, client)
-
-                # Create new subscription for the contact
-                subscription = create_subscription(updated_contact, sender)
-
-                # Update the contact with subscription details
-                updated_contact = update_contact_subscription(
-                    contact, subscription, client)
 
             # This exception should rather look for a 404 if the contact is
             # not found, but currently a 400 Bad Request is returned.
@@ -303,12 +296,6 @@ def update_create_vumi_contact(nursereg_id, client=None, sender=None):
                     logger.info("Contact doesn't exist - creating new contact")
                     contact = create_contact(nursereg, client)
 
-                    # Create new subscription for the contact
-                    subscription = create_subscription(contact, sender)
-                    # Update the contact with subscription details
-                    updated_contact = update_contact_subscription(
-                        contact, subscription, client)
-
                 elif 500 < e.response.status_code < 599:
                     # Retry task if 500 error
                     raise update_create_vumi_contact.retry(exc=e)
@@ -316,6 +303,13 @@ def update_create_vumi_contact(nursereg_id, client=None, sender=None):
                     raise e
             except:
                 logger.error('Problem contacting http_api', exc_info=True)
+
+            # Create new subscription for the contact
+            subscription = create_subscription(contact, sender)
+
+            # Update the contact with subscription details
+            updated_contact = update_contact_subscription(
+                contact, subscription, client)
 
             return updated_contact
 
