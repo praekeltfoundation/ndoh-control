@@ -176,6 +176,10 @@ def define_extras_registration(_extras, nursereg):
         _extras[u"nc_passport_country"] = nursereg.passport_origin
     if nursereg.cmsisdn != nursereg.dmsisdn:
         _extras[u"nc_registered_by"] = nursereg.dmsisdn
+    if nursereg.persal_no:
+        _extras[u"nc_persal"] = str(nursereg.persal_no)
+    if nursereg.sanc_reg_no:
+        _extras[u"nc_sanc"] = str(nursereg.sanc_reg_no)
 
     return _extras
 
@@ -255,6 +259,33 @@ def create_subscription(contact, sender=None):
             exc_info=True)
 
 
+def transfer_subscription(contact, rmsisdn_active_subs):
+    for sub in rmsisdn_active_subs:
+        # activate the same subscriptions on the new msisdn
+        subscription = Subscription(
+            contact_key=contact["key"],
+            to_addr=contact["msisdn"],
+            user_account=contact["user_account"],
+            lang="en",
+            message_set=sub.message_set,
+            schedule=sub.schedule,
+            next_sequence_number=sub.next_sequence_number)
+        subscription.save()
+
+        # deactivate active subscriptions for rmsisdn
+        sub.active = False
+        sub.save()
+
+    # TODO #123: Clear extras for old contact for external change requests
+
+    # return the last created subscription
+    # Warning: This only caters for singular messageset called 'nurseconnect'
+    cmsisdn_active_subs = Subscription.objects.filter(
+        to_addr=contact["msisdn"], active=True,
+        message_set__short_name="nurseconnect")
+    return cmsisdn_active_subs.order_by('-created_at')[0]
+
+
 def create_contact(nursereg, client):
     contact_data = {
         u"msisdn": nursereg.cmsisdn
@@ -285,15 +316,8 @@ def update_create_vumi_contact(nursereg_id, client=None, sender=None):
                     msisdn=nursereg.cmsisdn)
 
                 logger.info("Contact exists - updating contact")
-                updated_contact = update_contact_registration(
+                contact = update_contact_registration(
                     contact, nursereg, client)
-
-                # Create new subscription for the contact
-                subscription = create_subscription(updated_contact, sender)
-
-                # Update the contact with subscription details
-                updated_contact = update_contact_subscription(
-                    contact, subscription, client)
 
             # This exception should rather look for a 404 if the contact is
             # not found, but currently a 400 Bad Request is returned.
@@ -303,12 +327,6 @@ def update_create_vumi_contact(nursereg_id, client=None, sender=None):
                     logger.info("Contact doesn't exist - creating new contact")
                     contact = create_contact(nursereg, client)
 
-                    # Create new subscription for the contact
-                    subscription = create_subscription(contact, sender)
-                    # Update the contact with subscription details
-                    updated_contact = update_contact_subscription(
-                        contact, subscription, client)
-
                 elif 500 < e.response.status_code < 599:
                     # Retry task if 500 error
                     raise update_create_vumi_contact.retry(exc=e)
@@ -317,7 +335,28 @@ def update_create_vumi_contact(nursereg_id, client=None, sender=None):
             except:
                 logger.error('Problem contacting http_api', exc_info=True)
 
-            return updated_contact
+            # Warning: This only caters for singular messageset 'nurseconnect'
+            cmsisdn_active_subs = Subscription.objects.filter(
+                to_addr=nursereg.cmsisdn, active=True,
+                message_set__short_name="nurseconnect")
+            if cmsisdn_active_subs.count() > 0:
+                # Do nothing if the cmsisdn has an active subscription
+                return contact
+            else:
+                rmsisdn_active_subs = Subscription.objects.filter(
+                    to_addr=nursereg.rmsisdn, active=True,
+                    message_set__short_name="nurseconnect")
+                if rmsisdn_active_subs.count() > 0:
+                    subscription = transfer_subscription(contact,
+                                                         rmsisdn_active_subs)
+                else:
+                    # Create new subscription for the contact
+                    subscription = create_subscription(contact, sender)
+
+                # Update the contact with subscription details
+                updated_contact = update_contact_subscription(
+                    contact, subscription, client)
+                return updated_contact
 
         except ObjectDoesNotExist:
             logger.error('Missing NurseReg object', exc_info=True)
