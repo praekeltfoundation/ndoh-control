@@ -1050,7 +1050,8 @@ class TestUpdateCreateVumiContactTask(AuthenticatedAPITestCase):
             "nc_subscription_seq_start": "13",
         })
         postsubs = Subscription.objects.all().count()
-        # check two additional subscriptions created
+        # check two additional subscriptions created for potential future
+        # use case with multiple active subscriptions
         self.assertEqual(postsubs, presubs+2)
 
     def test_create_vumi_contact_switch_to_new_nr(self):
@@ -1099,7 +1100,8 @@ class TestUpdateCreateVumiContactTask(AuthenticatedAPITestCase):
             "nc_registered_by": "+27821237777"
         })
         postsubs = Subscription.objects.all().count()
-        # check two additional subscriptions created
+        # check two additional subscriptions created for potential future
+        # use case with multiple active subscriptions
         self.assertEqual(postsubs, presubs+2)
 
     def test_create_subscription(self):

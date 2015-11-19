@@ -259,8 +259,8 @@ def create_subscription(contact, sender=None):
             exc_info=True)
 
 
-def transfer_subscription(contact, rm_active_nr_subs):
-    for sub in rm_active_nr_subs:
+def transfer_subscription(contact, rmsisdn_active_subs):
+    for sub in rmsisdn_active_subs:
         # activate the same subscriptions on the new msisdn
         subscription = Subscription(
             contact_key=contact["key"],
@@ -279,10 +279,11 @@ def transfer_subscription(contact, rm_active_nr_subs):
     # TODO #123: Clear extras for old contact for external change requests
 
     # return the last created subscription
-    cm_active_nr_subs = Subscription.objects.filter(
+    # Warning: This only caters for singular messageset called 'nurseconnect'
+    cmsisdn_active_subs = Subscription.objects.filter(
         to_addr=contact["msisdn"], active=True,
         message_set__short_name="nurseconnect")
-    return cm_active_nr_subs.order_by('-created_at')[0]
+    return cmsisdn_active_subs.order_by('-created_at')[0]
 
 
 def create_contact(nursereg, client):
@@ -334,19 +335,20 @@ def update_create_vumi_contact(nursereg_id, client=None, sender=None):
             except:
                 logger.error('Problem contacting http_api', exc_info=True)
 
-            cm_active_nr_subs = Subscription.objects.filter(
+            # Warning: This only caters for singular messageset 'nurseconnect'
+            cmsisdn_active_subs = Subscription.objects.filter(
                 to_addr=nursereg.cmsisdn, active=True,
                 message_set__short_name="nurseconnect")
-            if cm_active_nr_subs.count() > 0:
+            if cmsisdn_active_subs.count() > 0:
                 # Do nothing if the cmsisdn has an active subscription
                 return contact
             else:
-                rm_active_nr_subs = Subscription.objects.filter(
+                rmsisdn_active_subs = Subscription.objects.filter(
                     to_addr=nursereg.rmsisdn, active=True,
                     message_set__short_name="nurseconnect")
-                if rm_active_nr_subs.count() > 0:
+                if rmsisdn_active_subs.count() > 0:
                     subscription = transfer_subscription(contact,
-                                                         rm_active_nr_subs)
+                                                         rmsisdn_active_subs)
                 else:
                     # Create new subscription for the contact
                     subscription = create_subscription(contact, sender)
