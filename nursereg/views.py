@@ -14,6 +14,16 @@ class NurseSourceViewSet(viewsets.ModelViewSet):
     serializer_class = NurseSourceSerializer
 
 
+class NurseRegViewSet(viewsets.ModelViewSet):
+
+    """
+    API endpoint that allows registrations to be viewed or edited.
+    """
+    permission_classes = (IsAdminUser,)
+    queryset = NurseReg.objects.all()
+    serializer_class = NurseRegSerializer
+
+
 class NurseRegPost(mixins.CreateModelMixin,  generics.GenericAPIView):
     permission_classes = (IsAuthenticated,)
     queryset = NurseReg.objects.all()

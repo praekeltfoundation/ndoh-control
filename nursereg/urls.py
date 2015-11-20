@@ -4,6 +4,7 @@ from . import views
 
 router = routers.DefaultRouter()
 router.register(r'nursesources', views.NurseSourceViewSet)
+router.register(r'nurseregistrations', views.NurseRegViewSet)
 
 
 # Wire up our API using automatic URL routing.
