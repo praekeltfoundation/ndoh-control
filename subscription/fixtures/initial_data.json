@@ -137,7 +137,7 @@
     "fields": {
         "month_of_year": "*",
         "day_of_week": "*",
-        "hour": "9",
+        "hour": "7",
         "minute": "0",
         "day_of_month": "*"
     }
@@ -148,7 +148,7 @@
     "fields": {
         "month_of_year": "*",
         "day_of_week": "1",
-        "hour": "9",
+        "hour": "7",
         "minute": "15",
         "day_of_month": "*"
     }
@@ -159,7 +159,7 @@
     "fields": {
         "month_of_year": "*",
         "day_of_week": "1, 4",
-        "hour": "9",
+        "hour": "7",
         "minute": "30",
         "day_of_month": "*"
     }
@@ -170,7 +170,7 @@
     "fields": {
         "month_of_year": "*",
         "day_of_week": "1,3,5",
-        "hour": "9",
+        "hour": "7",
         "minute": "45",
         "day_of_month": "*"
     }
@@ -181,7 +181,7 @@
     "fields": {
         "month_of_year": "*",
         "day_of_week": "1,2,3,5",
-        "hour": "10",
+        "hour": "8",
         "minute": "0",
         "day_of_month": "*"
     }
@@ -192,7 +192,7 @@
     "fields": {
         "month_of_year": "*",
         "day_of_week": "1,2,3,4,5",
-        "hour": "10",
+        "hour": "8",
         "minute": "15",
         "day_of_month": "*"
     }
