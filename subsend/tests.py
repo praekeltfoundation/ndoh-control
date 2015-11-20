@@ -19,7 +19,7 @@ from djcelery.models import PeriodicTask
 
 
 class TestMessageQueueProcessor(TestCase):
-    fixtures = ["test_subsend.json"]
+    fixtures = ["test_initialdata.json", "test_subsend.json"]
 
     @override_settings(CELERY_EAGER_PROPAGATES_EXCEPTIONS=True,
                        CELERY_ALWAYS_EAGER=True,
@@ -150,7 +150,7 @@ class TestMessageQueueProcessor(TestCase):
 
 
 class TestMessageFailure(TestCase):
-    fixtures = ["test_subsend.json"]
+    fixtures = ["test_initialdata.json", "test_subsend.json"]
 
     @override_settings(CELERY_EAGER_PROPAGATES_EXCEPTIONS=True,
                        CELERY_ALWAYS_EAGER=True,

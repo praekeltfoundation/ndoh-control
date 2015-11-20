@@ -195,7 +195,7 @@ class RecordingHandler(logging.Handler):
 
 class APITestCase(TestCase):
 
-    fixtures = ["nursereg_test.json"]
+    fixtures = ["test_initialdata.json", "nursereg_test.json"]
 
     def setUp(self):
         self.adminclient = APIClient()
@@ -1065,6 +1065,8 @@ class TestUpdateCreateVumiContactTask(AuthenticatedAPITestCase):
         # Check
         self.assertEqual(result["msisdn"], "+27821234444")
         self.assertEqual(result["groups"], [])
+        import pprint
+        pprint.pprint(result["extra"])
         self.assertEqual(result["extra"], {
             "nc_dob": "1951-01-02",
             "nc_sa_id_no": "5101025009086",
@@ -1080,6 +1082,7 @@ class TestUpdateCreateVumiContactTask(AuthenticatedAPITestCase):
         # check two additional subscriptions created for potential future
         # use case with multiple active subscriptions
         self.assertEqual(postsubs, presubs+2)
+        self.assertEqual(0, 1)
 
     def test_create_vumi_contact_switch_to_new_nr(self):
         # Test mocks an external registration - no existing Vumi contact
@@ -1114,6 +1117,8 @@ class TestUpdateCreateVumiContactTask(AuthenticatedAPITestCase):
         # Check
         self.assertEqual(result["msisdn"], "+27821238888")
         self.assertEqual(result["groups"], [])
+        import pprint
+        pprint.pprint(result["extra"])
         self.assertEqual(result["extra"], {
             "nc_dob": "1951-01-02",
             "nc_sa_id_no": "5101025009086",
