@@ -19,7 +19,7 @@ class NurseRegViewSet(viewsets.ModelViewSet):
     """
     API endpoint that allows registrations to be viewed or edited.
     """
-    permission_classes = (IsAdminUser,)
+    permission_classes = (IsAuthenticated,)
     queryset = NurseReg.objects.all()
     serializer_class = NurseRegSerializer
 
