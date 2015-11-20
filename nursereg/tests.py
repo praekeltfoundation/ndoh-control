@@ -592,6 +592,33 @@ class TestNurseRegAPI(AuthenticatedAPITestCase):
         post_save.disconnect(nursereg_postsave, sender=NurseReg)
 
 
+class TestNurseRegistrationAPI(AuthenticatedAPITestCase):
+
+    def test_get_nurseregistration(self):
+        # Setup
+        self.make_nursereg(post_data=TEST_REG_DATA["sa_id"])
+        last_nursereg = NurseReg.objects.last()
+        # Execute
+        response = self.adminclient.get(
+            '/api/v2/nurseregistrations/%s/' % last_nursereg.id,
+            content_type='application/json')
+        # Check
+        self.assertEqual(response.status_code, 200)
+
+    def test_patch_nurseregistration(self):
+        # Setup
+        self.make_nursereg(post_data=TEST_REG_DATA["sa_id"])
+        last_nursereg = NurseReg.objects.last()
+        # Execute
+        response = self.adminclient.patch(
+            '/api/v2/nurseregistrations/%s/' % last_nursereg.id,
+            json.dumps({"persal_no": 88888888}),
+            content_type='application/json')
+        self.assertEqual(response.status_code, 200)
+        nursereg = NurseReg.objects.get(id=last_nursereg.id)
+        self.assertEqual(nursereg.persal_no, 88888888)
+
+
 # class TestJembiPostJsonTask(AuthenticatedAPITestCase):
 
 #     def test_build_jembi_json_clinic_self(self):
