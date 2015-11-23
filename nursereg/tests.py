@@ -822,6 +822,7 @@ class TestUpdateCreateVumiContactTask(AuthenticatedAPITestCase):
             post_data=TEST_REG_DATA["sa_id"])
         client = self.make_client()
         presubs = Subscription.objects.all().count()
+        last_nursereg = NurseReg.objects.last()
         # Execute
         contact = tasks.update_create_vumi_contact.apply_async(
             kwargs={"nursereg_id": nursereg.data["id"],
@@ -834,6 +835,7 @@ class TestUpdateCreateVumiContactTask(AuthenticatedAPITestCase):
         self.assertEqual(result["key"], "knownuuid")
         self.assertEqual(result["user_account"], "knownaccount")
         self.assertEqual(result["extra"], {
+            "nc_last_reg_id": last_nursereg.id,
             "nc_dob": "1951-01-02",
             "nc_sa_id_no": "5101025009086",
             "nc_is_registered": "true",
@@ -862,6 +864,7 @@ class TestUpdateCreateVumiContactTask(AuthenticatedAPITestCase):
             post_data=TEST_REG_DATA["passport"])
         client = self.make_client()
         presubs = Subscription.objects.all().count()
+        last_nursereg = NurseReg.objects.last()
         # Execute
         contact = tasks.update_create_vumi_contact.apply_async(
             kwargs={"nursereg_id": nursereg.data["id"],
@@ -871,6 +874,7 @@ class TestUpdateCreateVumiContactTask(AuthenticatedAPITestCase):
         self.assertEqual(result["msisdn"], "+27821235555")
         self.assertEqual(result["groups"], [])
         self.assertEqual(result["extra"], {
+            "nc_last_reg_id": last_nursereg.id,
             "nc_dob": "1976-03-07",
             "nc_passport_num": "Cub1234",
             "nc_passport_country": "cu",
@@ -895,6 +899,7 @@ class TestUpdateCreateVumiContactTask(AuthenticatedAPITestCase):
             u"msisdn": u"+27821237777",
             u"user_account": u"knownaccount",
             u"extra": {
+                "nc_last_reg_id": "last nursereg id",
                 "nc_dob": "1951-01-02",
                 "nc_sa_id_no": "5101025009086",
                 "nc_is_registered": "true",
@@ -911,6 +916,7 @@ class TestUpdateCreateVumiContactTask(AuthenticatedAPITestCase):
             post_data=TEST_REG_DATA["change_faccode"])
         client = self.make_client()
         presubs = Subscription.objects.all().count()
+        last_nursereg = NurseReg.objects.last()
         # Execute
         contact = tasks.update_create_vumi_contact.apply_async(
             kwargs={"nursereg_id": nursereg.data["id"],
@@ -920,6 +926,7 @@ class TestUpdateCreateVumiContactTask(AuthenticatedAPITestCase):
         self.assertEqual(result["msisdn"], "+27821237777")
         self.assertEqual(result["groups"], [])
         self.assertEqual(result["extra"], {
+            "nc_last_reg_id": last_nursereg.id,
             "nc_dob": "1951-01-02",
             "nc_sa_id_no": "5101025009086",
             "nc_is_registered": "true",
@@ -943,6 +950,7 @@ class TestUpdateCreateVumiContactTask(AuthenticatedAPITestCase):
             u"msisdn": u"+27821237777",
             u"user_account": u"knownaccount",
             u"extra": {
+                "nc_last_reg_id": "last nursereg id",
                 "nc_dob": "1951-01-02",
                 "nc_sa_id_no": "5101025009086",
                 "nc_is_registered": "true",
@@ -959,6 +967,7 @@ class TestUpdateCreateVumiContactTask(AuthenticatedAPITestCase):
             post_data=TEST_REG_DATA["change_sanc"])
         client = self.make_client()
         presubs = Subscription.objects.all().count()
+        last_nursereg = NurseReg.objects.last()
         # Execute
         contact = tasks.update_create_vumi_contact.apply_async(
             kwargs={"nursereg_id": nursereg.data["id"],
@@ -968,6 +977,7 @@ class TestUpdateCreateVumiContactTask(AuthenticatedAPITestCase):
         self.assertEqual(result["msisdn"], "+27821237777")
         self.assertEqual(result["groups"], [])
         self.assertEqual(result["extra"], {
+            "nc_last_reg_id": last_nursereg.id,
             "nc_dob": "1951-01-02",
             "nc_sa_id_no": "5101025009086",
             "nc_is_registered": "true",
@@ -992,6 +1002,7 @@ class TestUpdateCreateVumiContactTask(AuthenticatedAPITestCase):
             u"msisdn": u"+27821237777",
             u"user_account": u"knownaccount",
             u"extra": {
+                "nc_last_reg_id": "last nursereg id",
                 "nc_dob": "1951-01-02",
                 "nc_sa_id_no": "5101025009086",
                 "nc_is_registered": "true",
@@ -1008,6 +1019,7 @@ class TestUpdateCreateVumiContactTask(AuthenticatedAPITestCase):
             post_data=TEST_REG_DATA["change_persal"])
         client = self.make_client()
         presubs = Subscription.objects.all().count()
+        last_nursereg = NurseReg.objects.last()
         # Execute
         contact = tasks.update_create_vumi_contact.apply_async(
             kwargs={"nursereg_id": nursereg.data["id"],
@@ -1017,6 +1029,7 @@ class TestUpdateCreateVumiContactTask(AuthenticatedAPITestCase):
         self.assertEqual(result["msisdn"], "+27821237777")
         self.assertEqual(result["groups"], [])
         self.assertEqual(result["extra"], {
+            "nc_last_reg_id": last_nursereg.id,
             "nc_dob": "1951-01-02",
             "nc_sa_id_no": "5101025009086",
             "nc_is_registered": "true",
@@ -1041,6 +1054,7 @@ class TestUpdateCreateVumiContactTask(AuthenticatedAPITestCase):
             u"msisdn": u"+27821237777",
             u"user_account": u"knownaccount",
             u"extra": {
+                "nc_last_reg_id": "last nursereg id",
                 "nc_dob": "1951-01-02",
                 "nc_sa_id_no": "5101025009086",
                 "nc_is_registered": "true",
@@ -1057,6 +1071,7 @@ class TestUpdateCreateVumiContactTask(AuthenticatedAPITestCase):
             post_data=TEST_REG_DATA["change_old_nr"])
         client = self.make_client()
         presubs = Subscription.objects.all().count()
+        last_nursereg = NurseReg.objects.last()
         # Execute
         contact = tasks.update_create_vumi_contact.apply_async(
             kwargs={"nursereg_id": nursereg.data["id"],
@@ -1066,6 +1081,7 @@ class TestUpdateCreateVumiContactTask(AuthenticatedAPITestCase):
         self.assertEqual(result["msisdn"], "+27821234444")
         self.assertEqual(result["groups"], [])
         self.assertEqual(result["extra"], {
+            "nc_last_reg_id": last_nursereg.id,
             "nc_dob": "1951-01-02",
             "nc_sa_id_no": "5101025009086",
             "nc_is_registered": "true",
@@ -1090,6 +1106,7 @@ class TestUpdateCreateVumiContactTask(AuthenticatedAPITestCase):
             u"msisdn": u"+27821237777",
             u"user_account": u"knownaccount",
             u"extra": {
+                "nc_last_reg_id": "last nursereg id",
                 "nc_dob": "1951-01-02",
                 "nc_sa_id_no": "5101025009086",
                 "nc_is_registered": "true",
@@ -1106,6 +1123,7 @@ class TestUpdateCreateVumiContactTask(AuthenticatedAPITestCase):
             post_data=TEST_REG_DATA["switch_to_new_nr"])
         client = self.make_client()
         presubs = Subscription.objects.all().count()
+        last_nursereg = NurseReg.objects.last()
         # Execute
         contact = tasks.update_create_vumi_contact.apply_async(
             kwargs={"nursereg_id": nursereg.data["id"],
@@ -1115,6 +1133,7 @@ class TestUpdateCreateVumiContactTask(AuthenticatedAPITestCase):
         self.assertEqual(result["msisdn"], "+27821238888")
         self.assertEqual(result["groups"], [])
         self.assertEqual(result["extra"], {
+            "nc_last_reg_id": last_nursereg.id,
             "nc_dob": "1951-01-02",
             "nc_sa_id_no": "5101025009086",
             "nc_is_registered": "true",
