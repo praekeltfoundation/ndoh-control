@@ -44,6 +44,13 @@ class TestMessageQueueProcessor(TestCase):
         schedules = PeriodicTask.objects.all()
         self.assertEqual(len(schedules), 10)
 
+        subscription_momconnect = Subscription.objects.get(id=1)
+        self.assertEqual(subscription_momconnect.message_set.conversation_key,
+                         "replaceme_momconnect")
+        message_set_nurseconnect = MessageSet.objects.get(id=11)
+        self.assertEqual(message_set_nurseconnect.conversation_key,
+                         "replaceme_nurseconnect")
+
     def test_multisend(self):
         schedule = 6
         result = process_message_queue.delay(schedule, self.sender)
