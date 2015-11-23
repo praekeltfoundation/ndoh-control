@@ -26,6 +26,8 @@ class FakeClient(object):
 
 class TestSetSeqCommand(TestCase):
 
+    fixtures = ["test_initialdata.json"]
+
     def setUp(self):
         self.command = self.mk_command()
 
