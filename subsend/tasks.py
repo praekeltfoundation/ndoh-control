@@ -38,15 +38,7 @@ def process_message_queue(schedule, sender=None):
         schedule=schedule, active=True, completed=False,
         process_status=0).all()
 
-    # Make a reusable session to Vumi
-    if sender is None:
-        sender = HttpApiSender(
-            account_key=settings.VUMI_GO_ACCOUNT_KEY,
-            conversation_key=settings.VUMI_GO_CONVERSATION_KEY,
-            conversation_token=settings.VUMI_GO_ACCOUNT_TOKEN
-        )
-        # sender = LoggingSender('go_http.test')
-        # Fire off message processor for each
+    # Fire off message processor for each
     for subscriber in subscribers:
         subscriber.process_status = 1  # In Proceses
         subscriber.save()
@@ -61,7 +53,7 @@ def process_message_queue(schedule, sender=None):
 
 
 @task(bind=True, time_limit=10, ignore_result=True)
-def send_message(self, subscriber, sender):
+def send_message(self, subscriber, sender=None):
     try:
         # send message to subscriber
         try:
@@ -71,6 +63,12 @@ def send_message(self, subscriber, sender):
                 sequence_number=subscriber.next_sequence_number)
             # send message
             try:
+                if sender is None:
+                    sender = HttpApiSender(
+                        account_key=settings.VUMI_GO_ACCOUNT_KEY,
+                        conversation_key=subscriber.message_set.conv_key,
+                        conversation_token=settings.VUMI_GO_ACCOUNT_TOKEN
+                    )
                 response = sender.send_text(subscriber.to_addr,
                                             message.content)
             except UserOptedOutException:

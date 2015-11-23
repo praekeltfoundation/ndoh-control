@@ -345,7 +345,8 @@ def update_create_vumi_contact(nursereg_id, client=None, sender=None):
             else:
                 rmsisdn_active_subs = Subscription.objects.filter(
                     to_addr=nursereg.rmsisdn, active=True,
-                    message_set__short_name="nurseconnect")
+                    message_set__short_name="nurseconnect").order_by(
+                    'created_at')
                 if rmsisdn_active_subs.count() > 0:
                     subscription = transfer_subscription(contact,
                                                          rmsisdn_active_subs)

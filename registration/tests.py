@@ -224,6 +224,8 @@ class RecordingHandler(logging.Handler):
 
 class APITestCase(TestCase):
 
+    fixtures = ["test_initialdata.json"]
+
     def setUp(self):
         self.adminclient = APIClient()
         self.normalclient = APIClient()

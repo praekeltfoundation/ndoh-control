@@ -13,6 +13,8 @@ from subscription.models import Subscription, MessageSet, Message
 
 class TestResetStatusCommand(TestCase):
 
+    fixtures = ["test_initialdata.json"]
+
     def setUp(self):
         self.command = self.mk_command()
 

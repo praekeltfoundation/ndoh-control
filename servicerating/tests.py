@@ -28,7 +28,7 @@ from datetime import date, timedelta
 
 
 class ServiceRatingResourceTest(ResourceTestCase):
-    fixtures = ["test_servicerating.json"]
+    fixtures = ["test_initialdata.json", "test_servicerating.json"]
 
     def setUp(self):
         super(ServiceRatingResourceTest, self).setUp()
@@ -157,7 +157,7 @@ class RecordingHandler(logging.Handler):
 
 class TestEnsureCleanServiceratings(TestCase):
 
-    fixtures = ["test.json"]
+    fixtures = ["test_initialdata.json", "test.json"]
 
     @override_settings(CELERY_EAGER_PROPAGATES_EXCEPTIONS=True,
                        CELERY_ALWAYS_EAGER=True,

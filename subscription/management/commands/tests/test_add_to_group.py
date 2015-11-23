@@ -42,6 +42,8 @@ class FakeClient(object):
 
 class TestAddToGroupCommand(TestCase):
 
+    fixtures = ["test_initialdata.json"]
+
     def setUp(self):
         self.command = self.mk_command()
 

@@ -18,7 +18,6 @@ import responses
 
 
 class SnappyBouncerResourceTest(ResourceTestCase):
-    # fixtures = ["test_snappybouncer.json"]
 
     def _replace_post_save_hooks(self):
         has_listeners = lambda: post_save.has_listeners(Ticket)
@@ -194,7 +193,6 @@ class SnappyBouncerResourceTest(ResourceTestCase):
 
 
 class JembiSubmissionTest(TestCase):
-    # fixtures = ["test_snappybouncer.json"]
 
     def _replace_post_save_hooks(self):
         has_listeners = lambda: post_save.has_listeners(Ticket)

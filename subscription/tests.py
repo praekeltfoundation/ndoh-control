@@ -22,6 +22,8 @@ from go_http.send import LoggingSender
 
 class SubscriptionResourceTest(ResourceTestCase):
 
+    fixtures = ["test_initialdata.json"]
+
     def setUp(self):
         super(SubscriptionResourceTest, self).setUp()
 
@@ -164,6 +166,8 @@ class SubscriptionResourceTest(ResourceTestCase):
 
 class TestUploadCSV(TestCase):
 
+    fixtures = ["test_initialdata.json"]
+
     MSG_HEADER = (
         "message_id,en,safe,af,safe,zu,safe,xh,safe,ve,safe,tn,safe,ts,safe,"
         "ss,safe,st,safe,nso,safe,nr,safe\r\n")
@@ -225,7 +229,7 @@ class TestUploadCSV(TestCase):
 
 class TestUploadOptOutCSV(TestCase):
 
-    fixtures = ["test_optout.json"]
+    fixtures = ["test_initialdata.json", "test_optout.json"]
 
     CSV_HEADER = ("Address Type, Address, Message ID, Timestamp\r\n")
     CSV_HEADER2 = ("============================================\r\n")
@@ -280,7 +284,7 @@ class RecordingHandler(logging.Handler):
 
 class TestEnsureCleanSubscriptions(TestCase):
 
-    fixtures = ["test.json"]
+    fixtures = ["test_initialdata.json", "test.json"]
 
     @override_settings(CELERY_EAGER_PROPAGATES_EXCEPTIONS=True,
                        CELERY_ALWAYS_EAGER=True,
@@ -314,7 +318,7 @@ class TestEnsureCleanSubscriptions(TestCase):
 
 class TestFireSummaryMetrics(TestCase):
 
-    fixtures = ["test.json"]
+    fixtures = ["test_initialdata.json", "test.json"]
 
     @override_settings(CELERY_EAGER_PROPAGATES_EXCEPTIONS=True,
                        CELERY_ALWAYS_EAGER=True,

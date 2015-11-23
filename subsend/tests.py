@@ -19,7 +19,7 @@ from djcelery.models import PeriodicTask
 
 
 class TestMessageQueueProcessor(TestCase):
-    fixtures = ["test_subsend.json"]
+    fixtures = ["test_initialdata.json", "test_subsend.json"]
 
     @override_settings(CELERY_EAGER_PROPAGATES_EXCEPTIONS=True,
                        CELERY_ALWAYS_EAGER=True,
@@ -43,6 +43,13 @@ class TestMessageQueueProcessor(TestCase):
         self.assertEqual(len(subscriptions), 6)
         schedules = PeriodicTask.objects.all()
         self.assertEqual(len(schedules), 10)
+
+        subscription_momconnect = Subscription.objects.get(id=1)
+        self.assertEqual(subscription_momconnect.message_set.conversation_key,
+                         "replaceme_momconnect")
+        message_set_nurseconnect = MessageSet.objects.get(id=11)
+        self.assertEqual(message_set_nurseconnect.conversation_key,
+                         "replaceme_nurseconnect")
 
     def test_multisend(self):
         schedule = 6
@@ -150,7 +157,7 @@ class TestMessageQueueProcessor(TestCase):
 
 
 class TestMessageFailure(TestCase):
-    fixtures = ["test_subsend.json"]
+    fixtures = ["test_initialdata.json", "test_subsend.json"]
 
     @override_settings(CELERY_EAGER_PROPAGATES_EXCEPTIONS=True,
                        CELERY_ALWAYS_EAGER=True,

@@ -6,7 +6,7 @@ from subscription.models import Message, Subscription
 
 class MessageEditViewTests(TestCase):
 
-    fixtures = ["test_controlinterface_message.json"]
+    fixtures = ["test_initialdata.json", "test_controlinterface_message.json"]
 
     def setUp(self):
         # Create a user.
@@ -103,7 +103,8 @@ class MessageEditViewTests(TestCase):
 
 class SubscriptionEditViewTests(TestCase):
 
-    fixtures = ["test_controlinterface_subscription.json"]
+    fixtures = ["test_initialdata.json",
+                "test_controlinterface_subscription.json"]
 
     def setUp(self):
         # Create a user.
