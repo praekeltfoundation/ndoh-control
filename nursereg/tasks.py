@@ -283,7 +283,6 @@ def transfer_subscription(contact, rmsisdn_active_subs):
     cmsisdn_active_subs = Subscription.objects.filter(
         to_addr=contact["msisdn"], active=True,
         message_set__short_name="nurseconnect")
-    print(cmsisdn_active_subs.order_by('-created_at')[0].id)
     return cmsisdn_active_subs.order_by('-created_at')[0]
 
 
