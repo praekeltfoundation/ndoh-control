@@ -14,6 +14,8 @@ from subscription.models import Subscription, MessageSet, Message
 
 class TestMarkCompletedCommand(TestCase):
 
+    fixtures = ["test_initialdata.json"]
+
     def setUp(self):
         self.command = self.mk_command()
 

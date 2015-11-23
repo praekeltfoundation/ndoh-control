@@ -29,6 +29,7 @@ class MessageSet(models.Model):
         can be sent
     """
     short_name = models.CharField(max_length=20)
+    conversation_key = models.CharField(max_length=255, null=True, blank=True)
     notes = models.TextField(verbose_name=u'Notes', null=True, blank=True)
     next_set = models.ForeignKey('self',
                                  null=True,

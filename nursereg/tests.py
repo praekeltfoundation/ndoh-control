@@ -195,7 +195,7 @@ class RecordingHandler(logging.Handler):
 
 class APITestCase(TestCase):
 
-    fixtures = ["nursereg_test.json"]
+    fixtures = ["test_initialdata.json", "nursereg_test.json"]
 
     def setUp(self):
         self.adminclient = APIClient()
