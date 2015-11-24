@@ -260,31 +260,25 @@ def create_subscription(contact, sender=None):
             exc_info=True)
 
 
-def transfer_subscription(contact, rmsisdn_active_subs):
-    for sub in rmsisdn_active_subs:
-        # activate the same subscriptions on the new msisdn
-        subscription = Subscription(
-            contact_key=contact["key"],
-            to_addr=contact["msisdn"],
-            user_account=contact["user_account"],
-            lang="en",
-            message_set=sub.message_set,
-            schedule=sub.schedule,
-            next_sequence_number=sub.next_sequence_number)
-        subscription.save()
+def transfer_subscription(contact, subscription):
+    # activate the same subscription on the new msisdn
+    new_sub = Subscription(
+        contact_key=contact["key"],
+        to_addr=contact["msisdn"],
+        user_account=contact["user_account"],
+        lang="en",
+        message_set=subscription.message_set,
+        schedule=subscription.schedule,
+        next_sequence_number=subscription.next_sequence_number)
+    new_sub.save()
 
-        # deactivate active subscriptions for rmsisdn
-        sub.active = False
-        sub.save()
+    # deactivate active subscriptions for rmsisdn
+    subscription.active = False
+    subscription.save()
 
     # TODO #123: Clear extras for old contact for external change requests
 
-    # return the last created subscription
-    # Warning: This only caters for singular messageset called 'nurseconnect'
-    cmsisdn_active_subs = Subscription.objects.filter(
-        to_addr=contact["msisdn"], active=True,
-        message_set__short_name="nurseconnect")
-    return cmsisdn_active_subs.order_by('-created_at')[0]
+    return new_sub
 
 
 def create_contact(nursereg, client):
@@ -344,14 +338,14 @@ def update_create_vumi_contact(nursereg_id, client=None, sender=None):
                 # Do nothing if the cmsisdn has an active subscription
                 return contact
             else:
-                rmsisdn_active_subs = Subscription.objects.filter(
-                    to_addr=nursereg.rmsisdn, active=True,
-                    message_set__short_name="nurseconnect").order_by(
-                    'created_at')
-                if rmsisdn_active_subs.count() > 0:
-                    subscription = transfer_subscription(contact,
-                                                         rmsisdn_active_subs)
-                else:
+                try:
+                    # Get the old contact active subscription
+                    rmsisdn_active_sub = Subscription.objects.get(
+                        to_addr=nursereg.rmsisdn, active=True,
+                        message_set__short_name="nurseconnect")
+                    subscription = transfer_subscription(
+                        contact, rmsisdn_active_sub)
+                except ObjectDoesNotExist:
                     # Create new subscription for the contact
                     subscription = create_subscription(contact, sender)
 

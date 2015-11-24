@@ -9,7 +9,7 @@
             "message_set": 11,
             "next_sequence_number": 16,
             "lang": "en",
-            "active": true,
+            "active": false,
             "completed": false,
             "created_at": "2014-10-01T10:49:23.571Z",
             "updated_at": "2014-11-01T10:49:23.571Z",
@@ -44,6 +44,42 @@
             "to_addr": "+27821237777",
             "message_set": 3,
             "next_sequence_number": 27,
+            "lang": "en",
+            "active": true,
+            "completed": false,
+            "created_at": "2016-10-01T10:49:23.571Z",
+            "updated_at": "2016-11-01T10:49:23.571Z",
+            "schedule": 2,
+            "process_status": 0
+        }
+    },
+    {
+        "pk": 104,
+        "model": "subscription.subscription",
+        "fields": {
+            "user_account": "82309423100",
+            "contact_key": "82309423100",
+            "to_addr": "+27821232222",
+            "message_set": 11,
+            "next_sequence_number": 27,
+            "lang": "en",
+            "active": true,
+            "completed": false,
+            "created_at": "2016-10-01T10:49:23.571Z",
+            "updated_at": "2016-11-01T10:49:23.571Z",
+            "schedule": 2,
+            "process_status": 0
+        }
+    },
+    {
+        "pk": 105,
+        "model": "subscription.subscription",
+        "fields": {
+            "user_account": "82309423100",
+            "contact_key": "82309423100",
+            "to_addr": "+27821232222",
+            "message_set": 11,
+            "next_sequence_number": 28,
             "lang": "en",
             "active": true,
             "completed": false,
