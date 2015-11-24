@@ -164,7 +164,7 @@ def define_extras_subscription(_extras, subscription):
 def define_extras_registration(_extras, nursereg):
     # Set up the new extras
     _extras[u"nc_source_name"] = nursereg.nurse_source.name
-    _extras[u"nc_last_reg_id"] = nursereg.id
+    _extras[u"nc_last_reg_id"] = str(nursereg.id)
     # Duplication of JS extras required for external nurseregs
     _extras[u"nc_faccode"] = nursereg.faccode
     _extras[u"nc_is_registered"] = "true"

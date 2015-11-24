@@ -846,7 +846,7 @@ class TestUpdateCreateVumiContactTask(AuthenticatedAPITestCase):
         self.assertEqual(result["key"], "knownuuid")
         self.assertEqual(result["user_account"], "knownaccount")
         self.assertEqual(result["extra"], {
-            "nc_last_reg_id": last_nursereg.id,
+            "nc_last_reg_id": str(last_nursereg.id),
             "nc_dob": "1951-01-02",
             "nc_sa_id_no": "5101025009086",
             "nc_is_registered": "true",
@@ -885,7 +885,7 @@ class TestUpdateCreateVumiContactTask(AuthenticatedAPITestCase):
         self.assertEqual(result["msisdn"], "+27821235555")
         self.assertEqual(result["groups"], [])
         self.assertEqual(result["extra"], {
-            "nc_last_reg_id": last_nursereg.id,
+            "nc_last_reg_id": str(last_nursereg.id),
             "nc_dob": "1976-03-07",
             "nc_passport_num": "Cub1234",
             "nc_passport_country": "cu",
@@ -937,7 +937,7 @@ class TestUpdateCreateVumiContactTask(AuthenticatedAPITestCase):
         self.assertEqual(result["msisdn"], "+27821237777")
         self.assertEqual(result["groups"], [])
         self.assertEqual(result["extra"], {
-            "nc_last_reg_id": last_nursereg.id,
+            "nc_last_reg_id": str(last_nursereg.id),
             "nc_dob": "1951-01-02",
             "nc_sa_id_no": "5101025009086",
             "nc_is_registered": "true",
@@ -988,7 +988,7 @@ class TestUpdateCreateVumiContactTask(AuthenticatedAPITestCase):
         self.assertEqual(result["msisdn"], "+27821237777")
         self.assertEqual(result["groups"], [])
         self.assertEqual(result["extra"], {
-            "nc_last_reg_id": last_nursereg.id,
+            "nc_last_reg_id": str(last_nursereg.id),
             "nc_dob": "1951-01-02",
             "nc_sa_id_no": "5101025009086",
             "nc_is_registered": "true",
@@ -1040,7 +1040,7 @@ class TestUpdateCreateVumiContactTask(AuthenticatedAPITestCase):
         self.assertEqual(result["msisdn"], "+27821237777")
         self.assertEqual(result["groups"], [])
         self.assertEqual(result["extra"], {
-            "nc_last_reg_id": last_nursereg.id,
+            "nc_last_reg_id": str(last_nursereg.id),
             "nc_dob": "1951-01-02",
             "nc_sa_id_no": "5101025009086",
             "nc_is_registered": "true",
@@ -1091,7 +1091,7 @@ class TestUpdateCreateVumiContactTask(AuthenticatedAPITestCase):
         self.assertEqual(result["msisdn"], "+27821234444")
         self.assertEqual(result["groups"], [])
         self.assertEqual(result["extra"], {
-            "nc_last_reg_id": last_nursereg.id,
+            "nc_last_reg_id": str(last_nursereg.id),
             "nc_dob": "1951-01-02",
             "nc_sa_id_no": "5101025009086",
             "nc_is_registered": "true",
@@ -1178,7 +1178,7 @@ class TestUpdateCreateVumiContactTask(AuthenticatedAPITestCase):
         self.assertEqual(result["msisdn"], "+27821238888")
         self.assertEqual(result["groups"], [])
         self.assertEqual(result["extra"], {
-            "nc_last_reg_id": last_nursereg.id,
+            "nc_last_reg_id": str(last_nursereg.id),
             "nc_dob": "1951-01-02",
             "nc_sa_id_no": "5101025009086",
             "nc_is_registered": "true",
