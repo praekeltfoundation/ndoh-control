@@ -6,12 +6,12 @@ from django.contrib.auth.models import User
 from django.test import TestCase
 from django.db.models.signals import post_save
 from django.core.exceptions import ValidationError
+from django.core.exceptions import MultipleObjectsReturned
 from rest_framework.test import APIClient
 from rest_framework.authtoken.models import Token
 from rest_framework import status
 from requests.adapters import HTTPAdapter
 from requests_testadapter import TestSession, Resp
-# from requests.exceptions import HTTPError
 from go_http.contacts import ContactsApiClient
 from go_http.send import LoggingSender
 from fake_go_contacts import Request, FakeContactsApi
@@ -90,6 +90,17 @@ TEST_REG_DATA = {
         "cmsisdn": "+27821234444",
         "dmsisdn": "+27821234444",
         "rmsisdn": "+27821237777",
+        "faccode": "123456",
+        "id_type": "sa_id",
+        "id_no": "5101025009086",
+        "dob": "1951-01-02",
+        "sanc_reg_no": None,
+        "persal_no": None
+    },
+    "change_old_nr_multiple_active_subs": {
+        "cmsisdn": "+27821234444",
+        "dmsisdn": "+27821234444",
+        "rmsisdn": "+27821232222",
         "faccode": "123456",
         "id_type": "sa_id",
         "id_no": "5101025009086",
@@ -530,7 +541,7 @@ class TestNurseRegAPI(AuthenticatedAPITestCase):
         post_save.connect(nursereg_postsave, sender=NurseReg)
 
         # Check number of subscriptions before task fire
-        self.assertEqual(Subscription.objects.all().count(), 4)
+        self.assertEqual(Subscription.objects.all().count(), 6)
 
         # Check there are no pre-existing registration objects
         self.assertEqual(NurseReg.objects.all().count(), 0)
@@ -572,7 +583,7 @@ class TestNurseRegAPI(AuthenticatedAPITestCase):
         #     "http://test/v2/registration/net.ihe/DocumentDossier")
 
         # Test number of subscriptions after task fire
-        self.assertEqual(Subscription.objects.all().count(), 5)
+        self.assertEqual(Subscription.objects.all().count(), 7)
 
         # Test subscription object is the one you added
         d = Subscription.objects.last()
@@ -1046,7 +1057,6 @@ class TestUpdateCreateVumiContactTask(AuthenticatedAPITestCase):
         self.assertEqual(postsubs, presubs)
 
     def test_create_vumi_contact_change_old_nr(self):
-        # Test mocks an external registration - no existing Vumi contact
         # Setup
         # make existing contact with msisdn 27821237777
         self.make_existing_contact({
@@ -1096,8 +1106,44 @@ class TestUpdateCreateVumiContactTask(AuthenticatedAPITestCase):
         # check one additional subscriptions created
         self.assertEqual(postsubs, presubs+1)
 
+    def test_create_vumi_contact_multiple_active_subscriptions(self):
+        # Setup
+        # make existing contact with msisdn 27821232222
+        self.make_existing_contact({
+            u"key": u"knownuuid",
+            u"msisdn": u"+27821232222",
+            u"user_account": u"knownaccount",
+            u"extra": {
+                "nc_last_reg_id": "last nursereg id",
+                "nc_dob": "1951-01-02",
+                "nc_sa_id_no": "5101025009086",
+                "nc_is_registered": "true",
+                "nc_id_type": "sa_id",
+                "nc_faccode": "123456",
+                "nc_source_name": "Test Nurse Source",
+                "nc_subscription_type": "11",
+                "nc_subscription_rate": "4",
+                "nc_subscription_seq_start": "11",
+            }
+        })
+        # nurse registration - change old nr
+        nursereg = self.make_nursereg(
+            post_data=TEST_REG_DATA["change_old_nr_multiple_active_subs"])
+        client = self.make_client()
+        presubs = Subscription.objects.all().count()
+        # Execute
+        # Check
+        with self.assertRaises(MultipleObjectsReturned):
+            contact = tasks.update_create_vumi_contact.apply_async(
+                kwargs={"nursereg_id": nursereg.data["id"],
+                        "client": client})
+            contact.get()
+
+        postsubs = Subscription.objects.all().count()
+        # check no additional subscriptions created
+        self.assertEqual(postsubs, presubs)
+
     def test_create_vumi_contact_switch_to_new_nr(self):
-        # Test mocks an external registration - no existing Vumi contact
         # Setup
         # make existing contact with msisdn 27821237777
         self.make_existing_contact({

@@ -4,7 +4,6 @@ from requests.exceptions import HTTPError
 from datetime import datetime
 from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
-from django.core.exceptions import MultipleObjectsReturned
 from celery import task
 from celery.utils.log import get_task_logger
 from celery.exceptions import SoftTimeLimitExceeded
@@ -346,20 +345,14 @@ def update_create_vumi_contact(nursereg_id, client=None, sender=None):
                         message_set__short_name="nurseconnect")
                     subscription = transfer_subscription(
                         contact, rmsisdn_active_sub)
-                    # Update the contact with subscription details
-                    updated_contact = update_contact_subscription(
-                        contact, subscription, client)
-                    return updated_contact
                 except ObjectDoesNotExist:
                     # Create new subscription for the contact
                     subscription = create_subscription(contact, sender)
-                    # Update the contact with subscription details
-                    updated_contact = update_contact_subscription(
-                        contact, subscription, client)
-                    return updated_contact
-                except MultipleObjectsReturned:
-                    logger.error('Multiple active NurseConnect subscriptions \
-                        found!', exc_info=True)
+
+                # Update the contact with subscription details
+                updated_contact = update_contact_subscription(
+                    contact, subscription, client)
+                return updated_contact
 
         except ObjectDoesNotExist:
             logger.error('Missing NurseReg object', exc_info=True)
