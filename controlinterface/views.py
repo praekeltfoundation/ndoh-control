@@ -9,6 +9,7 @@ from django.contrib import messages
 from django.core.context_processors import csrf
 from django.core.exceptions import ObjectDoesNotExist
 from django import forms
+from go_http.optouts import OptOutsApiClient
 
 import control.settings as settings
 
@@ -335,12 +336,18 @@ def subscription_edit(request):
     elif request.method == "POST" and \
             request.POST["subaction"] == "optout":
         # Update the record
-        # TODO Opt user out when functionality available
         optoutform = SubscriptionOptOutForm(request.POST)
         if optoutform.is_valid():
+            # Deactivate subscriptions
             subscriptions = Subscription.objects.filter(
                 to_addr=optoutform.cleaned_data['msisdn']).update(
                 active=False)
+            # Opt the user out
+            optout_client = OptOutsApiClient(
+                auth_token=settings.VUMI_GO_API_TOKEN)
+            optout_client.set_optout('msisdn',
+                                     optoutform.cleaned_data['msisdn'])
+
             messages.success(request,
                              "All subscriptions for %s have been cancelled \
                              and user has been opted out" %

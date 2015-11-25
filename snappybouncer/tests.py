@@ -402,7 +402,7 @@ class BackfillTicketTest(TestCase):
 
         # response for vumi contact request
         responses.add(responses.GET,
-                      "http://go.vumi.org/api/v1/go/contacts/fakekey",
+                      "https://go.vumi.org/api/v1/go/contacts/fakekey",
                       json.dumps({"extra": {"clinic_code": "123457"}}),
                       status=200, content_type='application/json')
 
@@ -426,7 +426,7 @@ class BackfillTicketTest(TestCase):
                                 None, 112, "testtag")
         # response for vumi contact request
         responses.add(responses.GET,
-                      "http://go.vumi.org/api/v1/go/contacts/fakekey",
+                      "https://go.vumi.org/api/v1/go/contacts/fakekey",
                       json.dumps({"extra": {"clinic_code": "123458"}}),
                       status=200, content_type='application/json')
         # Execute

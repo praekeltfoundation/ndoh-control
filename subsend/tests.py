@@ -193,7 +193,7 @@ class TestMessageFailure(TestCase):
                                           "Message 1 on accelerated",
                                           "response reason")
         responses.add(responses.PUT,
-                      "http://go.vumi.org/api/v1/go/http_api_nostream/"
+                      "https://go.vumi.org/api/v1/go/http_api_nostream/"
                       "replaceme/messages.json",
                       content_type='application/json;charset=utf-8',
                       body=exception)
@@ -206,7 +206,7 @@ class TestMessageFailure(TestCase):
     def test_subscriber_three_retries_on_500(self):
         subscriber = Subscription.objects.get(pk=1)
         responses.add(responses.PUT,
-                      "http://go.vumi.org/api/v1/go/http_api_nostream/"
+                      "https://go.vumi.org/api/v1/go/http_api_nostream/"
                       "replaceme/messages.json",
                       content_type='application/json;charset=utf-8',
                       status=577, body='{"error": "problems"}')
@@ -221,7 +221,7 @@ class TestMessageFailure(TestCase):
     def test_subscriber_other_httperror_code(self):
         subscriber = Subscription.objects.get(pk=1)
         responses.add(responses.PUT,
-                      "http://go.vumi.org/api/v1/go/http_api_nostream/"
+                      "https://go.vumi.org/api/v1/go/http_api_nostream/"
                       "replaceme/messages.json",
                       content_type='application/json;charset=utf-8',
                       status=405, body='{"error": "problems"}')
@@ -265,7 +265,7 @@ class TestHttpApiSender(TestCase):
             account_key="acc-key", conversation_key="conv-key",
             conversation_token="conv-token")
         self.assertEqual(sender.api_url,
-                         "http://go.vumi.org/api/v1/go/http_api_nostream")
+                         "https://go.vumi.org/api/v1/go/http_api_nostream")
 
     def check_request(self, request, method, data=None, headers=None):
         self.assertEqual(request.method, method)
