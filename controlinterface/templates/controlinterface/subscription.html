@@ -118,7 +118,7 @@
     {% elif babyform %}
           <h3>Confirm Baby Switch</h3>
           <p><form id="subscription-edit-form" method="post" method="POST" action=".">
-            Switching a user to baby messages will mean that they will not receive any pregnancy messages anymore and will now start receiving messages about their baby. Mothers should have given birth to change to baby messages. Please confirm your choice:
+            <p>Switching a user to baby messages will mean that they will not receive any pregnancy messages anymore and will now start receiving messages about their baby. Mothers should have given birth to change to baby messages. Please confirm your choice:</p>
           {% csrf_token %}
           {{ babyform|bootstrap }}
           <input type="submit" class="btn btn-success" value="Start baby messages" />

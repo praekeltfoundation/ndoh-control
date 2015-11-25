@@ -105,7 +105,9 @@ def update_snappy_ticket_with_extras(snappy_api, nonce, contact_key, subject):
     optout_url = settings.SITE_DOMAIN_URL + \
         "/controlinterface/subscription/?msisdn=" + \
         urllib.quote_plus(contact["msisdn"])
-    extra_info += "Opt this user out: " + optout_url + "\n"
+    extra_info += (
+        "Manage user subscriptions (opt out, unsubscribe or switch "
+        "to baby): %s\n" % optout_url)
     # Send private note
     snappy_api.create_note(
         mailbox_id=settings.SNAPPY_MAILBOX_ID,
