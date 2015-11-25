@@ -4,7 +4,6 @@ from django.test import TestCase, Client
 from django.core.urlresolvers import reverse
 from django.contrib.auth.models import User
 from subscription.models import Message, Subscription
-from go_http.optouts import OptOutsApiClient
 
 
 class MessageEditViewTests(TestCase):
@@ -117,9 +116,6 @@ class SubscriptionEditViewTests(TestCase):
             self.username,
             'testuser@example.com', self.password)
         self.client = Client()
-        self.optout_client = OptOutsApiClient(
-            auth_token="replaceme",
-            api_url="https://testing.optout/api/v1/go")
 
     def login(self):
         self.client.login(username='testuser', password='testpass')
@@ -251,6 +247,7 @@ class SubscriptionEditViewTests(TestCase):
         """
         If confirm cancel params, should cancel all, optout and confirm
         """
+        # Setup
         self.login()
         # Mock set_optout response
         optout_response = {
@@ -272,8 +269,11 @@ class SubscriptionEditViewTests(TestCase):
         activebefore = Subscription.objects.filter(
             to_addr="+271112", active=True).count()
         self.assertEqual(activebefore, 1)
+        # Execute
         response = self.client.post(
             reverse('controlinterface.views.subscription_edit'), optoutform)
+        # Check
+        self.assertEqual(len(responses.calls), 1)
         self.assertContains(response,
                             "All subscriptions for +271112 "
                             "have been cancelled")
