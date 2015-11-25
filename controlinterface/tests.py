@@ -1,7 +1,10 @@
+import responses
+import json
 from django.test import TestCase, Client
 from django.core.urlresolvers import reverse
 from django.contrib.auth.models import User
 from subscription.models import Message, Subscription
+from go_http.optouts import OptOutsApiClient
 
 
 class MessageEditViewTests(TestCase):
@@ -114,6 +117,9 @@ class SubscriptionEditViewTests(TestCase):
             self.username,
             'testuser@example.com', self.password)
         self.client = Client()
+        self.optout_client = OptOutsApiClient(
+            auth_token="replaceme",
+            api_url="https://testing.optout/api/v1/go")
 
     def login(self):
         self.client.login(username='testuser', password='testpass')
@@ -240,13 +246,26 @@ class SubscriptionEditViewTests(TestCase):
             to_addr="+271112", active=True).count()
         self.assertEqual(activeafter, 0)
 
+    @responses.activate
     def test_subscription_cancel_optout_all(self):
         """
         If confirm cancel params, should cancel all, optout and confirm
         """
-        # TODO Check optout has taken place when functionality available
         self.login()
-        cancelform = {
+        # Mock set_optout response
+        optout_response = {
+            "opt_out": {
+                u'created_at': u'2015-11-10 20:33:03.742409',
+                u'message': None,
+                u'user_account': u'fxxxeee',
+            }
+        }
+        responses.add(
+            responses.PUT,
+            "https://go.vumi.org/api/v1/go/optouts/msisdn/%2B271112",
+            body=json.dumps(optout_response), status=201)
+
+        optoutform = {
             "subaction": "optout",
             "msisdn": "+271112"
         }
@@ -254,7 +273,7 @@ class SubscriptionEditViewTests(TestCase):
             to_addr="+271112", active=True).count()
         self.assertEqual(activebefore, 1)
         response = self.client.post(
-            reverse('controlinterface.views.subscription_edit'), cancelform)
+            reverse('controlinterface.views.subscription_edit'), optoutform)
         self.assertContains(response,
                             "All subscriptions for +271112 "
                             "have been cancelled")
