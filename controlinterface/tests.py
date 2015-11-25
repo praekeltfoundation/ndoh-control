@@ -1,3 +1,5 @@
+import responses
+import json
 from django.test import TestCase, Client
 from django.core.urlresolvers import reverse
 from django.contrib.auth.models import User
@@ -240,21 +242,38 @@ class SubscriptionEditViewTests(TestCase):
             to_addr="+271112", active=True).count()
         self.assertEqual(activeafter, 0)
 
+    @responses.activate
     def test_subscription_cancel_optout_all(self):
         """
         If confirm cancel params, should cancel all, optout and confirm
         """
-        # TODO Check optout has taken place when functionality available
+        # Setup
         self.login()
-        cancelform = {
+        # Mock set_optout response
+        optout_response = {
+            "opt_out": {
+                u'created_at': u'2015-11-10 20:33:03.742409',
+                u'message': None,
+                u'user_account': u'fxxxeee',
+            }
+        }
+        responses.add(
+            responses.PUT,
+            "https://go.vumi.org/api/v1/go/optouts/msisdn/%2B271112",
+            body=json.dumps(optout_response), status=201)
+
+        optoutform = {
             "subaction": "optout",
             "msisdn": "+271112"
         }
         activebefore = Subscription.objects.filter(
             to_addr="+271112", active=True).count()
         self.assertEqual(activebefore, 1)
+        # Execute
         response = self.client.post(
-            reverse('controlinterface.views.subscription_edit'), cancelform)
+            reverse('controlinterface.views.subscription_edit'), optoutform)
+        # Check
+        self.assertEqual(len(responses.calls), 1)
         self.assertContains(response,
                             "All subscriptions for +271112 "
                             "have been cancelled")
