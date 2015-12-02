@@ -156,6 +156,28 @@ class TestMessageQueueProcessor(TestCase):
         self.assertEquals(subscriber_updated.process_status, -1)
 
 
+class TestMessageSuccess(TestCase):
+    """Test message sending using responses"""
+    fixtures = ["test_initialdata.json", "test_subsend.json"]
+
+    @responses.activate
+    def test_successful_message(self):
+        # Setup
+        subscriber = Subscription.objects.get(pk=1)
+        expected_result = {
+            "message_id": "id-1",
+        }
+        responses.add(responses.PUT,
+                      "https://go.vumi.org/api/v1/go/http_api_nostream/"
+                      "replaceme_momconnect/messages.json",
+                      content_type='application/json;charset=utf-8',
+                      body=json.dumps(expected_result))
+        # Execute
+        result = send_message.delay(subscriber)
+        # Check
+        self.assertEqual(result.get(), expected_result)
+
+
 class TestMessageFailure(TestCase):
     fixtures = ["test_initialdata.json", "test_subsend.json"]
 

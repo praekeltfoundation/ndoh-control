@@ -66,7 +66,8 @@ def send_message(self, subscriber, sender=None):
                 if sender is None:
                     sender = HttpApiSender(
                         account_key=settings.VUMI_GO_ACCOUNT_KEY,
-                        conversation_key=subscriber.message_set.conv_key,
+                        conversation_key=subscriber.message_set
+                        .conversation_key,
                         conversation_token=settings.VUMI_GO_ACCOUNT_TOKEN
                     )
                 response = sender.send_text(subscriber.to_addr,
