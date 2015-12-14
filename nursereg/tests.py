@@ -548,7 +548,7 @@ class TestNurseRegAPI(AuthenticatedAPITestCase):
         self.assertEqual(NurseReg.objects.all().count(), 0)
 
         responses.add(responses.POST,
-                      "http://test/v2/nurse",
+                      "http://test/v2/nc/subscription",
                       body='jembi_post_json task', status=201,
                       content_type='application/json')
 
@@ -574,7 +574,7 @@ class TestNurseRegAPI(AuthenticatedAPITestCase):
         self.assertEqual(len(responses.calls), 1)
         self.assertEqual(
             responses.calls[0].request.url,
-            "http://test/v2/nurse")
+            "http://test/v2/nc/subscription")
 
         # Test number of subscriptions after task fire
         self.assertEqual(Subscription.objects.all().count(), 7)
@@ -639,11 +639,11 @@ class TestJembiPostJsonTask(AuthenticatedAPITestCase):
             "cmsisdn": "+27821234444",
             "rmsisdn": None,
             "faccode": "123456",
-            "id": '5101025009086^^^ZAF^NI',
+            "id": "5101025009086^^^ZAF^NI",
             "dob": "19510102",
             "persal": None,
             "sanc": None,
-            "encdate": '20130819144811'
+            "encdate": "20130819144811"
         }
         # Execute
         payload = tasks.build_jembi_json(reg)
@@ -667,7 +667,7 @@ class TestJembiPostJsonTask(AuthenticatedAPITestCase):
             "dob": "19760307",
             "persal": None,
             "sanc": None,
-            "encdate": '20130819144811'
+            "encdate": "20130819144811"
         }
         # Execute
         payload = tasks.build_jembi_json(reg)
@@ -687,11 +687,11 @@ class TestJembiPostJsonTask(AuthenticatedAPITestCase):
             "cmsisdn": "+27821234444",
             "rmsisdn": "+27821237777",
             "faccode": "123456",
-            "id": '5101025009086^^^ZAF^NI',
+            "id": "5101025009086^^^ZAF^NI",
             "dob": "19510102",
             "persal": None,
             "sanc": None,
-            "encdate": '20130819144811'
+            "encdate": "20130819144811"
         }
         # Execute
         payload = tasks.build_jembi_json(reg)
@@ -711,11 +711,11 @@ class TestJembiPostJsonTask(AuthenticatedAPITestCase):
             "cmsisdn": "+27821237777",
             "rmsisdn": None,
             "faccode": "234567",
-            "id": '5101025009086^^^ZAF^NI',
+            "id": "5101025009086^^^ZAF^NI",
             "dob": "19510102",
             "persal": None,
             "sanc": None,
-            "encdate": '20130819144811'
+            "encdate": "20130819144811"
         }
         # Execute
         payload = tasks.build_jembi_json(reg)
@@ -735,11 +735,11 @@ class TestJembiPostJsonTask(AuthenticatedAPITestCase):
             "cmsisdn": "+27821237777",
             "rmsisdn": None,
             "faccode": "123456",
-            "id": '5101025009086^^^ZAF^NI',
+            "id": "5101025009086^^^ZAF^NI",
             "dob": "19510102",
             "persal": 11114444,
             "sanc": None,
-            "encdate": '20130819144811'
+            "encdate": "20130819144811"
         }
         # Execute
         payload = tasks.build_jembi_json(reg)
@@ -753,7 +753,7 @@ class TestJembiPostJsonTask(AuthenticatedAPITestCase):
             post_data=TEST_REG_DATA["sa_id"])
 
         responses.add(responses.POST,
-                      "http://test/v2/nurse",
+                      "http://test/v2/nc/subscription",
                       body='jembi_post_json task', status=201,
                       content_type='application/json')
 
@@ -772,7 +772,7 @@ class TestJembiPostJsonTask(AuthenticatedAPITestCase):
             post_data=TEST_REG_DATA["sa_id"])
 
         responses.add(responses.POST,
-                      "http://test/v2/nurse",
+                      "http://test/v2/nc/subscription",
                       body='{"error": "jembi json problems"}', status=531,
                       content_type='application/json')
 
@@ -792,7 +792,7 @@ class TestJembiPostJsonTask(AuthenticatedAPITestCase):
             post_data=TEST_REG_DATA["sa_id"])
 
         responses.add(responses.POST,
-                      "http://test/v2/nurse",
+                      "http://test/v2/nc/subscription",
                       body='{"error": "jembi json problems"}', status=404,
                       content_type='application/json')
 

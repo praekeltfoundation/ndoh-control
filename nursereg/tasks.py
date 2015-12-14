@@ -16,7 +16,7 @@ from subscription.models import Subscription, MessageSet
 logger = get_task_logger(__name__)
 
 
-def get_patient_id(id_type, id_no=None, passport_origin=None, msisdn=None):
+def get_registrant_id(id_type, id_no=None, passport_origin=None, msisdn=None):
     if id_type == 'sa_id':
         return id_no + "^^^ZAF^NI"
     elif id_type == 'passport':
@@ -68,7 +68,7 @@ def build_jembi_json(nursereg):
         "cmsisdn": nursereg.cmsisdn,
         "rmsisdn": nursereg.rmsisdn,
         "faccode": nursereg.faccode,
-        "id": get_patient_id(
+        "id": get_registrant_id(
             nursereg.id_type, nursereg.id_no, nursereg.passport_origin,
             nursereg.cmsisdn),
         "dob": get_dob(nursereg.dob),
@@ -91,7 +91,7 @@ def jembi_post_json(nursereg_id, sender=None):
 
         try:
             result = requests.post(
-                "%s/nurse" % settings.JEMBI_BASE_URL,  # url
+                "%s/nc/subscription" % settings.JEMBI_BASE_URL,  # url
                 headers={'Content-Type': 'application/json'},
                 data=json.dumps(json_doc),
                 auth=(settings.JEMBI_USERNAME, settings.JEMBI_PASSWORD),
