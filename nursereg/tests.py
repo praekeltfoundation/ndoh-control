@@ -12,6 +12,7 @@ from rest_framework.authtoken.models import Token
 from rest_framework import status
 from requests.adapters import HTTPAdapter
 from requests_testadapter import TestSession, Resp
+from requests.exceptions import HTTPError
 from go_http.contacts import ContactsApiClient
 from go_http.send import LoggingSender
 from fake_go_contacts import Request, FakeContactsApi
@@ -546,14 +547,10 @@ class TestNurseRegAPI(AuthenticatedAPITestCase):
         # Check there are no pre-existing registration objects
         self.assertEqual(NurseReg.objects.all().count(), 0)
 
-        # responses.add(responses.POST,
-        #               "http://test/v2/subscription",
-        #               body='jembi_post_json task', status=201,
-        #               content_type='application/json')
-        # responses.add(responses.POST,
-        #               "http://test/v2/registration/net.ihe/DocumentDossier",
-        #               body="Request added to queue", status=202,
-        #               content_type='application/json')
+        responses.add(responses.POST,
+                      "http://test/v2/nurse",
+                      body='jembi_post_json task', status=201,
+                      content_type='application/json')
 
         # Set up the client
         tasks.get_client = self.override_get_client
@@ -573,14 +570,11 @@ class TestNurseRegAPI(AuthenticatedAPITestCase):
         d = NurseReg.objects.last()
         self.assertEqual(d.id_type, 'sa_id')
 
-        # Test post requests has been made to Jembi
-        self.assertEqual(len(responses.calls), 0)
-        # self.assertEqual(
-        #     responses.calls[0].request.url,
-        #     "http://test/v2/subscription")
-        # self.assertEqual(
-        #     responses.calls[1].request.url,
-        #     "http://test/v2/registration/net.ihe/DocumentDossier")
+        # Test post requests have been made to Jembi
+        self.assertEqual(len(responses.calls), 1)
+        self.assertEqual(
+            responses.calls[0].request.url,
+            "http://test/v2/nurse")
 
         # Test number of subscriptions after task fire
         self.assertEqual(Subscription.objects.all().count(), 7)
@@ -590,8 +584,8 @@ class TestNurseRegAPI(AuthenticatedAPITestCase):
         self.assertEqual(d.to_addr, "+27821234444")
 
         # Test metrics have fired
-        # self.assertEqual(True, self.check_logs(
-        #     "Metric: u'test.clinic.sum.json_to_jembi_success' [sum] -> 1"))
+        self.assertEqual(True, self.check_logs(
+            "Metric: u'test.nursereg.sum.json_to_jembi_success' [sum] -> 1"))
         self.assertEqual(True, self.check_logs(
             "Metric: u'test.sum.nc_subscriptions' [sum] -> 1"))
         self.assertEqual(True, self.check_logs(
@@ -630,182 +624,187 @@ class TestNurseRegistrationAPI(AuthenticatedAPITestCase):
         self.assertEqual(nursereg.persal_no, 88888888)
 
 
-# class TestJembiPostJsonTask(AuthenticatedAPITestCase):
+class TestJembiPostJsonTask(AuthenticatedAPITestCase):
 
-#     def test_build_jembi_json_clinic_self(self):
-#         registration_sa_id = self.make_nursereg(
-#             post_data=TEST_REG_DATA["clinic_self"])
-#         reg = Registration.objects.get(pk=registration_sa_id.data["id"])
-#         expected_json_clinic_self = {
-#             'edd': '20150801',
-#             'id': '8009151234001^^^ZAF^NI',
-#             'lang': 'en',
-#             'dob': "19800915",
-#             'dmsisdn': '+27001',
-#             'mha': 1,
-#             'cmsisdn': '+27001',
-#             'faccode': '12345',
-#             'encdate': '20130819144811',
-#             'type': 3,
-#             'swt': 1
-#         }
-#         payload = tasks.build_jembi_json(reg)
-#         self.assertEqual(expected_json_clinic_self, payload)
+    def test_build_jembi_json_sa_id(self):
+        # Setup
+        nursereg_sa_id = self.make_nursereg(
+            post_data=TEST_REG_DATA["sa_id"])
+        reg = NurseReg.objects.get(pk=nursereg_sa_id.data["id"])
+        expected_json_clinic_self = {
+            "mha": 1,
+            "swt": 3,
+            "type": 7,
+            "dmsisdn": "+27821234444",
+            "cmsisdn": "+27821234444",
+            "rmsisdn": None,
+            "faccode": "123456",
+            "id": '5101025009086^^^ZAF^NI',
+            "dob": "19510102",
+            "persal": None,
+            "sanc": None,
+            "encdate": '20130819144811'
+        }
+        # Execute
+        payload = tasks.build_jembi_json(reg)
+        # Check
+        self.assertEqual(expected_json_clinic_self, payload)
 
-#     def test_build_jembi_json_clinic_hcw(self):
-#         registration_clinic_hcw = self.make_nursereg(
-#             post_data=TEST_REG_DATA["clinic_hcw"])
-#         reg = Registration.objects.get(pk=registration_clinic_hcw.data["id"])
-#         expected_json_clinic_hcw = {
-#             'edd': '20150901',
-#             'id': '5551111^^^ZW^PPN',
-#             'lang': 'af',
-#             'dob': None,
-#             'dmsisdn': "+27820010001",
-#             'mha': 1,
-#             'cmsisdn': '+27001',
-#             'faccode': '12345',
-#             'encdate': '20130819144811',
-#             'type': 3,
-#             'swt': 1
-#         }
-#         payload = tasks.build_jembi_json(reg)
-#         self.assertEqual(expected_json_clinic_hcw, payload)
+    def test_build_jembi_json_passport(self):
+        # Setup
+        nursereg_passport = self.make_nursereg(
+            post_data=TEST_REG_DATA["passport"])
+        reg = NurseReg.objects.get(pk=nursereg_passport.data["id"])
+        expected_json_clinic_self = {
+            "mha": 1,
+            "swt": 3,
+            "type": 7,
+            "dmsisdn": "+27821234444",
+            "cmsisdn": "+27821235555",
+            "rmsisdn": None,
+            "faccode": "123456",
+            "id": "Cub1234^^^CU^PPN",
+            "dob": "19760307",
+            "persal": None,
+            "sanc": None,
+            "encdate": '20130819144811'
+        }
+        # Execute
+        payload = tasks.build_jembi_json(reg)
+        # Check
+        self.assertEqual(expected_json_clinic_self, payload)
 
-#     def test_build_jembi_json_chw_self(self):
-#         registration_chw_self = self.make_nursereg(
-#             post_data=TEST_REG_DATA["chw_self"])
-#         reg = Registration.objects.get(pk=registration_chw_self.data["id"])
-#         expected_json_chw_self = {
-#             'id': '27002^^^ZAF^TEL',
-#             'lang': 'xh',
-#             'dob': "19801015",
-#             'dmsisdn': '+27002',
-#             'mha': 1,
-#             'cmsisdn': '+27002',
-#             'faccode': None,
-#             'encdate': '20130819144811',
-#             'type': 2,
-#             'swt': 1
-#         }
-#         payload = tasks.build_jembi_json(reg)
-#         self.assertEqual(expected_json_chw_self, payload)
+    def test_build_jembi_json_change_old_nr(self):
+        # Setup
+        nursereg_change_old_nr = self.make_nursereg(
+            post_data=TEST_REG_DATA["change_old_nr"])
+        reg = NurseReg.objects.get(pk=nursereg_change_old_nr.data["id"])
+        expected_json_clinic_self = {
+            "mha": 1,
+            "swt": 3,
+            "type": 7,
+            "dmsisdn": "+27821234444",
+            "cmsisdn": "+27821234444",
+            "rmsisdn": "+27821237777",
+            "faccode": "123456",
+            "id": '5101025009086^^^ZAF^NI',
+            "dob": "19510102",
+            "persal": None,
+            "sanc": None,
+            "encdate": '20130819144811'
+        }
+        # Execute
+        payload = tasks.build_jembi_json(reg)
+        # Check
+        self.assertEqual(expected_json_clinic_self, payload)
 
-#     def test_build_jembi_json_chw_hcw(self):
-#         registration_chw_hcw = self.make_nursereg(
-#             post_data=TEST_REG_DATA["chw_hcw"])
-#         reg = Registration.objects.get(pk=registration_chw_hcw.data["id"])
-#         expected_json_chw_hcw = {
-#             'id': '8011151234001^^^ZAF^NI',
-#             'lang': 'zu',
-#             'dob': "19801115",
-#             'dmsisdn': "+27820020002",
-#             'mha': 1,
-#             'cmsisdn': '+27002',
-#             'faccode': None,
-#             'encdate': '20130819144811',
-#             'type': 2,
-#             'swt': 1
-#         }
-#         payload = tasks.build_jembi_json(reg)
-#         self.assertEqual(expected_json_chw_hcw, payload)
+    def test_build_jembi_json_change_faccode(self):
+        # Setup
+        nursereg_change_faccode = self.make_nursereg(
+            post_data=TEST_REG_DATA["change_faccode"])
+        reg = NurseReg.objects.get(pk=nursereg_change_faccode.data["id"])
+        expected_json_clinic_self = {
+            "mha": 1,
+            "swt": 3,
+            "type": 7,
+            "dmsisdn": "+27821237777",
+            "cmsisdn": "+27821237777",
+            "rmsisdn": None,
+            "faccode": "234567",
+            "id": '5101025009086^^^ZAF^NI',
+            "dob": "19510102",
+            "persal": None,
+            "sanc": None,
+            "encdate": '20130819144811'
+        }
+        # Execute
+        payload = tasks.build_jembi_json(reg)
+        # Check
+        self.assertEqual(expected_json_clinic_self, payload)
 
-#     def test_build_jembi_json_personal_detailed(self):
-#         registration_personal = self.make_nursereg(
-#             post_data=TEST_REG_DATA["personal_detailed"])
-#         reg = Registration.objects.get(pk=registration_personal.data["id"])
-#         expected_json_personal = {
-#             'id': '5552222^^^MZ^PPN',
-#             'lang': 'st',
-#             'dob': None,
-#             'dmsisdn': '+27003',
-#             'mha': 1,
-#             'cmsisdn': '+27003',
-#             'faccode': None,
-#             'encdate': '20130819144811',
-#             'type': 1,
-#             'swt': 1
-#         }
-#         payload = tasks.build_jembi_json(reg)
-#         self.assertEqual(expected_json_personal, payload)
+    def test_build_jembi_json_change_persal(self):
+        # Setup
+        nursereg_change_persal = self.make_nursereg(
+            post_data=TEST_REG_DATA["change_persal"])
+        reg = NurseReg.objects.get(pk=nursereg_change_persal.data["id"])
+        expected_json_clinic_self = {
+            "mha": 1,
+            "swt": 3,
+            "type": 7,
+            "dmsisdn": "+27821237777",
+            "cmsisdn": "+27821237777",
+            "rmsisdn": None,
+            "faccode": "123456",
+            "id": '5101025009086^^^ZAF^NI',
+            "dob": "19510102",
+            "persal": 11114444,
+            "sanc": None,
+            "encdate": '20130819144811'
+        }
+        # Execute
+        payload = tasks.build_jembi_json(reg)
+        # Check
+        self.assertEqual(expected_json_clinic_self, payload)
 
-#     def test_build_jembi_json_personal_simple(self):
-#         registration_personal = self.make_nursereg(
-#             post_data=TEST_REG_DATA["personal_simple"])
-#         reg = Registration.objects.get(pk=registration_personal.data["id"])
-#         expected_json_personal = {
-#             'id': '27004^^^ZAF^TEL',
-#             'lang': 'ss',
-#             'dob': None,
-#             'dmsisdn': '+27004',
-#             'mha': 1,
-#             'cmsisdn': '+27004',
-#             'faccode': None,
-#             'encdate': '20130819144811',
-#             'type': 1,
-#             'swt': 1
-#         }
-#         payload = tasks.build_jembi_json(reg)
-#         self.assertEqual(expected_json_personal, payload)
+    @responses.activate
+    def test_jembi_post_json(self):
+        # Setup
+        nursereg = self.make_nursereg(
+            post_data=TEST_REG_DATA["sa_id"])
 
-#     @responses.activate
-#     def test_jembi_post_json(self):
-#         registration = self.make_nursereg(
-#             post_data=TEST_REG_DATA["clinic_self"])
+        responses.add(responses.POST,
+                      "http://test/v2/nurse",
+                      body='jembi_post_json task', status=201,
+                      content_type='application/json')
 
-#         responses.add(responses.POST,
-#                       "http://test/v2/subscription",
-#                       body='jembi_post_json task', status=201,
-#                       content_type='application/json')
+        task_response = tasks.jembi_post_json.apply_async(
+            kwargs={"nursereg_id": nursereg.data["id"],
+                    "sender": self.sender})
+        self.assertEqual(len(responses.calls), 1)
+        self.assertEqual(task_response.get(), 'jembi_post_json task')
+        self.assertEqual(True, self.check_logs(
+            "Metric: u'test.nursereg.sum.json_to_jembi_success' [sum] -> 1"))
+        self.assertEqual(1, self.check_logs_number_of_entries())
 
-#         task_response = tasks.jembi_post_json.apply_async(
-#             kwargs={"registration_id": registration.data["id"],
-#                     "sender": self.sender})
-#         self.assertEqual(len(responses.calls), 1)
-#         self.assertEqual(task_response.get(), 'jembi_post_json task')
-#         self.assertEqual(True, self.check_logs(
-#             "Metric: u'test.clinic.sum.json_to_jembi_success' [sum] -> 1"))
-#         self.assertEqual(1, self.check_logs_number_of_entries())
+    @responses.activate
+    def test_jembi_post_json_retries(self):
+        nursereg = self.make_nursereg(
+            post_data=TEST_REG_DATA["sa_id"])
 
-#     @responses.activate
-#     def test_jembi_post_json_retries(self):
-#         registration = self.make_nursereg(
-#             post_data=TEST_REG_DATA["clinic_self"])
+        responses.add(responses.POST,
+                      "http://test/v2/nurse",
+                      body='{"error": "jembi json problems"}', status=531,
+                      content_type='application/json')
 
-#         responses.add(responses.POST,
-#                       "http://test/v2/subscription",
-#                       body='{"error": "jembi json problems"}', status=531,
-#                       content_type='application/json')
+        task_response = tasks.jembi_post_json.apply_async(
+            kwargs={"nursereg_id": nursereg.data["id"]})
+        self.assertEqual(len(responses.calls), 4)
+        with self.assertRaises(HTTPError) as cm:
+            task_response.get()
+        self.assertEqual(cm.exception.response.status_code, 531)
+        self.assertEqual(True, self.check_logs(
+            "Metric: u'test.nursereg.sum.json_to_jembi_fail' [sum] -> 1"))
+        self.assertEqual(1, self.check_logs_number_of_entries())
 
-#         task_response = tasks.jembi_post_json.apply_async(
-#             kwargs={"registration_id": registration.data["id"]})
-#         self.assertEqual(len(responses.calls), 4)
-#         with self.assertRaises(HTTPError) as cm:
-#             task_response.get()
-#         self.assertEqual(cm.exception.response.status_code, 531)
-#         self.assertEqual(True, self.check_logs(
-#             "Metric: u'test.clinic.sum.json_to_jembi_fail' [sum] -> 1"))
-#         self.assertEqual(1, self.check_logs_number_of_entries())
+    @responses.activate
+    def test_jembi_post_json_other_httperror(self):
+        nursereg = self.make_nursereg(
+            post_data=TEST_REG_DATA["sa_id"])
 
-#     @responses.activate
-#     def test_jembi_post_json_other_httperror(self):
-#         registration = self.make_nursereg(
-#             post_data=TEST_REG_DATA["clinic_self"])
+        responses.add(responses.POST,
+                      "http://test/v2/nurse",
+                      body='{"error": "jembi json problems"}', status=404,
+                      content_type='application/json')
 
-#         responses.add(responses.POST,
-#                       "http://test/v2/subscription",
-#                       body='{"error": "jembi json problems"}', status=404,
-#                       content_type='application/json')
-
-#         task_response = tasks.jembi_post_json.apply_async(
-#             kwargs={"registration_id": registration.data["id"]})
-#         self.assertEqual(len(responses.calls), 1)
-#         with self.assertRaises(HTTPError) as cm:
-#             task_response.get()
-#         self.assertEqual(cm.exception.response.status_code, 404)
-#         self.assertEqual(True, self.check_logs(
-#             "Metric: u'test.clinic.sum.json_to_jembi_fail' [sum] -> 1"))
-#         self.assertEqual(1, self.check_logs_number_of_entries())
+        task_response = tasks.jembi_post_json.apply_async(
+            kwargs={"nursereg_id": nursereg.data["id"]})
+        self.assertEqual(len(responses.calls), 1)
+        with self.assertRaises(HTTPError) as cm:
+            task_response.get()
+        self.assertEqual(cm.exception.response.status_code, 404)
+        self.assertEqual(True, self.check_logs(
+            "Metric: u'test.nursereg.sum.json_to_jembi_fail' [sum] -> 1"))
+        self.assertEqual(1, self.check_logs_number_of_entries())
 
 
 class TestUpdateCreateVumiContactTask(AuthenticatedAPITestCase):
