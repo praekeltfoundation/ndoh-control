@@ -591,7 +591,7 @@ class TestNurseRegAPI(AuthenticatedAPITestCase):
         self.assertEqual(True, self.check_logs(
             "Metric: u'test.nurseconnect.sum.nc_subscription_to_protocol_" +
             "success' [sum] -> 1"))
-        self.assertEqual(2, self.check_logs_number_of_entries())
+        self.assertEqual(3, self.check_logs_number_of_entries())
 
         # remove post_save hooks to prevent teardown errors
         post_save.disconnect(nursereg_postsave, sender=NurseReg)
