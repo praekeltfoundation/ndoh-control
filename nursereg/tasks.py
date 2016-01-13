@@ -49,6 +49,20 @@ def get_dob(mom_dob):
         return None
 
 
+def get_persal(persal):
+    if persal is not None:
+        return str(persal)
+    else:
+        return None
+
+
+def get_sanc(sanc):
+    if sanc is not None:
+        return str(sanc)
+    else:
+        return None
+
+
 def get_sender():
     sender = HttpApiSender(
         account_key=settings.VUMI_GO_ACCOUNT_KEY,
@@ -72,8 +86,8 @@ def build_jembi_json(nursereg):
             nursereg.id_type, nursereg.id_no, nursereg.passport_origin,
             nursereg.cmsisdn),
         "dob": get_dob(nursereg.dob),
-        "persal": nursereg.persal_no,
-        "sanc": nursereg.sanc_reg_no,
+        "persal": get_persal(nursereg.persal_no),
+        "sanc": get_sanc(nursereg.sanc_reg_no),
         "encdate": get_timestamp()
     }
 

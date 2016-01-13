@@ -737,7 +737,7 @@ class TestJembiPostJsonTask(AuthenticatedAPITestCase):
             "faccode": "123456",
             "id": "5101025009086^^^ZAF^NI",
             "dob": "19510102",
-            "persal": 11114444,
+            "persal": "11114444",
             "sanc": None,
             "encdate": "20130819144811"
         }
