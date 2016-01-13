@@ -1,5 +1,5 @@
-# import requests
-# import json
+import requests
+import json
 from requests.exceptions import HTTPError
 from datetime import datetime
 from django.conf import settings
@@ -16,13 +16,13 @@ from subscription.models import Subscription, MessageSet
 logger = get_task_logger(__name__)
 
 
-def get_patient_id(id_type, id_no=None, passport_origin=None, mom_msisdn=None):
+def get_registrant_id(id_type, id_no=None, passport_origin=None, msisdn=None):
     if id_type == 'sa_id':
         return id_no + "^^^ZAF^NI"
     elif id_type == 'passport':
         return id_no + '^^^' + passport_origin.upper() + '^PPN'
     else:
-        return mom_msisdn.replace('+', '') + '^^^ZAF^TEL'
+        return msisdn.replace('+', '') + '^^^ZAF^TEL'
 
 
 def get_subscription_type(authority):
@@ -58,94 +58,89 @@ def get_sender():
     return sender
 
 
-# def build_jembi_json(registration):
-#     """ Compile json to be sent to Jembi. """
-#     json_template = {
-#         "mha": 1,
-#         "swt": 1,
-#         "dmsisdn": registration.hcw_msisdn,
-#         "cmsisdn": registration.mom_msisdn,
-#         "id": get_patient_id(
-#             registration.mom_id_type, registration.mom_id_no,
-#             registration.mom_passport_origin, registration.mom_msisdn),
-#         "type": get_subscription_type(registration.authority),
-#         "lang": registration.mom_lang,
-#         "encdate": get_timestamp(),
-#         "faccode": registration.clinic_code,
-#         "dob": get_dob(registration.mom_dob)
-#     }
+def build_jembi_json(nursereg):
+    """ Compile json to be sent to Jembi. """
+    json_template = {
+        "mha": 1,
+        "swt": 3,
+        "type": 7,
+        "dmsisdn": nursereg.dmsisdn,
+        "cmsisdn": nursereg.cmsisdn,
+        "rmsisdn": nursereg.rmsisdn,
+        "faccode": nursereg.faccode,
+        "id": get_registrant_id(
+            nursereg.id_type, nursereg.id_no, nursereg.passport_origin,
+            nursereg.cmsisdn),
+        "dob": get_dob(nursereg.dob),
+        "persal": nursereg.persal_no,
+        "sanc": nursereg.sanc_reg_no,
+        "encdate": get_timestamp()
+    }
 
-#     # Self registrations on all lines should use cmsisdn as dmsisdn too
-#     if registration.hcw_msisdn is None:
-#         json_template["dmsisdn"] = registration.mom_msisdn
-
-#     if registration.authority == 'clinic':
-#         json_template["edd"] = registration.mom_edd.strftime("%Y%m%d")
-
-#     return json_template
+    return json_template
 
 
-# @task(time_limit=10)
-# def jembi_post_json(registration_id, sender=None):
-#     """ Task to send registrations Json to Jembi"""
+@task(time_limit=10)
+def jembi_post_json(nursereg_id, sender=None):
+    """ Task to send nurse registrations Json to Jembi"""
 
-#     logger.info("Compiling Jembi Json data")
-#     try:
-#         registration = NurseReg.objects.get(pk=registration_id)
-#         json_doc = build_jembi_json(registration)
+    logger.info("Compiling Jembi Json data")
+    try:
+        nursereg = NurseReg.objects.get(pk=nursereg_id)
+        json_doc = build_jembi_json(nursereg)
 
-#         try:
-#             result = requests.post(
-#                 "%s/subscription" % settings.JEMBI_BASE_URL,  # url
-#                 headers={'Content-Type': 'application/json'},
-#                 data=json.dumps(json_doc),
-#                 auth=(settings.JEMBI_USERNAME, settings.JEMBI_PASSWORD),
-#                 verify=False
-#             )
-#             result.raise_for_status()
-#             vumi_fire_metric.apply_async(
-#                 kwargs={
-#                     "metric": u"%s.%s.sum.json_to_jembi_success" % (
-#                         settings.METRIC_ENV, registration.authority),
-#                     "value": 1,
-#                     "agg": "sum",
-#                     "sender": sender}
-#             )
-#         except HTTPError as e:
-#             # retry message sending if in 500 range (3 default retries)
-#             if 500 < e.response.status_code < 599:
-#                 if jembi_post_json.max_retries == \
-#                    jembi_post_json.request.retries:
-#                     vumi_fire_metric.apply_async(
-#                         kwargs={
-#                             "metric": u"%s.%s.sum.json_to_jembi_fail" % (
-#                                 settings.METRIC_ENV, registration.authority),
-#                             "value": 1,
-#                             "agg": "sum",
-#                             "sender": None}
-#                     )
-#                 raise jembi_post_json.retry(exc=e)
-#             else:
-#                 vumi_fire_metric.apply_async(
-#                     kwargs={
-#                         "metric": u"%s.%s.sum.json_to_jembi_fail" % (
-#                             settings.METRIC_ENV, registration.authority),
-#                         "value": 1,
-#                         "agg": "sum",
-#                         "sender": None}
-#                 )
-#                 raise e
-#         except:
-#             logger.error('Problem posting JSON to Jembi', exc_info=True)
-#         return result.text
+        try:
+            result = requests.post(
+                "%s/nc/subscription" % settings.JEMBI_BASE_URL,  # url
+                headers={'Content-Type': 'application/json'},
+                data=json.dumps(json_doc),
+                auth=(settings.JEMBI_USERNAME, settings.JEMBI_PASSWORD),
+                verify=False
+            )
+            result.raise_for_status()
+            vumi_fire_metric.apply_async(
+                kwargs={
+                    "metric": u"%s.%s.sum.json_to_jembi_success" % (
+                        settings.METRIC_ENV, 'nursereg'),
+                    "value": 1,
+                    "agg": "sum",
+                    "sender": sender}
+            )
+        except HTTPError as e:
+            # retry message sending if in 500 range (3 default retries)
+            if 500 < e.response.status_code < 599:
+                if jembi_post_json.max_retries == \
+                   jembi_post_json.request.retries:
+                    vumi_fire_metric.apply_async(
+                        kwargs={
+                            "metric": u"%s.%s.sum.json_to_jembi_fail" % (
+                                settings.METRIC_ENV, 'nursereg'),
+                            "value": 1,
+                            "agg": "sum",
+                            "sender": None}
+                    )
+                raise jembi_post_json.retry(exc=e)
+            else:
+                vumi_fire_metric.apply_async(
+                    kwargs={
+                        "metric": u"%s.%s.sum.json_to_jembi_fail" % (
+                            settings.METRIC_ENV, 'nursereg'),
+                        "value": 1,
+                        "agg": "sum",
+                        "sender": None}
+                )
+                raise e
+        except:
+            logger.error('Problem posting JSON to Jembi', exc_info=True)
+        return result.text
 
-#     except ObjectDoesNotExist:
-#         logger.error('Missing NurseReg object', exc_info=True)
+    except ObjectDoesNotExist:
+        logger.error('Missing NurseReg object', exc_info=True)
 
-#     except SoftTimeLimitExceeded:
-#         logger.error(
-#             'Soft time limit exceeded processing Jembi send via Celery.',
-#             exc_info=True)
+    except SoftTimeLimitExceeded:
+        logger.error(
+            'Soft time limit exceeded processing Jembi send via Celery.',
+            exc_info=True)
 
 
 def get_client():
