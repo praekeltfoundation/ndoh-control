@@ -71,10 +71,10 @@ Clinic Health Care Worker-led on mothers device:
 .. code-block:: javascript
 
   {
-        "hcw_msisdn": None,
+        "hcw_msisdn": null,
         "mom_msisdn": "+27001",
         "mom_id_type": "sa_id",
-        "mom_passport_origin": None,
+        "mom_passport_origin": null,
         "mom_lang": "en",
         "mom_edd": "2015-08-01",
         "mom_id_no": "8009151234001",
@@ -95,7 +95,7 @@ Clinic Health Care Worker-led on HCW device:
         "mom_lang": "af",
         "mom_edd": "2015-09-01",
         "mom_id_no": "5551111",
-        "mom_dob": None,
+        "mom_dob": null,
         "clinic_code": "12345",
         "authority": "clinic"
     }
@@ -105,15 +105,15 @@ Community Health Care Worker-led on mothers device:
 .. code-block:: javascript
 
     {
-        "hcw_msisdn": None,
+        "hcw_msisdn": null,
         "mom_msisdn": "+27002",
         "mom_id_type": "none",
-        "mom_passport_origin": None,
+        "mom_passport_origin": null,
         "mom_lang": "xh",
-        "mom_edd": None,
-        "mom_id_no": None,
+        "mom_edd": null,
+        "mom_id_no": null,
         "mom_dob": "1980-10-15",
-        "clinic_code": None,
+        "clinic_code": null,
         "authority": "chw"
     }
 
@@ -125,12 +125,12 @@ Community Health Care Worker-led on HCW device:
         "hcw_msisdn": "+27820020002",
         "mom_msisdn": "+27002",
         "mom_id_type": "sa_id",
-        "mom_passport_origin": None,
+        "mom_passport_origin": null,
         "mom_lang": "zu",
-        "mom_edd": None,
+        "mom_edd": null,
         "mom_id_no": "8011151234001",
         "mom_dob": "1980-11-15",
-        "clinic_code": None,
+        "clinic_code": null,
         "authority": "chw"
     }
 
@@ -140,15 +140,15 @@ Detailed self-registration:
 
 
     {
-        "hcw_msisdn": None,
+        "hcw_msisdn": null,
         "mom_msisdn": "+27003",
         "mom_id_type": "passport",
         "mom_passport_origin": "mz",
         "mom_lang": "st",
-        "mom_edd": None,
+        "mom_edd": null,
         "mom_id_no": "5552222",
-        "mom_dob": None,
-        "clinic_code": None,
+        "mom_dob": null,
+        "clinic_code": null,
         "authority": "personal"
     }
 
@@ -157,14 +157,14 @@ Minimal self-registration:
 .. code-block:: javascript
 
     {
-        "hcw_msisdn": None,
+        "hcw_msisdn": null,
         "mom_msisdn": "+27004",
         "mom_id_type": "none",
-        "mom_passport_origin": None,
+        "mom_passport_origin": null,
         "mom_lang": "ss",
-        "mom_edd": None,
-        "mom_id_no": None,
-        "mom_dob": None,
-        "clinic_code": None,
+        "mom_edd": null,
+        "mom_id_no": null,
+        "mom_dob": null,
+        "clinic_code": null,
         "authority": "personal"
     }
