@@ -104,7 +104,7 @@ Community Health Care Worker-led on mothers device:
 
 .. code-block:: javascript
 
-    "chw_self": {
+    {
         "hcw_msisdn": None,
         "mom_msisdn": "+27002",
         "mom_id_type": "none",
