@@ -171,6 +171,7 @@ INSTALLED_APPS = (
     'snappybouncer',
     'controlinterface',
     'nursereg',
+    'django_object_actions',
 )
 
 # A sample logging configuration. The only tangible logging
