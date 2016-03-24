@@ -21,6 +21,17 @@ class SubscriptionAdmin(CsvExportAdminMixin, admin.ModelAdmin):
             model.active, model.completed, model.created_at, model.updated_at,
             model.schedule.id, model.process_status]
 
+
+class MessageAdmin(CsvExportAdminMixin, admin.ModelAdmin):
+    csv_header = [
+        'id', 'message_set', 'sequence_number', 'lang', 'content', 'created_at',
+        'updated_at']
+
+    def clean_csv_line(self, model):
+        return [
+            model.id, model.message_set.id, model.sequence_number, model.lang,
+            model.content, model.created_at, model.updated_at]
+
 admin.site.register(MessageSet)
-admin.site.register(Message)
+admin.site.register(Message, MessageAdmin)
 admin.site.register(Subscription, SubscriptionAdmin)

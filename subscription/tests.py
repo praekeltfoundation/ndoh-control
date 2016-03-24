@@ -7,7 +7,7 @@ from django.test import TestCase
 from django.contrib.auth.models import User
 from django.core.urlresolvers import reverse
 from django.test.utils import override_settings
-from subscription.admin import SubscriptionAdmin
+from subscription.admin import SubscriptionAdmin, MessageAdmin
 from subscription.models import MessageSet, Message, Subscription
 from subscription.tasks import (ingest_csv, ensure_one_subscription,
                                 vumi_fire_metric, ingest_opt_opts_csv,
@@ -445,3 +445,24 @@ class TestSubscriptionAdmin(AdminCsvDownloadBase):
                 model.lang, str(model.active), str(model.completed),
                 str(model.created_at), str(model.updated_at),
                 str(model.schedule.id), str(model.process_status)])
+
+
+class TestMessageAdmin(AdminCsvDownloadBase):
+    path = 'admin:subscription_message'
+    cls = MessageAdmin
+
+    def test_download_button_present(self):
+        '''On the admin changelist, there should be a download button.'''
+        self.assert_download_button_present()
+
+    def test_valid_csv(self):
+        '''The returned CSV should be valid, and should contain the correct
+        data.'''
+        rows = self.get_csv()
+        models = Message.objects.order_by('id')
+        self.assertEqual(len(rows), len(models))
+        for row, model in zip(rows, models):
+            self.assertEqual(row, [
+                str(model.id), str(model.message_set.id),
+                str(model.sequence_number), model.lang, model.content,
+                str(model.created_at), str(model.updated_at)])
