@@ -7,6 +7,7 @@ from django.test import TestCase
 from django.contrib.auth.models import User
 from django.core.urlresolvers import reverse
 from django.test.utils import override_settings
+from subscription.admin import SubscriptionAdmin
 from subscription.models import MessageSet, Message, Subscription
 from subscription.tasks import (ingest_csv, ensure_one_subscription,
                                 vumi_fire_metric, ingest_opt_opts_csv,
@@ -15,6 +16,7 @@ from subscription.tasks import (ingest_csv, ensure_one_subscription,
                                 fire_metrics_active_langs,
                                 fire_metrics_all_time_langs)
 from StringIO import StringIO
+import csv
 import json
 import logging
 from go_http.send import LoggingSender
@@ -390,3 +392,43 @@ class TestSetSeqCommand(TestCase):
         pass
         # https://gist.github.com/imsickofmaps/236129fbe7da6300629b
         # https://gist.github.com/imsickofmaps/b9712fde824853d00da3
+
+
+class TestSubscriptionAdmin(TestCase):
+    fixtures = ["test_initialdata.json", "test.json"]
+
+    def setUp(self):
+        self.user = User.objects.create_superuser(
+            'admin', 'admin@example.org', 'admin')
+        self.client.login(username='admin', password='admin')
+
+    def test_download_button_present(self):
+        '''On the admin changelist, there should be a download button.'''
+        r = self.client.get(reverse(
+            'admin:subscription_subscription_changelist'))
+        self.assertContains(
+            r, '<a href="%s" title="Download an export of the data as CSV"'
+            ' class="">Download</a>' % reverse(
+                'admin:subscription_subscription_actions',
+                args=['export_csv']),
+            html=True)
+
+    def test_valid_csv(self):
+        '''The returned CSV should be valid, and should contain the correct
+        data.'''
+        r = self.client.get(reverse(
+            'admin:subscription_subscription_actions', args=['export_csv']))
+        content = csv.reader(r.streaming_content)
+        header = content.next()
+        self.assertEqual(header, SubscriptionAdmin.csv_header)
+
+        rows = sorted(content, key=lambda l: int(l[0]))
+        models = Subscription.objects.order_by('id')
+        self.assertEqual(len(rows), len(models))
+        for row, model in zip(rows, models):
+            self.assertEqual(row, [
+                str(model.id), model.user_account, model.contact_key,
+                str(model.message_set.id), str(model.next_sequence_number),
+                model.lang, str(model.active), str(model.completed),
+                str(model.created_at), str(model.updated_at),
+                str(model.schedule.id), str(model.process_status)])
