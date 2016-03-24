@@ -24,8 +24,8 @@ class SubscriptionAdmin(CsvExportAdminMixin, admin.ModelAdmin):
 
 class MessageAdmin(CsvExportAdminMixin, admin.ModelAdmin):
     csv_header = [
-        'id', 'message_set', 'sequence_number', 'lang', 'content', 'created_at',
-        'updated_at']
+        'id', 'message_set', 'sequence_number', 'lang', 'content',
+        'created_at', 'updated_at']
 
     def clean_csv_line(self, model):
         return [
