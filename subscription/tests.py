@@ -394,7 +394,9 @@ class TestSetSeqCommand(TestCase):
         # https://gist.github.com/imsickofmaps/b9712fde824853d00da3
 
 
-class TestSubscriptionAdmin(TestCase):
+class AdminCsvDownloadBase(TestCase):
+    path = None
+    cls = None
     fixtures = ["test_initialdata.json", "test.json"]
 
     def setUp(self):
@@ -402,27 +404,38 @@ class TestSubscriptionAdmin(TestCase):
             'admin', 'admin@example.org', 'admin')
         self.client.login(username='admin', password='admin')
 
-    def test_download_button_present(self):
-        '''On the admin changelist, there should be a download button.'''
+    def get_csv(self):
+        '''Returns a list of lists that represent each row  of the csv.'''
         r = self.client.get(reverse(
-            'admin:subscription_subscription_changelist'))
+            '%s_actions' % self.path, args=['export_csv']))
+        content = csv.reader(r.streaming_content)
+        header = content.next()
+        self.assertEqual(header, self.cls.csv_header)
+        return sorted(content, key=lambda l: int(l[0]))
+
+    def assert_download_button_present(self):
+        r = self.client.get(reverse(
+            '%s_changelist' % self.path))
         self.assertContains(
             r, '<a href="%s" title="Download an export of the data as CSV"'
             ' class="">Download</a>' % reverse(
-                'admin:subscription_subscription_actions',
+                '%s_actions' % self.path,
                 args=['export_csv']),
             html=True)
+
+
+class TestSubscriptionAdmin(AdminCsvDownloadBase):
+    path = 'admin:subscription_subscription'
+    cls = SubscriptionAdmin
+
+    def test_download_button_present(self):
+        '''On the admin changelist, there should be a download button.'''
+        self.assert_download_button_present()
 
     def test_valid_csv(self):
         '''The returned CSV should be valid, and should contain the correct
         data.'''
-        r = self.client.get(reverse(
-            'admin:subscription_subscription_actions', args=['export_csv']))
-        content = csv.reader(r.streaming_content)
-        header = content.next()
-        self.assertEqual(header, SubscriptionAdmin.csv_header)
-
-        rows = sorted(content, key=lambda l: int(l[0]))
+        rows = self.get_csv()
         models = Subscription.objects.order_by('id')
         self.assertEqual(len(rows), len(models))
         for row, model in zip(rows, models):
