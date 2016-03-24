@@ -172,6 +172,7 @@ INSTALLED_APPS = (
     'controlinterface',
     'nursereg',
     'django_object_actions',
+    'djorm_core.postgresql',
 )
 
 # A sample logging configuration. The only tangible logging
