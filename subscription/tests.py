@@ -7,6 +7,7 @@ from django.test import TestCase
 from django.contrib.auth.models import User
 from django.core.urlresolvers import reverse
 from django.test.utils import override_settings
+from control.test_utils import AdminCsvDownloadBase
 from subscription.admin import SubscriptionAdmin, MessageAdmin, MessageSetAdmin
 from subscription.models import MessageSet, Message, Subscription
 from subscription.tasks import (ingest_csv, ensure_one_subscription,
@@ -16,7 +17,6 @@ from subscription.tasks import (ingest_csv, ensure_one_subscription,
                                 fire_metrics_active_langs,
                                 fire_metrics_all_time_langs)
 from StringIO import StringIO
-import csv
 import json
 import logging
 from go_http.send import LoggingSender
@@ -394,39 +394,10 @@ class TestSetSeqCommand(TestCase):
         # https://gist.github.com/imsickofmaps/b9712fde824853d00da3
 
 
-class AdminCsvDownloadBase(TestCase):
-    path = None
-    cls = None
-    fixtures = ["test_initialdata.json", "test.json"]
-
-    def setUp(self):
-        self.user = User.objects.create_superuser(
-            'admin', 'admin@example.org', 'admin')
-        self.client.login(username='admin', password='admin')
-
-    def get_csv(self):
-        '''Returns a list of lists that represent each row  of the csv.'''
-        r = self.client.get(reverse(
-            '%s_actions' % self.path, args=['export_csv']))
-        content = csv.reader(r.streaming_content)
-        header = content.next()
-        self.assertEqual(header, self.cls.csv_header)
-        return sorted(content, key=lambda l: int(l[0]))
-
-    def assert_download_button_present(self):
-        r = self.client.get(reverse(
-            '%s_changelist' % self.path))
-        self.assertContains(
-            r, '<a href="%s" title="Download an export of the data as CSV"'
-            ' class="">Download</a>' % reverse(
-                '%s_actions' % self.path,
-                args=['export_csv']),
-            html=True)
-
-
 class TestSubscriptionAdmin(AdminCsvDownloadBase):
     path = 'admin:subscription_subscription'
     cls = SubscriptionAdmin
+    fixtures = ["test_initialdata.json", "test.json"]
 
     def test_download_button_present(self):
         '''On the admin changelist, there should be a download button.'''
@@ -450,6 +421,7 @@ class TestSubscriptionAdmin(AdminCsvDownloadBase):
 class TestMessageAdmin(AdminCsvDownloadBase):
     path = 'admin:subscription_message'
     cls = MessageAdmin
+    fixtures = ["test_initialdata.json", "test.json"]
 
     def test_download_button_present(self):
         '''On the admin changelist, there should be a download button.'''
@@ -471,6 +443,7 @@ class TestMessageAdmin(AdminCsvDownloadBase):
 class TestMessageSetAdmin(AdminCsvDownloadBase):
     path = 'admin:subscription_messageset'
     cls = MessageSetAdmin
+    fixtures = ["test_initialdata.json", "test.json"]
 
     def test_download_button_present(self):
         '''On the admin changelist, there should be a download button.'''
