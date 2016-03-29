@@ -16,8 +16,10 @@ from go_http.contacts import ContactsApiClient
 from go_http.send import LoggingSender
 from fake_go_contacts import Request, FakeContactsApi
 from .models import Registration, Source, fire_jembi_post
+from control.test_utils import AdminCsvDownloadBase
 from subscription.models import Subscription
 from registration import tasks
+from registration.admin import RegistrationAdmin
 
 
 def override_get_today():
@@ -1132,3 +1134,33 @@ class TestUpdateCreateVumiContactTask(AuthenticatedAPITestCase):
             "Metric: u'test.clinic.sum.subscription_to_protocol_fail' " +
             "[sum] -> 1"))
         self.assertEqual(1, self.check_logs_number_of_entries())
+
+
+class TestRegistrationAdmin(AdminCsvDownloadBase):
+    path = 'admin:registration_registration'
+    cls = RegistrationAdmin
+    fixtures = ["test_initialdata.json"]
+
+    def test_download_button_present(self):
+        '''On the admin changelist, there should be a download button.'''
+        self.assert_download_button_present()
+
+    def test_valid_csv(self):
+        '''The returned CSV should be valid, and should contain the correct
+        data.'''
+        source = Source.objects.create(user=self.user)
+        Registration.objects.create(
+            source=source, mom_msisdn='+1234', mom_id_type='sa_id',
+            mom_id_no='5501010000066', mom_lang='eng', authority='personal',
+            mom_dob=str(datetime.now().date()), clinic_code='123',
+            mom_edd=str(datetime.now().date()), mom_passport_origin='foo'
+        )
+        rows = self.get_csv()
+        models = Registration.objects.order_by('id')
+        self.assertEqual(len(rows), len(models))
+        for row, model in zip(rows, models):
+            self.assertEqual(row, [
+                str(model.id), model.mom_id_type,
+                model.mom_passport_origin, model.mom_lang,
+                str(model.mom_edd), str(model.mom_dob), model.clinic_code,
+                model.authority, str(model.created_at), str(model.updated_at)])
