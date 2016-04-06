@@ -35,7 +35,7 @@ class MessageAdmin(CsvExportAdminMixin, admin.ModelAdmin):
 
 class MessageSetAdmin(CsvExportAdminMixin, admin.ModelAdmin):
     csv_header = [
-        'short_name', 'conversation_key', 'notes', 'next_set',
+        'id', 'short_name', 'conversation_key', 'notes', 'next_set',
         'default_schedule', 'created_at', 'updated_at']
 
     def clean_csv_line(self, model):
