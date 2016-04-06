@@ -20,3 +20,5 @@ responses==0.4.0
 djangorestframework==3.2.3
 django-filter==0.11.0
 lxml==3.4.4
+django-object-actions==0.8.0
+djorm-ext-core==0.7
