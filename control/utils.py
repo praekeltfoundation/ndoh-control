@@ -39,7 +39,8 @@ class CsvExportAdminMixin(DjangoObjectActions):
             Number of objects to include in each chunk. Default 1000.
         """
         with server_side_cursors(itersize=items_per_chunk):
-            return queryset.iterator()
+            for item in queryset.iterator():
+                yield item
 
     def export_csv(self, request, queryset):
         rows = itertools.chain(
