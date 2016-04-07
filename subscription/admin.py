@@ -17,9 +17,9 @@ class SubscriptionAdmin(CsvExportAdminMixin, admin.ModelAdmin):
     def clean_csv_line(self, model):
         return [
             model.id, model.user_account, model.contact_key,
-            model.message_set.id, model.next_sequence_number, model.lang,
+            model.message_set_id, model.next_sequence_number, model.lang,
             model.active, model.completed, model.created_at, model.updated_at,
-            model.schedule.id, model.process_status]
+            model.schedule_id, model.process_status]
 
 
 class MessageAdmin(CsvExportAdminMixin, admin.ModelAdmin):
@@ -29,13 +29,13 @@ class MessageAdmin(CsvExportAdminMixin, admin.ModelAdmin):
 
     def clean_csv_line(self, model):
         return [
-            model.id, model.message_set.id, model.sequence_number, model.lang,
+            model.id, model.message_set_id, model.sequence_number, model.lang,
             model.content, model.created_at, model.updated_at]
 
 
 class MessageSetAdmin(CsvExportAdminMixin, admin.ModelAdmin):
     csv_header = [
-        'short_name', 'conversation_key', 'notes', 'next_set',
+        'id', 'short_name', 'conversation_key', 'notes', 'next_set',
         'default_schedule', 'created_at', 'updated_at']
 
     def clean_csv_line(self, model):
@@ -44,7 +44,7 @@ class MessageSetAdmin(CsvExportAdminMixin, admin.ModelAdmin):
             next_set = next_set.id
         return [
             model.id, model.short_name, model.conversation_key, model.notes,
-            next_set, model.default_schedule.id, model.created_at,
+            next_set, model.default_schedule_id, model.created_at,
             model.updated_at]
 
 admin.site.register(MessageSet, MessageSetAdmin)
