@@ -4,7 +4,6 @@ import itertools
 
 from django.http import StreamingHttpResponse
 from django_object_actions import DjangoObjectActions
-from djorm_core.postgresql import server_side_cursors
 
 
 class Echo(object):
@@ -29,23 +28,10 @@ class CsvExportAdminMixin(DjangoObjectActions):
         CSV. Can also set the `csv_header` class variable.'''
         return self.csv_header
 
-    def iterate_query(self, queryset, items_per_chunk=1000):
-        """Iterate over a queryset using server-side cursors (if possible).
-        :type queryset:
-            Django query set.
-        :param queryset:
-            Query to iterate over.
-        :param int items_per_chunk:
-            Number of objects to include in each chunk. Default 1000.
-        """
-        with server_side_cursors(itersize=items_per_chunk):
-            for item in queryset.iterator():
-                yield item
-
     def export_csv(self, request, queryset):
         rows = itertools.chain(
             (self.get_csv_header(), ),
-            (self.clean_csv_line(obj) for obj in self.iterate_query(queryset))
+            (self.clean_csv_line(obj) for obj in queryset.iterator())
         )
         pseudo_buffer = Echo()
         writer = csv.writer(pseudo_buffer)
