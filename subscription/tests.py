@@ -476,7 +476,7 @@ class TestMessageSetAdmin(AdminCsvDownloadBase):
             if next_set:
                 next_set = str(next_set.id)
             else:
-                next_set = ''
+                next_set = str(next_set)
             self.assertEqual(row, [
                 str(model.id), model.short_name,
                 model.conversation_key, model.notes, next_set,
