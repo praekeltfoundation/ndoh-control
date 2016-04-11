@@ -28,10 +28,16 @@ class CsvExportAdminMixin(DjangoObjectActions):
         CSV. Can also set the `csv_header` class variable.'''
         return self.csv_header
 
+    def _encode_csv_line(self, line):
+        return [unicode(item).encode('utf-8') for item in line]
+
     def export_csv(self, request, queryset):
         rows = itertools.chain(
             (self.get_csv_header(), ),
-            (self.clean_csv_line(obj) for obj in queryset.iterator())
+            (
+                self._encode_csv_line(self.clean_csv_line(obj))
+                for obj in queryset.iterator()
+            )
         )
         pseudo_buffer = Echo()
         writer = csv.writer(pseudo_buffer)

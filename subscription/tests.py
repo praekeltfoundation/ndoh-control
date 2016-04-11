@@ -439,6 +439,22 @@ class TestMessageAdmin(AdminCsvDownloadBase):
                 str(model.sequence_number), model.lang, model.content,
                 str(model.created_at), str(model.updated_at)])
 
+    def test_unicode_in_message(self):
+        '''If there are non-ascii characters in a field value, this should be
+        handled correctly.'''
+        ms = MessageSet.objects.all()[0]
+        Message.objects.create(
+            content=u'\U0001F4A9', message_set=ms, sequence_number=1)
+        rows = self.get_csv()
+        models = Message.objects.order_by('id')
+        self.assertEqual(len(rows), len(models))
+        for row, model in zip(rows, models):
+            self.assertEqual(row, [
+                str(model.id), str(model.message_set.id),
+                str(model.sequence_number), model.lang,
+                model.content.encode('utf-8'), str(model.created_at),
+                str(model.updated_at)])
+
 
 class TestMessageSetAdmin(AdminCsvDownloadBase):
     path = 'admin:subscription_messageset'
@@ -460,7 +476,7 @@ class TestMessageSetAdmin(AdminCsvDownloadBase):
             if next_set:
                 next_set = str(next_set.id)
             else:
-                next_set = ''
+                next_set = str(next_set)
             self.assertEqual(row, [
                 str(model.id), model.short_name,
                 model.conversation_key, model.notes, next_set,
