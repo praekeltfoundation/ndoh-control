@@ -31,7 +31,8 @@ class CsvExportAdminMixin(DjangoObjectActions):
     def export_csv(self, request, queryset):
         rows = itertools.chain(
             (self.get_csv_header(), ),
-            (self.clean_csv_line(obj) for obj in queryset.iterator())
+            ([unicode(k).encode('utf-8') for k in i] for i in (
+                self.clean_csv_line(obj) for obj in queryset.iterator()))
         )
         pseudo_buffer = Echo()
         writer = csv.writer(pseudo_buffer)
