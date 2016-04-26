@@ -1055,7 +1055,7 @@ class TestUpdateCreateVumiContactTask(AuthenticatedAPITestCase):
         nursereg = self.make_nursereg(
             post_data=TEST_REG_DATA["passport"])
         client = self.make_client()
-        presubs = Subscription .objects.all().count()
+        presubs = Subscription.objects.all().count()
         last_nursereg = NurseReg.objects.last()
         # Execute
         contact = tasks.update_create_vumi_contact.apply_async(
