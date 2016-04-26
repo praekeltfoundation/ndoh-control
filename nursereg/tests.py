@@ -54,6 +54,12 @@ TEST_REG_DATA = {
         "id_no": "Cub1234",
         "dob": "1976-03-07",
         "passport_origin": "cu",
+    },
+    # No ID self registration
+    "no_id": {
+        "cmsisdn": "+27821234444",
+        "dmsisdn": "+27821234444",
+        "faccode": "123456",
         "sanc_reg_no": None,
         "persal_no": None
     },
@@ -86,6 +92,27 @@ TEST_REG_DATA = {
         "dob": "1951-01-02",
         "sanc_reg_no": None,
         "persal_no": "11114444"
+    },
+    "change_id": {
+        "cmsisdn": "+27821237777",
+        "dmsisdn": "+27821237777",
+        "faccode": "123456",
+        "id_type": "sa_id",
+        "dob": "1990-01-01",
+        "sanc_reg_no": None,
+        "persal_no": None,
+        "id_no": "9001016265166"
+    },
+    "change_passport": {
+        "cmsisdn": "+27821237777",
+        "dmsisdn": "+27821237777",
+        "faccode": "123456",
+        "id_type": "passport",
+        "dob": "1976-03-07",
+        "sanc_reg_no": None,
+        "persal_no": None,
+        "id_no": "Nam1234",
+        "passport_origin": "na"
     },
     "change_old_nr": {
         "cmsisdn": "+27821234444",
@@ -443,7 +470,7 @@ class TestNurseRegAPI(AuthenticatedAPITestCase):
         # Check
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
-    def test_create_nursereg(self):
+    def test_create_nursereg_sa_id(self):
         # Setup
         last_nurse_source = NurseSource.objects.last()
         # Execute
@@ -458,6 +485,29 @@ class TestNurseRegAPI(AuthenticatedAPITestCase):
         self.assertEqual(d.id_type, 'sa_id')
         self.assertEqual(d.id_no, '5101025009086')
         self.assertEqual(d.dob.strftime("%Y-%m-%d"), "1951-01-02")
+        self.assertEqual(d.nurse_source, last_nurse_source)
+        self.assertEqual(d.passport_origin, None)
+        self.assertEqual(d.persal_no, None)
+        self.assertEqual(d.opted_out, False)
+        self.assertEqual(d.optout_reason, None)
+        self.assertEqual(d.optout_count, 0)
+        self.assertEqual(d.sanc_reg_no, None)
+
+    def test_create_nursereg_no_id(self):
+        # Setup
+        last_nurse_source = NurseSource.objects.last()
+        # Execute
+        reg_response = self.make_nursereg(
+            post_data=TEST_REG_DATA["no_id"])
+        # Check
+        self.assertEqual(reg_response.status_code, status.HTTP_201_CREATED)
+        d = NurseReg.objects.last()
+        self.assertEqual(d.cmsisdn, '+27821234444')
+        self.assertEqual(d.dmsisdn, '+27821234444')
+        self.assertEqual(d.faccode, '123456')
+        self.assertEqual(d.id_type, None)
+        self.assertEqual(d.id_no, None)
+        self.assertEqual(d.dob, None)
         self.assertEqual(d.nurse_source, last_nurse_source)
         self.assertEqual(d.passport_origin, None)
         self.assertEqual(d.persal_no, None)
@@ -537,7 +587,7 @@ class TestNurseRegAPI(AuthenticatedAPITestCase):
         self.assertEqual(1, self.check_logs_number_of_entries())
 
     @responses.activate
-    def test_create_registration_fires_tasks(self):
+    def test_create_registration_fires_tasks_sa_id(self):
         # restore the post_save hooks just for this test
         post_save.connect(nursereg_postsave, sender=NurseReg)
 
@@ -569,6 +619,66 @@ class TestNurseRegAPI(AuthenticatedAPITestCase):
         # Test the registration object is the one you added
         d = NurseReg.objects.last()
         self.assertEqual(d.id_type, 'sa_id')
+
+        # Test post requests have been made to Jembi
+        self.assertEqual(len(responses.calls), 1)
+        self.assertEqual(
+            responses.calls[0].request.url,
+            "http://test/v2/nc/subscription")
+
+        # Test number of subscriptions after task fire
+        self.assertEqual(Subscription.objects.all().count(), 7)
+
+        # Test subscription object is the one you added
+        d = Subscription.objects.last()
+        self.assertEqual(d.to_addr, "+27821234444")
+
+        # Test metrics have fired
+        self.assertEqual(True, self.check_logs(
+            "Metric: u'test.nursereg.sum.json_to_jembi_success' [sum] -> 1"))
+        self.assertEqual(True, self.check_logs(
+            "Metric: u'test.sum.nc_subscriptions' [sum] -> 1"))
+        self.assertEqual(True, self.check_logs(
+            "Metric: u'test.nurseconnect.sum.nc_subscription_to_protocol_" +
+            "success' [sum] -> 1"))
+        self.assertEqual(3, self.check_logs_number_of_entries())
+
+        # remove post_save hooks to prevent teardown errors
+        post_save.disconnect(nursereg_postsave, sender=NurseReg)
+
+    @responses.activate
+    def test_create_registration_fires_tasks_no_id(self):
+        # restore the post_save hooks just for this test
+        post_save.connect(nursereg_postsave, sender=NurseReg)
+
+        # Check number of subscriptions before task fire
+        self.assertEqual(Subscription.objects.all().count(), 6)
+
+        # Check there are no pre-existing registration objects
+        self.assertEqual(NurseReg.objects.all().count(), 0)
+
+        responses.add(responses.POST,
+                      "http://test/v2/nc/subscription",
+                      body='jembi_post_json task', status=201,
+                      content_type='application/json')
+
+        # Set up the client
+        tasks.get_client = self.override_get_client
+
+        # Make a new registration
+        reg_response = self.make_nursereg(
+            post_data=TEST_REG_DATA["no_id"])
+
+        # Test registration object has been created successfully
+        self.assertEqual(reg_response.status_code, status.HTTP_201_CREATED)
+
+        # Test there is now a registration object in the database
+        d = NurseReg.objects.all()
+        self.assertEqual(NurseReg.objects.all().count(), 1)
+
+        # Test the registration object is the one you added
+        d = NurseReg.objects.last()
+        self.assertEqual(d.id_type, None)
 
         # Test post requests have been made to Jembi
         self.assertEqual(len(responses.calls), 1)
@@ -674,6 +784,30 @@ class TestJembiPostJsonTask(AuthenticatedAPITestCase):
         # Check
         self.assertEqual(expected_json_clinic_self, payload)
 
+    def test_build_jembi_json_no_id(self):
+        # Setup
+        nursereg_sa_id = self.make_nursereg(
+            post_data=TEST_REG_DATA["no_id"])
+        reg = NurseReg.objects.get(pk=nursereg_sa_id.data["id"])
+        expected_json_clinic_self = {
+            "mha": 1,
+            "swt": 3,
+            "type": 7,
+            "dmsisdn": "+27821234444",
+            "cmsisdn": "+27821234444",
+            "rmsisdn": None,
+            "faccode": "123456",
+            "id": "27821234444^^^ZAF^TEL",
+            "dob": None,
+            "persal": None,
+            "sanc": None,
+            "encdate": "20130819144811"
+        }
+        # Execute
+        payload = tasks.build_jembi_json(reg)
+        # Check
+        self.assertEqual(expected_json_clinic_self, payload)
+
     def test_build_jembi_json_change_old_nr(self):
         # Setup
         nursereg_change_old_nr = self.make_nursereg(
@@ -738,6 +872,54 @@ class TestJembiPostJsonTask(AuthenticatedAPITestCase):
             "id": "5101025009086^^^ZAF^NI",
             "dob": "19510102",
             "persal": "11114444",
+            "sanc": None,
+            "encdate": "20130819144811"
+        }
+        # Execute
+        payload = tasks.build_jembi_json(reg)
+        # Check
+        self.assertEqual(expected_json_clinic_self, payload)
+
+    def test_build_jembi_json_change_id(self):
+        # Setup
+        nursereg_change_id = self.make_nursereg(
+            post_data=TEST_REG_DATA["change_id"])
+        reg = NurseReg.objects.get(pk=nursereg_change_id.data["id"])
+        expected_json_clinic_self = {
+            "mha": 1,
+            "swt": 3,
+            "type": 7,
+            "dmsisdn": "+27821237777",
+            "cmsisdn": "+27821237777",
+            "rmsisdn": None,
+            "faccode": "123456",
+            "id": "9001016265166^^^ZAF^NI",
+            "dob": "19900101",
+            "persal": None,
+            "sanc": None,
+            "encdate": "20130819144811"
+        }
+        # Execute
+        payload = tasks.build_jembi_json(reg)
+        # Check
+        self.assertEqual(expected_json_clinic_self, payload)
+
+    def test_build_jembi_json_change_passport(self):
+        # Setup
+        nursereg_change_passport = self.make_nursereg(
+            post_data=TEST_REG_DATA["change_passport"])
+        reg = NurseReg.objects.get(pk=nursereg_change_passport.data["id"])
+        expected_json_clinic_self = {
+            "mha": 1,
+            "swt": 3,
+            "type": 7,
+            "dmsisdn": "+27821237777",
+            "cmsisdn": "+27821237777",
+            "rmsisdn": None,
+            "faccode": "123456",
+            "id": "Nam1234^^^NA^PPN",
+            "dob": "19760307",
+            "persal": None,
             "sanc": None,
             "encdate": "20130819144811"
         }
@@ -873,7 +1055,7 @@ class TestUpdateCreateVumiContactTask(AuthenticatedAPITestCase):
         nursereg = self.make_nursereg(
             post_data=TEST_REG_DATA["passport"])
         client = self.make_client()
-        presubs = Subscription.objects.all().count()
+        presubs = Subscription .objects.all().count()
         last_nursereg = NurseReg.objects.last()
         # Execute
         contact = tasks.update_create_vumi_contact.apply_async(
@@ -896,6 +1078,47 @@ class TestUpdateCreateVumiContactTask(AuthenticatedAPITestCase):
             "nc_subscription_type": "11",
             "nc_subscription_rate": "4",
             "nc_subscription_seq_start": "1"
+        })
+        postsubs = Subscription.objects.all().count()
+        self.assertEqual(postsubs, presubs+1)
+
+    def test_update_vumi_contact_no_id(self):
+        # Test mocks a JS nurse registration - existing Vumi contact
+        # Setup
+        # make existing contact with msisdn 27821234444
+        self.make_existing_contact({
+            u"key": u"knownuuid",
+            u"msisdn": u"+27821234444",
+            u"groups": [u"672442947cdf4a2aae0f96ccb688df05"],
+            u"user_account": u"knownaccount",
+            u"extra": {}
+        })
+        # nurse registration for contact 27001
+        nursereg = self.make_nursereg(
+            post_data=TEST_REG_DATA["no_id"])
+        client = self.make_client()
+        presubs = Subscription.objects.all().count()
+        last_nursereg = NurseReg.objects.last()
+        # Execute
+        contact = tasks.update_create_vumi_contact.apply_async(
+            kwargs={"nursereg_id": nursereg.data["id"],
+                    "client": client})
+        result = contact.get()
+        # Check
+        self.assertEqual(result["msisdn"], "+27821234444")
+        self.assertEqual(result["groups"],
+                         [u"672442947cdf4a2aae0f96ccb688df05"])
+        self.assertEqual(result["key"], "knownuuid")
+        self.assertEqual(result["user_account"], "knownaccount")
+        self.assertEqual(result["extra"], {
+            "nc_last_reg_id": str(last_nursereg.id),
+            "nc_is_registered": "true",
+            "nc_id_type": None,
+            "nc_faccode": "123456",
+            "nc_source_name": "Test Nurse Source",
+            "nc_subscription_type": "11",
+            "nc_subscription_rate": "4",
+            "nc_subscription_seq_start": "1",
         })
         postsubs = Subscription.objects.all().count()
         self.assertEqual(postsubs, presubs+1)
@@ -1047,6 +1270,105 @@ class TestUpdateCreateVumiContactTask(AuthenticatedAPITestCase):
             "nc_faccode": "123456",
             "nc_source_name": "Test Nurse Source",
             "nc_persal": "11114444",
+            "nc_subscription_type": "11",
+            "nc_subscription_rate": "4",
+            "nc_subscription_seq_start": "1",
+        })
+        postsubs = Subscription.objects.all().count()
+        # check no additional subscription created
+        self.assertEqual(postsubs, presubs)
+
+    def test_create_vumi_contact_change_id(self):
+        # Test mocks an external registration - no existing Vumi contact
+        # Setup
+        # make existing contact with msisdn 27821237777
+        self.make_existing_contact({
+            u"key": u"knownuuid",
+            u"msisdn": u"+27821237777",
+            u"user_account": u"knownaccount",
+            u"extra": {
+                "nc_last_reg_id": "last nursereg id",
+                "nc_is_registered": "true",
+                "nc_id_type": None,
+                "nc_faccode": "123456",
+                "nc_source_name": "Test Nurse Source",
+                "nc_subscription_type": "11",
+                "nc_subscription_rate": "4",
+                "nc_subscription_seq_start": "1",
+            }
+        })
+        # nurse registration for contact 27821237777 -change persal
+        nursereg = self.make_nursereg(
+            post_data=TEST_REG_DATA["change_id"])
+        client = self.make_client()
+        presubs = Subscription.objects.all().count()
+        last_nursereg = NurseReg.objects.last()
+        # Execute
+        contact = tasks.update_create_vumi_contact.apply_async(
+            kwargs={"nursereg_id": nursereg.data["id"],
+                    "client": client})
+        result = contact.get()
+        # Check
+        self.assertEqual(result["msisdn"], "+27821237777")
+        self.assertEqual(result["groups"], [])
+        self.assertEqual(result["extra"], {
+            "nc_last_reg_id": str(last_nursereg.id),
+            "nc_dob": "1990-01-01",
+            "nc_sa_id_no": "9001016265166",
+            "nc_is_registered": "true",
+            "nc_id_type": "sa_id",
+            "nc_faccode": "123456",
+            "nc_source_name": "Test Nurse Source",
+            "nc_subscription_type": "11",
+            "nc_subscription_rate": "4",
+            "nc_subscription_seq_start": "1",
+        })
+        postsubs = Subscription.objects.all().count()
+        # check no additional subscription created
+        self.assertEqual(postsubs, presubs)
+
+    def test_create_vumi_contact_change_passport(self):
+        # Test mocks an external registration - no existing Vumi contact
+        # Setup
+        # make existing contact with msisdn 27821237777
+        self.make_existing_contact({
+            u"key": u"knownuuid",
+            u"msisdn": u"+27821237777",
+            u"user_account": u"knownaccount",
+            u"extra": {
+                "nc_last_reg_id": "last nursereg id",
+                "nc_is_registered": "true",
+                "nc_id_type": None,
+                "nc_faccode": "123456",
+                "nc_source_name": "Test Nurse Source",
+                "nc_subscription_type": "11",
+                "nc_subscription_rate": "4",
+                "nc_subscription_seq_start": "1",
+            }
+        })
+        # nurse registration for contact 27821237777 -change persal
+        nursereg = self.make_nursereg(
+            post_data=TEST_REG_DATA["change_passport"])
+        client = self.make_client()
+        presubs = Subscription.objects.all().count()
+        last_nursereg = NurseReg.objects.last()
+        # Execute
+        contact = tasks.update_create_vumi_contact.apply_async(
+            kwargs={"nursereg_id": nursereg.data["id"],
+                    "client": client})
+        result = contact.get()
+        # Check
+        self.assertEqual(result["msisdn"], "+27821237777")
+        self.assertEqual(result["groups"], [])
+        self.assertEqual(result["extra"], {
+            "nc_last_reg_id": str(last_nursereg.id),
+            "nc_dob": "1976-03-07",
+            "nc_passport_num": "Nam1234",
+            "nc_passport_country": "na",
+            "nc_is_registered": "true",
+            "nc_id_type": "passport",
+            "nc_faccode": "123456",
+            "nc_source_name": "Test Nurse Source",
             "nc_subscription_type": "11",
             "nc_subscription_rate": "4",
             "nc_subscription_seq_start": "1",

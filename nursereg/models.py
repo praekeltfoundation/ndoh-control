@@ -48,11 +48,12 @@ class NurseReg(models.Model):
     dmsisdn = models.CharField(max_length=255, null=True, blank=True)
     rmsisdn = models.CharField(max_length=255, null=True, blank=True)
     faccode = models.CharField(max_length=100)
-    id_type = models.CharField(max_length=8, choices=ID_TYPE_CHOICES)
+    id_type = models.CharField(max_length=8, null=True, blank=True,
+                               choices=ID_TYPE_CHOICES)
     id_no = models.CharField(max_length=100, null=True, blank=True)
     passport_origin = models.CharField(max_length=100, null=True,
                                        blank=True, choices=COUNTRY_CHOICES)
-    dob = models.DateField()
+    dob = models.DateField(null=True, blank=True)
     nurse_source = models.ForeignKey(NurseSource, related_name='nurseregs',
                                      null=False)
     persal_no = models.IntegerField(null=True, blank=True)
