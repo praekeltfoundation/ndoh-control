@@ -40,7 +40,7 @@ class TestMessageQueueProcessor(TestCase):
         messagesets = MessageSet.objects.all()
         self.assertEqual(len(messagesets), 11)
         subscriptions = Subscription.objects.all()
-        self.assertEqual(len(subscriptions), 6)
+        self.assertEqual(len(subscriptions), 7)
         schedules = PeriodicTask.objects.all()
         self.assertEqual(len(schedules), 10)
 
@@ -63,6 +63,35 @@ class TestMessageQueueProcessor(TestCase):
         schedule = 2
         result = process_message_queue.delay(schedule, self.sender)
         self.assertEquals(result.get(), 0)
+
+    def test_send_nurseconnect_no_category(self):
+        subscriber = Subscription.objects.get(pk=6)
+        result = send_message.delay(subscriber, self.sender)
+        self.assertEqual(result.get(), {
+            "message_id": result.get()["message_id"],
+            "to_addr": "+271113",
+            "content": "Message 3 in en on nurseconnect",
+        })
+        self.assertEqual(
+            self.handler.logs[1].msg,
+            "Metric: 'prd.sum.nurseconnect.sms.outbound' [sum] -> 1")
+
+    def test_send_nurseconnect_info_category(self):
+        subscriber = Subscription.objects.get(pk=6)
+        subscriber.next_sequence_number = 4
+        subscriber.save()
+        result = send_message.delay(subscriber, self.sender)
+        self.assertEqual(result.get(), {
+            "message_id": result.get()["message_id"],
+            "to_addr": "+271113",
+            "content": "Message 4 in en on nurseconnect",
+        })
+        self.assertEqual(
+            self.handler.logs[1].msg,
+            "Metric: 'prd.sum.nurseconnect.sms.outbound' [sum] -> 1")
+        self.assertEqual(
+            self.handler.logs[2].msg,
+            "Metric: 'prd.sum.nurseconnect.info.sms.outbound' [sum] -> 1")
 
     def test_send_message_1_en_accelerated(self):
         subscriber = Subscription.objects.get(pk=1)
@@ -100,7 +129,7 @@ class TestMessageQueueProcessor(TestCase):
         self.assertTrue(result.successful())
         # Check another added and old still there
         all_subscription = Subscription.objects.all()
-        self.assertEquals(len(all_subscription), 7)
+        self.assertEquals(len(all_subscription), 8)
         # Check new subscription is for baby1
         new_subscription = Subscription.objects.get(pk=101)
         self.assertEquals(new_subscription.message_set.pk, 4)
@@ -119,7 +148,7 @@ class TestMessageQueueProcessor(TestCase):
         self.assertTrue(result.successful())
         # Check another added and old still there
         all_subscription = Subscription.objects.all()
-        self.assertEquals(len(all_subscription), 7)
+        self.assertEquals(len(all_subscription), 8)
         # Check new subscription is for baby2
         new_subscription = Subscription.objects.get(pk=101)
         self.assertEquals(new_subscription.message_set.pk, 5)
@@ -138,7 +167,7 @@ class TestMessageQueueProcessor(TestCase):
         self.assertTrue(result.successful())
         # Check no new subscription added
         all_subscription = Subscription.objects.all()
-        self.assertEquals(len(all_subscription), 6)
+        self.assertEquals(len(all_subscription), 7)
         # Check old one now inactive and complete
         subscriber_updated = Subscription.objects.get(pk=4)
         self.assertEquals(subscriber_updated.completed, True)
@@ -204,7 +233,7 @@ class TestMessageFailure(TestCase):
         messagesets = MessageSet.objects.all()
         self.assertEqual(len(messagesets), 11)
         subscriptions = Subscription.objects.all()
-        self.assertEqual(len(subscriptions), 6)
+        self.assertEqual(len(subscriptions), 7)
         schedules = PeriodicTask.objects.all()
         self.assertEqual(len(schedules), 10)
 

@@ -72,6 +72,19 @@ def send_message(self, subscriber, sender=None):
                     )
                 response = sender.send_text(subscriber.to_addr,
                                             message.content)
+                # Fire NurseConnect metrics if applicable
+                if subscriber.message_set.short_name == 'nurseconnect':
+                    vumi_fire_metric.delay(
+                        metric="%s.sum.nurseconnect.sms.outbound" %
+                        settings.VUMI_GO_METRICS_PREFIX,
+                        value=1, agg="sum", sender=sender)
+                    if message.category:
+                        vumi_fire_metric.delay(
+                            metric="%s.sum.nurseconnect.%s.sms.outbound" % (
+                                settings.VUMI_GO_METRICS_PREFIX,
+                                str(message.category)),
+                            value=1, agg="sum", sender=sender)
+
             except UserOptedOutException:
                 # user has opted out so deactivate subscription
                 subscriber.active = False
