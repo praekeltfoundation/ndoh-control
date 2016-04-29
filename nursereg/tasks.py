@@ -177,11 +177,12 @@ def define_extras_registration(_extras, nursereg):
     # Duplication of JS extras required for external nurseregs
     _extras[u"nc_faccode"] = nursereg.faccode
     _extras[u"nc_is_registered"] = "true"
-    _extras[u"nc_id_type"] = nursereg.id_type
     if nursereg.id_type == "sa_id":
+        _extras[u"nc_id_type"] = nursereg.id_type
         _extras[u"nc_sa_id_no"] = nursereg.id_no
         _extras[u"nc_dob"] = nursereg.dob.strftime("%Y-%m-%d")
     elif nursereg.id_type == "passport":
+        _extras[u"nc_id_type"] = nursereg.id_type
         _extras[u"nc_passport_num"] = nursereg.id_no
         _extras[u"nc_passport_country"] = nursereg.passport_origin
         _extras[u"nc_dob"] = nursereg.dob.strftime("%Y-%m-%d")

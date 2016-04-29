@@ -1113,7 +1113,6 @@ class TestUpdateCreateVumiContactTask(AuthenticatedAPITestCase):
         self.assertEqual(result["extra"], {
             "nc_last_reg_id": str(last_nursereg.id),
             "nc_is_registered": "true",
-            "nc_id_type": None,
             "nc_faccode": "123456",
             "nc_source_name": "Test Nurse Source",
             "nc_subscription_type": "11",
