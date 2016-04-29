@@ -29,7 +29,7 @@ def get_future_date(days, date_current=None):
     return future_date.strftime("%Y-%m-%d")
 
 
-@task()
+@task(ignore_result=True)
 def ensure_one_servicerating():
     """
     Fixes issues caused by upstream failures that lead
@@ -47,7 +47,7 @@ def ensure_one_servicerating():
     return affected
 
 
-@task()
+@task(ignore_result=True)
 def vumi_fire_metric(metric, value, agg, sender=None):
     try:
         if sender is None:
@@ -64,7 +64,7 @@ def vumi_fire_metric(metric, value, agg, sender=None):
             'HTTP API via Celery'), exc_info=True)
 
 
-@task()
+@task(ignore_result=True)
 def vumi_send_message(contact_key, message, client=None, sender=None):
     try:
         if client is None:
@@ -101,7 +101,7 @@ def vumi_send_message(contact_key, message, client=None, sender=None):
             'HTTP API via Celery'), exc_info=True)
 
 
-@task()
+@task(ignore_result=True)
 def vumi_update_contact_extras(contact_key, updates, client=None):
     try:
         if client is None:
@@ -119,7 +119,7 @@ def vumi_update_contact_extras(contact_key, updates, client=None):
             'HTTP API via Celery'), exc_info=True)
 
 
-@task()
+@task(ignore_result=True)
 def vumi_update_smart_group_query(group_key, query, client=None):
     try:
         if client is None:
@@ -137,7 +137,7 @@ def vumi_update_smart_group_query(group_key, query, client=None):
             'HTTP API via Celery'), exc_info=True)
 
 
-@task()
+@task(ignore_result=True)
 def vumi_get_smart_group_contacts(group_key, client=None):
     try:
         if client is None:
@@ -150,7 +150,7 @@ def vumi_get_smart_group_contacts(group_key, client=None):
             'HTTP API via Celery'), exc_info=True)
 
 
-@task()
+@task(ignore_result=True)
 def send_reminders(group_key, client=None, sender=None):
     try:
         reminder = "Thank you for registering. We can only improve if we get " \

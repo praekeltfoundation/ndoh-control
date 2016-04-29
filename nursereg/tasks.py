@@ -94,7 +94,7 @@ def build_jembi_json(nursereg):
     return json_template
 
 
-@task(time_limit=10)
+@task(time_limit=10, ignore_result=True)
 def jembi_post_json(nursereg_id, sender=None):
     """ Task to send nurse registrations Json to Jembi"""
 
@@ -301,7 +301,7 @@ def create_contact(nursereg, client):
     return client.create_contact(contact_data)
 
 
-@task(time_limit=10)
+@task(time_limit=10, ignore_result=True)
 def update_create_vumi_contact(nursereg_id, client=None, sender=None):
     """ Task to update or create a Vumi contact when a nurse
         registration is created.
@@ -374,7 +374,7 @@ def update_create_vumi_contact(nursereg_id, client=None, sender=None):
             exc_info=True)
 
 
-@task(time_limit=10)
+@task(time_limit=10, ignore_result=True)
 def fire_new_clinic_metric(client=None, sender=None):
     """ Task to increment the unique clinic nurse registrations metric.
     """
@@ -396,7 +396,7 @@ def fire_new_clinic_metric(client=None, sender=None):
     return
 
 
-@task()
+@task(ignore_result=True)
 def vumi_fire_metric(metric, value, agg, sender=None):
     try:
         if sender is None:

@@ -15,7 +15,7 @@ from snappybouncer.models import Ticket
 logger = get_task_logger(__name__)
 
 
-@task()
+@task(ignore_result=True)
 def send_helpdesk_response(ticket):
     # Make a session to Vumi
     sender = HttpApiSender(
@@ -53,7 +53,7 @@ def build_jembi_helpdesk_json(ticket):
     return json_template
 
 
-@task()
+@task(ignore_result=True)
 def send_helpdesk_response_jembi(ticket):
     data = build_jembi_helpdesk_json(ticket)
     api_url = ("%s/helpdesk" % settings.JEMBI_BASE_URL)
@@ -67,7 +67,7 @@ def send_helpdesk_response_jembi(ticket):
     return result.text
 
 
-@task()
+@task(ignore_result=True)
 def create_snappy_ticket(ticket):
     # Make a session to Snappy
     snappy_api = SnappyApiSender(
@@ -91,7 +91,7 @@ def create_snappy_ticket(ticket):
     return True
 
 
-@task()
+@task(ignore_result=True)
 def update_snappy_ticket_with_extras(snappy_api, nonce, contact_key, subject):
     # Gets more extras from Vumi and creates a private note with them
     contacts_api = ContactsApiClient(auth_token=settings.VUMI_GO_API_TOKEN)
@@ -148,7 +148,7 @@ def extract_operator(tags, operators):
     return None
 
 
-@task()
+@task(ignore_result=True)
 def backfill_ticket(ticket_id, operators):
     """
     Looks up the Ticket's operator number and first tag and saves it
@@ -186,7 +186,7 @@ def get_ticket_faccode(contact_key):
     return None
 
 
-@task()
+@task(ignore_result=True)
 def backfill_ticket_faccode(ticket_id):
     """
     Looks up a Ticket contact's clinic code and stores it in the ticket

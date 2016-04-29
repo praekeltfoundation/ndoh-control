@@ -9,7 +9,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-@task()
+@task(ignore_result=True)
 def vumi_fire_metric(metric, value, agg, sender=None):
     try:
         if sender is None:
@@ -27,7 +27,7 @@ def vumi_fire_metric(metric, value, agg, sender=None):
             exc_info=True)
 
 
-@task()
+@task(ignore_result=True)
 def ingest_csv(csv_data, message_set):
     """ Expecting data in the following format:
     message_id,category,en,safe,af,safe,zu,safe,xh,safe,ve,safe,tn,safe,ts,safe,
@@ -55,7 +55,7 @@ def ingest_csv(csv_data, message_set):
                     logger.error(e)
 
 
-@task()
+@task(ignore_result=True)
 def ensure_one_subscription():
     """
     Fixes issues caused by upstream failures
@@ -73,7 +73,7 @@ def ensure_one_subscription():
     return affected
 
 
-@task()
+@task(ignore_result=True)
 def fire_metrics_active_subscriptions(sender=None):
     """
     Gathers subscription metrics and fires to metric store
@@ -115,7 +115,7 @@ def fire_metrics_active_subscriptions(sender=None):
     return total
 
 
-@task()
+@task(ignore_result=True)
 def fire_metrics_all_time_subscriptions(sender=None):
     """
     Gathers subscription metrics for all time and fires to metric store
@@ -155,7 +155,7 @@ def fire_metrics_all_time_subscriptions(sender=None):
     return total
 
 
-@task()
+@task(ignore_result=True)
 def fire_metrics_active_langs(sender=None):
     """
     Gathers subscription lang metrics and fires to metric store
@@ -192,7 +192,7 @@ def fire_metrics_active_langs(sender=None):
     return total
 
 
-@task()
+@task(ignore_result=True)
 def fire_metrics_all_time_langs(sender=None):
     """
     Gathers subscription lang metrics for all time and fires to metric store
@@ -234,7 +234,7 @@ def clean_msisdn(msisdn):
         return "+%s" % (msisdn.strip())
 
 
-@task()
+@task(ignore_result=True)
 def ingest_opt_opts_csv(csv_data):
     """ Expecting data in the following format:
     # CSV file format
