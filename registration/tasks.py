@@ -498,7 +498,7 @@ def create_subscription(contact, authority, sender=None):
             exc_info=True)
 
 
-@task(time_limit=10)
+@task(time_limit=10, ignore_result=True)
 def jembi_post_json(registration_id, sender=None):
     """ Task to send registrations Json to Jembi"""
 
@@ -561,7 +561,7 @@ def jembi_post_json(registration_id, sender=None):
             exc_info=True)
 
 
-@task(time_limit=10)
+@task(time_limit=10, ignore_result=True)
 def jembi_post_xml(registration_id, sender=None):
     """ Task to send clinic & chw registrations XML to Jembi"""
 
@@ -630,7 +630,7 @@ def jembi_post_xml(registration_id, sender=None):
             exc_info=True)
 
 
-@task(time_limit=10)
+@task(time_limit=10, ignore_result=True)
 def update_create_vumi_contact(registration_id, client=None, sender=None):
     """ Task to update or create a Vumi contact when a registration
         is created.
@@ -696,7 +696,7 @@ def update_create_vumi_contact(registration_id, client=None, sender=None):
             exc_info=True)
 
 
-@task()
+@task(ignore_result=True)
 def vumi_fire_metric(metric, value, agg, sender=None):
     try:
         if sender is None:

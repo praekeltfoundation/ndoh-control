@@ -13,7 +13,7 @@ from subscription.models import Subscription, Message
 logger = get_task_logger(__name__)
 
 
-@task()
+@task(ignore_result=True)
 def vumi_fire_metric(metric, value, agg, sender=None):
     try:
         if sender is None:
@@ -31,7 +31,7 @@ def vumi_fire_metric(metric, value, agg, sender=None):
             exc_info=True)
 
 
-@task()
+@task(ignore_result=True)
 def process_message_queue(schedule, sender=None):
     # Get all active and incomplete subscribers for schedule
     subscribers = Subscription.objects.filter(
@@ -108,7 +108,7 @@ def send_message(self, subscriber, sender=None):
              ' HTTP API via Celery'), exc_info=True)
 
 
-@task()
+@task(ignore_result=True)
 def processes_message(subscriber, sender, ignore_result=True):
     try:
         # Process moving to next message, next set or finished
