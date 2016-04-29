@@ -99,7 +99,8 @@ class NurseReg(models.Model):
 
 from django.db.models.signals import post_save
 from django.dispatch import receiver
-from .tasks import update_create_vumi_contact, jembi_post_json
+from .tasks import (update_create_vumi_contact, jembi_post_json,
+                    fire_new_clinic_metric)
 
 
 @receiver(post_save, sender=NurseReg)
@@ -116,3 +117,8 @@ def nursereg_postsave(sender, instance, created, **kwargs):
         # Fire Contact update create tasks
         update_create_vumi_contact.apply_async(
             kwargs={"nursereg_id": instance.id})
+
+        # fire metric if this NurseReg is the first for the clinic
+        if NurseReg.objects.filter(faccode=instance.faccode).count() == 1:
+            fire_new_clinic_metric.apply_async(
+                kwargs={})

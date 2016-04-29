@@ -641,21 +641,29 @@ class TestNurseRegAPI(AuthenticatedAPITestCase):
         self.assertEqual(True, self.check_logs(
             "Metric: u'test.nurseconnect.sum.nc_subscription_to_protocol_" +
             "success' [sum] -> 1"))
-        self.assertEqual(3, self.check_logs_number_of_entries())
+        self.assertEqual(True, self.check_logs(
+            "Metric: u'test.nurseconnect.unique.clinics' [sum] -> 1"))
+        self.assertEqual(4, self.check_logs_number_of_entries())
 
         # remove post_save hooks to prevent teardown errors
         post_save.disconnect(nursereg_postsave, sender=NurseReg)
 
     @responses.activate
     def test_create_registration_fires_tasks_no_id(self):
+        # Make a nursereg before restoring the post_save hooks so we can
+        # test that the fire_new_clinic_metric task is not executed if the
+        # clinic already has a registration
+        self.make_nursereg(
+            post_data=TEST_REG_DATA["no_id"])
+
         # restore the post_save hooks just for this test
         post_save.connect(nursereg_postsave, sender=NurseReg)
 
         # Check number of subscriptions before task fire
         self.assertEqual(Subscription.objects.all().count(), 6)
 
-        # Check there are no pre-existing registration objects
-        self.assertEqual(NurseReg.objects.all().count(), 0)
+        # Check there is a registration object in the db
+        self.assertEqual(NurseReg.objects.all().count(), 1)
 
         responses.add(responses.POST,
                       "http://test/v2/nc/subscription",
@@ -672,9 +680,9 @@ class TestNurseRegAPI(AuthenticatedAPITestCase):
         # Test registration object has been created successfully
         self.assertEqual(reg_response.status_code, status.HTTP_201_CREATED)
 
-        # Test there is now a registration object in the database
+        # Test there are now two registration objects in the database
         d = NurseReg.objects.all()
-        self.assertEqual(NurseReg.objects.all().count(), 1)
+        self.assertEqual(NurseReg.objects.all().count(), 2)
 
         # Test the registration object is the one you added
         d = NurseReg.objects.last()

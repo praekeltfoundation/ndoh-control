@@ -374,6 +374,28 @@ def update_create_vumi_contact(nursereg_id, client=None, sender=None):
             exc_info=True)
 
 
+@task(time_limit=10)
+def fire_new_clinic_metric(client=None, sender=None):
+    """ Task to increment the unique clinic nurse registrations metric.
+    """
+
+    logger.info("Firing metric")
+    try:
+        if client is None:
+            client = get_client()
+
+        vumi_fire_metric.apply_async(kwargs={
+            "metric": u"%s.nurseconnect.unique.clinics" % (
+                settings.METRIC_ENV),
+            "value": 1, "agg": "sum", "sender": sender}
+        )
+    except SoftTimeLimitExceeded:
+        logger.error(
+            'Soft time limit exceeded processing Jembi send via Celery.',
+            exc_info=True)
+    return
+
+
 @task()
 def vumi_fire_metric(metric, value, agg, sender=None):
     try:
