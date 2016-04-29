@@ -171,12 +171,12 @@ class TestUploadCSV(TestCase):
     fixtures = ["test_initialdata.json"]
 
     MSG_HEADER = (
-        "message_id,en,safe,af,safe,zu,safe,xh,safe,ve,safe,tn,safe,ts,safe,"
-        "ss,safe,st,safe,nso,safe,nr,safe\r\n")
+        "message_id,category,en,safe,af,safe,zu,safe,xh,safe,ve,safe,tn,safe,"
+        "ts,safe,ss,safe,st,safe,nso,safe,nr,safe\r\n")
     MSG_LINE_CLEAN_1 = (
-        "1,hello,0,hello1,0,hell2,0,,0,,0,,0,,0,,0,,0,,0,hello3,0\r\n")
+        "1,,hello,0,hello1,0,hell2,0,,0,,0,,0,,0,,0,,0,,0,hello3,0\r\n")
     MSG_LINE_CLEAN_2 = (
-        "2,goodbye,0,goodbye1,0,goodbye2,0,,0,,0,,0,,0,,0,,0,,0,"
+        "2,informational,goodbye,0,goodbye1,0,goodbye2,0,,0,,0,,0,,0,,0,,0,,0,"
         "goodbye3,0\r\n")
     MSG_LINE_DIRTY_1 = (
         "A,sequence_number_is_text,0,goodbye1,0,goodbye2,0,,0,,0,,0,,0,,0,,"
@@ -204,12 +204,14 @@ class TestUploadCSV(TestCase):
         ingest_csv(uploaded, message_set)
         imported_en = Message.objects.filter(sequence_number="1", lang="en")[0]
         self.assertEquals(imported_en.content, "hello")
+        self.assertEquals(imported_en.category, None)
         imported_af = Message.objects.filter(sequence_number="1", lang="af")[0]
         self.assertEquals(imported_af.content, "hello1")
         imported_nr = Message.objects.filter(sequence_number="1", lang="nr")[0]
         self.assertEquals(imported_nr.content, "hello3")
         imported_en = Message.objects.filter(sequence_number="2", lang="en")[0]
         self.assertEquals(imported_en.content, "goodbye")
+        self.assertEquals(imported_en.category, "informational")
         imported_af2 = Message.objects.filter(
             sequence_number="2", lang="af")[0]
         self.assertEquals(imported_af2.content, "goodbye1")

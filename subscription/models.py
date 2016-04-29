@@ -53,6 +53,7 @@ class Message(models.Model):
     sequence_number = models.IntegerField(null=False, blank=False)
     lang = models.CharField(max_length=3, null=False, blank=False)
     content = models.TextField(null=False, blank=False)
+    category = models.CharField(max_length=20, null=True, blank=True)
     created_at = AutoNewDateTimeField(blank=True)
     updated_at = AutoDateTimeField(blank=True)
 
