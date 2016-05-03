@@ -327,6 +327,9 @@ CELERY_ROUTES = {
     'nursereg.tasks.vumi_fire_metric': {
         'queue': 'priority',
     },
+    'nursereg.tasks.fire_new_clinic_metric': {
+        'queue': 'priority',
+    },
 }
 
 
