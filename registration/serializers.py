@@ -15,4 +15,4 @@ class RegistrationSerializer(serializers.ModelSerializer):
         model = Registration
         fields = ('id', 'hcw_msisdn', 'mom_msisdn', 'mom_id_type',
                   'mom_passport_origin', 'mom_lang', 'mom_edd', 'mom_id_no',
-                  'mom_dob', 'clinic_code', 'authority', 'source', )
+                  'mom_dob', 'consent', 'clinic_code', 'authority', 'source', )
