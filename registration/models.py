@@ -65,6 +65,7 @@ class Registration(models.Model):
     mom_edd = models.DateField(null=True, blank=True)
     mom_id_no = models.CharField(max_length=100, null=True, blank=True)
     mom_dob = models.DateField(null=True, blank=True)
+    consent = models.NullBooleanField(default=None)
     clinic_code = models.CharField(max_length=100, null=True, blank=True)
     authority = models.CharField(max_length=8, null=False, blank=False,
                                  choices=AUTHORITY_CHOICES)

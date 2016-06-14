@@ -44,6 +44,7 @@ TEST_REG_DATA = {
         "mom_edd": "2015-08-01",
         "mom_id_no": "8009151234001",
         "mom_dob": "1980-09-15",
+        "consent": True,
         "clinic_code": "12345",
         "authority": "clinic"
     },
@@ -475,6 +476,7 @@ class TestRegistrationsAPI(AuthenticatedAPITestCase):
 
         d = Registration.objects.last()
         self.assertEqual(d.mom_id_type, 'sa_id')
+        self.assertEqual(d.consent, True)
 
     def test_create_broken_registration_no_mom_msisdn(self):
         reg_response = self.make_registration(
