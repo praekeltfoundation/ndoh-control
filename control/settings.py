@@ -388,6 +388,8 @@ SNAPPY_EMAIL = "replaceme@example.org"
 SNAPPY_EXTRAS = []
 SNAPPY_ACCOUNT_ID = None
 
+CASEPRO_BASE_URL = "https://example.com/"
+
 BROKER_URL = 'redis://localhost:6379/0'
 
 DASHBOARD_API_KEY = "replaceme"

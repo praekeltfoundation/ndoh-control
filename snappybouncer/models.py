@@ -2,6 +2,8 @@ from django.db import models
 from django.utils import timezone
 from datetime import timedelta
 from django.db.models import DateTimeField
+from django.db.models.signals import post_save
+from django.dispatch import receiver
 
 
 # Modelled on https://github.com/jamesmarlowe/django-AutoDateTimeFields
@@ -79,21 +81,20 @@ class Ticket(models.Model):
     def __unicode__(self):
         return "%s" % self.message
 
+
 # Make sure new tickets are sent to Snappy via Celery
-from django.db.models.signals import post_save
-from django.dispatch import receiver
-
-
 @receiver(post_save, sender=Ticket)
-def fire_snappy_if_new(sender, instance, created, **kwargs):
-    from snappybouncer.tasks import create_snappy_ticket
+def relay_to_helpdesk(sender, instance, created, **kwargs):
+    from snappybouncer.tasks import create_snappy_ticket, create_casepro_ticket
     last_30_secs = timezone.now() - timedelta(seconds=30)
     recent = Ticket.objects.filter(contact_key=instance.contact_key,
                                    created_at__gte=last_30_secs).count()
     if created and recent == 1:
         create_snappy_ticket.delay(instance)
+        create_casepro_ticket.delay(instance)
 
-from south.modelsinspector import add_introspection_rules
+
+from south.modelsinspector import add_introspection_rules  # noqa
 add_introspection_rules([], [
     "^snappybouncer\.models\.AutoNewDateTimeField",
     "^snappybouncer\.models\.AutoDateTimeField"])

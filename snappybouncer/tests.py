@@ -7,8 +7,9 @@ from django.test.utils import override_settings
 from django.contrib.auth.models import User
 from django.db.models.signals import post_save
 from django.core import management
+from django.conf import settings
 from snappybouncer.models import (
-    Conversation, UserAccount, Ticket, fire_snappy_if_new)
+    Conversation, UserAccount, Ticket, relay_to_helpdesk)
 from snappybouncer.tasks import (send_helpdesk_response_jembi,
                                  build_jembi_helpdesk_json,
                                  backfill_ticket, backfill_ticket_faccode)
@@ -24,7 +25,7 @@ class SnappyBouncerResourceTest(ResourceTestCase):
         assert has_listeners(), (
             "Ticket model has no post_save listeners. Make sure"
             " helpers cleaned up properly in earlier tests.")
-        post_save.disconnect(fire_snappy_if_new,
+        post_save.disconnect(relay_to_helpdesk,
                              sender=Ticket)
         assert not has_listeners(), (
             "Ticket model still has post_save listeners. Make sure"
@@ -36,7 +37,7 @@ class SnappyBouncerResourceTest(ResourceTestCase):
             "Ticket model still has post_save listeners. Make sure"
             " helpers removed them properly in earlier tests.")
         post_save.connect(
-            fire_snappy_if_new,
+            relay_to_helpdesk,
             sender=Ticket)
 
     def setUp(self):
@@ -154,10 +155,15 @@ class SnappyBouncerResourceTest(ResourceTestCase):
         # ignored.
 
         # restore the post_save hook just for this test
-        post_save.connect(fire_snappy_if_new, sender=Ticket)
+        post_save.connect(relay_to_helpdesk, sender=Ticket)
 
         responses.add(responses.POST,
                       "https://app.besnappy.com/api/v1/note",
+                      body="nonce", status=200,
+                      content_type='application/json')
+
+        responses.add(responses.POST,
+                      settings.CASEPRO_BASE_URL,
                       body="nonce", status=200,
                       content_type='application/json')
 
@@ -176,8 +182,8 @@ class SnappyBouncerResourceTest(ResourceTestCase):
         self.assertEqual("dummycontactkey2", json_item["contact_key"])
         last = Ticket.objects.last()
         self.assertEqual(last.support_nonce, "nonce")
-        # Contacts API call is the other
-        self.assertEqual(len(responses.calls), 2)
+        # Contacts API and Casepro calls are the other two
+        self.assertEqual(len(responses.calls), 3)
         # Send another, should not call snappy
         response = self.api_client.post(
             '/api/v1/snappybouncer/ticket/', format='json',
@@ -187,9 +193,9 @@ class SnappyBouncerResourceTest(ResourceTestCase):
         self.assertEqual("dummycontactkey2", json_item["contact_key"])
         last = Ticket.objects.last()
         self.assertEqual(last.support_nonce, None)
-        self.assertEqual(len(responses.calls), 2)
+        self.assertEqual(len(responses.calls), 3)
         # remove to stop tearDown errors
-        post_save.disconnect(fire_snappy_if_new, sender=Ticket)
+        post_save.disconnect(relay_to_helpdesk, sender=Ticket)
 
 
 class JembiSubmissionTest(TestCase):
@@ -199,7 +205,7 @@ class JembiSubmissionTest(TestCase):
         assert has_listeners(), (
             "Ticket model has no post_save listeners. Make sure"
             " helpers cleaned up properly in earlier tests.")
-        post_save.disconnect(fire_snappy_if_new,
+        post_save.disconnect(relay_to_helpdesk,
                              sender=Ticket)
         assert not has_listeners(), (
             "Ticket model still has post_save listeners. Make sure"
@@ -211,7 +217,7 @@ class JembiSubmissionTest(TestCase):
             "Ticket model still has post_save listeners. Make sure"
             " helpers removed them properly in earlier tests.")
         post_save.connect(
-            fire_snappy_if_new,
+            relay_to_helpdesk,
             sender=Ticket)
 
     @override_settings(CELERY_EAGER_PROPAGATES_EXCEPTIONS=True,
@@ -324,7 +330,7 @@ class BackfillTicketTest(TestCase):
         assert has_listeners(), (
             "Ticket model has no post_save listeners. Make sure"
             " helpers cleaned up properly in earlier tests.")
-        post_save.disconnect(fire_snappy_if_new,
+        post_save.disconnect(relay_to_helpdesk,
                              sender=Ticket)
         assert not has_listeners(), (
             "Ticket model still has post_save listeners. Make sure"
@@ -336,7 +342,7 @@ class BackfillTicketTest(TestCase):
             "Ticket model still has post_save listeners. Make sure"
             " helpers removed them properly in earlier tests.")
         post_save.connect(
-            fire_snappy_if_new,
+            relay_to_helpdesk,
             sender=Ticket)
 
     @override_settings(CELERY_EAGER_PROPAGATES_EXCEPTIONS=True,
