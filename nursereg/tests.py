@@ -451,7 +451,7 @@ class TestContactsAPI(AuthenticatedAPITestCase):
         client = self.make_client()
         existing_group = client.create_group({
             "name": 'groupname'
-            })
+        })
         group = client.get_group(existing_group[u'key'])
         self.assertEqual(group, existing_group)
 
@@ -579,8 +579,7 @@ class TestNurseRegAPI(AuthenticatedAPITestCase):
                 "metric": "test.metric",
                 "value": 1,
                 "agg": "sum",
-                "sender": self.sender}
-            )
+                "sender": self.sender})
         # Check
         self.assertEqual(True,
                          self.check_logs("Metric: 'test.metric' [sum] -> 1"))
@@ -1047,7 +1046,7 @@ class TestUpdateCreateVumiContactTask(AuthenticatedAPITestCase):
             "nc_subscription_seq_start": "1",
         })
         postsubs = Subscription.objects.all().count()
-        self.assertEqual(postsubs, presubs+1)
+        self.assertEqual(postsubs, presubs + 1)
 
     def test_create_vumi_contact_passport(self):
         # Test mocks an external registration - no existing Vumi contact
@@ -1088,7 +1087,7 @@ class TestUpdateCreateVumiContactTask(AuthenticatedAPITestCase):
             "nc_subscription_seq_start": "1"
         })
         postsubs = Subscription.objects.all().count()
-        self.assertEqual(postsubs, presubs+1)
+        self.assertEqual(postsubs, presubs + 1)
 
     def test_update_vumi_contact_no_id(self):
         # Test mocks a JS nurse registration - existing Vumi contact
@@ -1128,7 +1127,7 @@ class TestUpdateCreateVumiContactTask(AuthenticatedAPITestCase):
             "nc_subscription_seq_start": "1",
         })
         postsubs = Subscription.objects.all().count()
-        self.assertEqual(postsubs, presubs+1)
+        self.assertEqual(postsubs, presubs + 1)
 
     def test_create_vumi_contact_change_faccode(self):
         # Test mocks an external registration - no existing Vumi contact
@@ -1432,7 +1431,7 @@ class TestUpdateCreateVumiContactTask(AuthenticatedAPITestCase):
         })
         postsubs = Subscription.objects.all().count()
         # check one additional subscriptions created
-        self.assertEqual(postsubs, presubs+1)
+        self.assertEqual(postsubs, presubs + 1)
 
     def test_create_vumi_contact_multiple_active_subscriptions(self):
         # Setup
@@ -1520,7 +1519,7 @@ class TestUpdateCreateVumiContactTask(AuthenticatedAPITestCase):
         })
         postsubs = Subscription.objects.all().count()
         # check one additional subscriptions created
-        self.assertEqual(postsubs, presubs+1)
+        self.assertEqual(postsubs, presubs + 1)
 
     def test_create_subscription(self):
         contact = {

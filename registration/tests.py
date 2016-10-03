@@ -452,7 +452,7 @@ class TestContactsAPI(AuthenticatedAPITestCase):
         client = self.make_client()
         existing_group = client.create_group({
             "name": 'groupname'
-            })
+        })
         group = client.get_group(existing_group[u'key'])
         self.assertEqual(group, existing_group)
 
@@ -534,8 +534,7 @@ class TestRegistrationsAPI(AuthenticatedAPITestCase):
                 "metric": "test.metric",
                 "value": 1,
                 "agg": "sum",
-                "sender": self.sender}
-            )
+                "sender": self.sender})
         self.assertEqual(True,
                          self.check_logs("Metric: 'test.metric' [sum] -> 1"))
         self.assertEqual(1, self.check_logs_number_of_entries())

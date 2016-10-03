@@ -24,7 +24,7 @@ class NurseRegViewSet(viewsets.ModelViewSet):
     serializer_class = NurseRegSerializer
 
 
-class NurseRegPost(mixins.CreateModelMixin,  generics.GenericAPIView):
+class NurseRegPost(mixins.CreateModelMixin, generics.GenericAPIView):
     permission_classes = (IsAuthenticated,)
     queryset = NurseReg.objects.all()
     serializer_class = NurseRegSerializer

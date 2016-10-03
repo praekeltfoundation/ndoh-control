@@ -413,11 +413,11 @@ def clinic_sub_map(weeks):
     elif weeks <= 31:
         msg_set = "standard"
         sub_rate = "two_per_week"
-        seq_start = ((weeks-4)*2)-1
+        seq_start = ((weeks - 4) * 2) - 1
     elif weeks <= 35:
         msg_set = "later"
         sub_rate = "three_per_week"
-        seq_start = ((weeks-30)*3)-2
+        seq_start = ((weeks - 30) * 3) - 2
     elif weeks == 36:
         sub_rate = "three_per_week"
     elif weeks == 37:
