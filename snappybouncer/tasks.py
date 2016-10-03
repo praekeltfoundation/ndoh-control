@@ -94,6 +94,9 @@ def create_snappy_ticket(ticket):
 
 @task(ignore_result=True)
 def create_casepro_ticket(ticket):
+    if not getattr(settings, 'CASEPRO_BASE_URL', None):
+        return
+
     casepro_payload = {
         'from': ticket.msisdn,
         'message_id': UUID(int=ticket.pk).hex,
