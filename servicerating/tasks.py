@@ -153,9 +153,10 @@ def vumi_get_smart_group_contacts(group_key, client=None):
 @task(ignore_result=True)
 def send_reminders(group_key, client=None, sender=None):
     try:
-        reminder = "Thank you for registering. We can only improve if we get " \
-                   "your feedback. Please dial *134*550*4# to rate the " \
-                   "service you received at the clinic you registered at"
+        reminder = (
+            "Thank you for registering. We can only improve if we get "
+            "your feedback. Please dial *134*550*4# to rate the "
+            "service you received at the clinic you registered at")
         today = get_date_filter()
         if client is not None:  # test mode because Fake doesn't support extra
             query = "name:Nancy"

@@ -14,7 +14,7 @@ class SourceViewSet(viewsets.ModelViewSet):
     serializer_class = SourceSerializer
 
 
-class RegistrationPost(mixins.CreateModelMixin,  generics.GenericAPIView):
+class RegistrationPost(mixins.CreateModelMixin, generics.GenericAPIView):
     permission_classes = (IsAuthenticated,)
     queryset = Registration.objects.all()
     serializer_class = RegistrationSerializer

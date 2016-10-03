@@ -441,7 +441,7 @@ class TestContactsApiClient(TestCase):
                                                client=client,
                                                sender=self.sender)
 
-        self.assertEqual(False,  send_message.get())
+        self.assertEqual(False, send_message.get())
 
     def test_reminders_chain_task(self):
         # This is a more detailed set of grouped asserts because of the chain

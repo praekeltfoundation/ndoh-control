@@ -50,7 +50,7 @@ class Command(BaseCommand):
         schedule_interval = 7 / 2.0  # twice a week for baby1
         # seq_start calc needs + 1 as seq starts on 1, not 0
         # e.g. 0-3 days should return 1
-        seq_start = int(floor(days/schedule_interval)) + 1
+        seq_start = int(floor(days / schedule_interval)) + 1
         return seq_start
 
     def handle(self, *args, **options):
