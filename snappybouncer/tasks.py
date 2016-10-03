@@ -102,7 +102,7 @@ def create_casepro_ticket(ticket):
         'message_id': UUID(int=ticket.pk).hex,
         'content': ticket.message,
     }
-    response = requests.post(settings.CASEPRO_BASE_URL, data=casepro_payload)
+    response = requests.post(settings.CASEPRO_BASE_URL, json=casepro_payload)
     response.raise_for_status()
 
     # NOTE: this should only be updated once Casepro is the defacto helpdesk

@@ -1,6 +1,7 @@
 """
 Tests for Snappy Bouncer Application
 """
+from uuid import UUID
 from tastypie.test import ResourceTestCase
 from django.test import TestCase
 from django.test.utils import override_settings
@@ -12,6 +13,7 @@ from snappybouncer.models import (
     Conversation, UserAccount, Ticket, relay_to_helpdesk)
 from snappybouncer.tasks import (send_helpdesk_response_jembi,
                                  build_jembi_helpdesk_json,
+                                 create_casepro_ticket,
                                  backfill_ticket, backfill_ticket_faccode)
 from snappybouncer.api import WebhookResource
 import json
@@ -198,7 +200,7 @@ class SnappyBouncerResourceTest(ResourceTestCase):
         post_save.disconnect(relay_to_helpdesk, sender=Ticket)
 
 
-class JembiSubmissionTest(TestCase):
+class SubmissionTestCase(TestCase):
 
     def _replace_post_save_hooks(self):
         has_listeners = lambda: post_save.has_listeners(Ticket)
@@ -224,7 +226,7 @@ class JembiSubmissionTest(TestCase):
                        CELERY_ALWAYS_EAGER=True,
                        BROKER_BACKEND='memory',)
     def setUp(self):
-        super(JembiSubmissionTest, self).setUp()
+        super(SubmissionTestCase, self).setUp()
         self._replace_post_save_hooks()
         self.conversation = self.mk_convo()
 
@@ -261,6 +263,32 @@ class JembiSubmissionTest(TestCase):
 
     def tearDown(self):
         self._restore_post_save_hooks()
+
+
+class CaseProSubmissionTest(SubmissionTestCase):
+
+    @responses.activate
+    def test_create_casepro_ticket(self):
+
+        responses.add(
+            responses.POST, settings.CASEPRO_BASE_URL, body={}, status=200,
+            content_type='application/json')
+
+        ticket = self.mk_ticket("supportnonce", 100,
+                                "Inbound Message", "Outbound Response",
+                                123456, 2, "test_tag")
+
+        self.assertEqual(len(responses.calls), 0)
+        create_casepro_ticket(ticket)
+        [call] = responses.calls
+        request = call.request
+        data = json.loads(request.body)
+        self.assertEqual(data['message_id'], UUID(int=ticket.pk).hex)
+        self.assertEqual(data['content'], ticket.message)
+        self.assertEqual(data['from'], ticket.msisdn)
+
+
+class JembiSubmissionTest(SubmissionTestCase):
 
     def test_extract_tag(self):
         # Setup
