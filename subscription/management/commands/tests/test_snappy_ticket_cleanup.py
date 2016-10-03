@@ -4,7 +4,7 @@ from django.core import management
 from django.db.models.signals import post_save
 from StringIO import StringIO
 from snappybouncer.models import (UserAccount, Conversation, Ticket,
-                                  fire_snappy_if_new)
+                                  relay_to_helpdesk)
 from subscription.management.commands import snappy_ticket_cleanup
 
 
@@ -15,7 +15,7 @@ class TestSnappyTicketCleanupCommand(TestCase):
         assert has_listeners(), (
             "Ticket model has no post_save listeners. Make sure"
             " helpers cleaned up properly in earlier tests.")
-        post_save.disconnect(fire_snappy_if_new,
+        post_save.disconnect(relay_to_helpdesk,
                              sender=Ticket)
         assert not has_listeners(), (
             "Ticket model still has post_save listeners. Make sure"
@@ -27,7 +27,7 @@ class TestSnappyTicketCleanupCommand(TestCase):
             "Ticket model still has post_save listeners. Make sure"
             " helpers removed them properly in earlier tests.")
         post_save.connect(
-            fire_snappy_if_new,
+            relay_to_helpdesk,
             sender=Ticket)
 
     def setUp(self):

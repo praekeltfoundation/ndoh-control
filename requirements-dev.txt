@@ -1,10 +1,10 @@
 pep8
 pyflakes
 coverage
-pytest
+pytest<3.0,>=2.9.0
 pytest-xdist
 pytest-cov
 requests_testadapter
 fake-go-contacts>=0.1.9
-pytest-django
+pytest-django<3.0,>=2.9.0
 flake8

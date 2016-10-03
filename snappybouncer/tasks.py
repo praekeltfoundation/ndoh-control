@@ -1,3 +1,4 @@
+from uuid import UUID
 from celery import task
 from celery.utils.log import get_task_logger
 import requests
@@ -89,6 +90,26 @@ def create_snappy_ticket(ticket):
                                            ticket.contact_key, subject)
     # TODO: Log ticket created metric
     return True
+
+
+@task(ignore_result=True)
+def create_casepro_ticket(ticket):
+    if not getattr(settings, 'CASEPRO_BASE_URL', None):
+        return
+
+    casepro_payload = {
+        'from': ticket.msisdn,
+        'message_id': UUID(int=ticket.pk).hex,
+        'content': ticket.message,
+    }
+    response = requests.post(settings.CASEPRO_BASE_URL, json=casepro_payload)
+    response.raise_for_status()
+
+    # NOTE: this should only be updated once Casepro is the defacto helpdesk
+    #       backend, otherwise we're just overwriting two backends' values
+    # data = response.json()
+    # ticket.support_id = data['id']
+    # ticket.save()
 
 
 @task(ignore_result=True)
