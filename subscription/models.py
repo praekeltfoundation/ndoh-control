@@ -73,7 +73,8 @@ class Subscription(models.Model):
                                     null=False)
     next_sequence_number = models.IntegerField(
         default=1, null=False, blank=False)
-    lang = models.CharField(max_length=3, null=False, blank=False)
+    lang = models.CharField(max_length=3, null=False, blank=False,
+                            db_index=True)
     active = models.BooleanField(default=True)
     completed = models.BooleanField(default=False)
     created_at = AutoNewDateTimeField(blank=True)
